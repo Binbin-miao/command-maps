@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "mora-plugin",
+    "fingerprint": "ddd947aa21d6",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#虚空使用率": {
+      "keys": [
+        "虚空使用率",
+        "查看虚空数据库深渊角色使用率统计"
+      ],
+      "args": {},
+      "ex": "#虚空使用率",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#虚空队伍": {
+      "keys": [
+        "虚空队伍",
+        "查看虚空数据库深渊队伍出战或满星率"
+      ],
+      "args": {},
+      "ex": "#虚空队伍",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#虚空深渊帮助": {
+      "keys": [
+        "虚空深渊帮助",
+        "查看虚空深渊数据库功能的使用帮助"
+      ],
+      "args": {},
+      "ex": "#虚空深渊帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#历代12": {
+      "keys": [
+        "历代12",
+        "查询历代深渊第12层的最低输出量要求"
+      ],
+      "args": {},
+      "ex": "#历代12",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#复刻表": {
+      "keys": [
+        "复刻表",
+        "查看原神或星铁角色及武器复刻时间表"
+      ],
+      "args": {},
+      "ex": "#复刻表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#添加": {
+      "keys": [
+        "添加",
+        "全局添加或删除指定的表情条目"
+      ],
+      "args": {},
+      "ex": "#添加",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情": {
+      "keys": [
+        "表情",
+        "查询或触发全局表情与自定义词条内容"
+      ],
+      "args": {},
+      "ex": "#表情",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#摩拉帮助": {
+      "keys": [
+        "摩拉帮助",
+        "查看摩拉插件的功能说明与帮助信息"
+      ],
+      "args": {},
+      "ex": "#摩拉帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新摩拉资源": {
+      "keys": [
+        "更新摩拉资源",
+        "强制或常规更新摩拉插件所需资源文件"
+      ],
+      "args": {},
+      "ex": "#更新摩拉资源",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#摩拉更新": {
+      "keys": [
+        "摩拉更新",
+        "强制或常规更新摩拉插件至最新版本"
+      ],
+      "args": {},
+      "ex": "#摩拉更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#攻略": {
+      "keys": [
+        "攻略",
+        "查询或更新指定角色的一图流攻略"
+      ],
+      "args": {},
+      "ex": "#攻略",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#参考面板": {
+      "keys": [
+        "参考面板",
+        "查询指定角色的参考面板或收益曲线"
+      ],
+      "args": {},
+      "ex": "#参考面板",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#收益曲线帮助": {
+      "keys": [
+        "收益曲线帮助",
+        "查看角色属性收益曲线功能的使用说明"
+      ],
+      "args": {},
+      "ex": "#收益曲线帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#参考面板帮助": {
+      "keys": [
+        "参考面板帮助",
+        "查看角色参考面板功能的使用帮助说明"
+      ],
+      "args": {},
+      "ex": "#参考面板帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
