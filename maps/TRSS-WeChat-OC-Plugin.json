@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "TRSS-WeChat-OC-Plugin",
+    "fingerprint": "b4a1c5109f31",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#微信个人号更新": {
+      "keys": [
+        "微信个人号更新",
+        "更新微信个人号插件至指定分支版本"
+      ],
+      "args": {},
+      "ex": "#微信个人号更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#微信登录": {
+      "keys": [
+        "微信登录",
+        "获取微信个人号登录二维码并扫码登录"
+      ],
+      "args": {},
+      "ex": "#微信登录",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#微信账号": {
+      "keys": [
+        "微信账号",
+        "查看已登录的微信个人号账号列表"
+      ],
+      "args": {},
+      "ex": "#微信账号",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#微信删除": {
+      "keys": [
+        "微信删除",
+        "删除或移除指定的微信个人号账号"
+      ],
+      "args": {},
+      "ex": "#微信删除",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#微信禁用": {
+      "keys": [
+        "微信禁用",
+        "启用、禁用或解禁指定的微信个人号"
+      ],
+      "args": {},
+      "ex": "#微信禁用",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#微信设置昵称": {
+      "keys": [
+        "微信设置昵称",
+        "设置或修改微信个人号的展示昵称"
+      ],
+      "args": {},
+      "ex": "#微信设置昵称",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
