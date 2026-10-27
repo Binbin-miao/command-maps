@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "cyxz-plugin",
+    "fingerprint": "23852ef87369",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#帮助": {
+      "keys": [
+        "帮助",
+        "获取次元小镇插件的帮助图片"
+      ],
+      "args": {},
+      "ex": "#帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#cos": {
+      "keys": [
+        "cos",
+        "获取并发送Cosplay相关图片"
+      ],
+      "args": {},
+      "ex": "#cos",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#pixiv": {
+      "keys": [
+        "pixiv",
+        "获取Pixiv或二次元相关图片"
+      ],
+      "args": {},
+      "ex": "#pixiv",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#私服": {
+      "keys": [
+        "私服",
+        "获取并发送私服写真相关图片"
+      ],
+      "args": {},
+      "ex": "#私服",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#jk": {
+      "keys": [
+        "jk",
+        "获取并发送JK制服相关图片"
+      ],
+      "args": {},
+      "ex": "#jk",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#汉服": {
+      "keys": [
+        "汉服",
+        "获取并发送汉服相关图片"
+      ],
+      "args": {},
+      "ex": "#汉服",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#lolita": {
+      "keys": [
+        "lolita",
+        "获取并发送洛丽塔相关图片"
+      ],
+      "args": {},
+      "ex": "#lolita",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#头像": {
+      "keys": [
+        "头像",
+        "获取并发送二次元头像图片"
+      ],
+      "args": {},
+      "ex": "#头像",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#壁纸": {
+      "keys": [
+        "壁纸",
+        "获取指定类型的壁纸图片"
+      ],
+      "args": {},
+      "ex": "#壁纸",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插画": {
+      "keys": [
+        "插画",
+        "获取并发送二次元插画图片"
+      ],
+      "args": {},
+      "ex": "#插画",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#图集": {
+      "keys": [
+        "图集",
+        "获取并发送图集或画册图片"
+      ],
+      "args": {},
+      "ex": "#图集",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#次元测试": {
+      "keys": [
+        "次元测试",
+        "执行次元小镇插件的测试指令"
+      ],
+      "args": {},
+      "ex": "#次元测试",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
