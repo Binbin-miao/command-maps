@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "other/update.js",
+    "fingerprint": "42c59a0511c1",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#更新日志": {
+      "keys": [
+        "更新日志",
+        "查看机器人的版本历史与详细更新日志"
+      ],
+      "args": {},
+      "ex": "#更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新": {
+      "keys": [
+        "更新",
+        "检查并执行机器人的在线更新或强制更新",
+        "#强制更新"
+      ],
+      "args": {},
+      "ex": "#更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#全部更新": {
+      "keys": [
+        "全部更新",
+        "检查并静默或强制更新全部已安装的组件"
+      ],
+      "args": {},
+      "ex": "#全部更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 1
+    }
+  }
+}
