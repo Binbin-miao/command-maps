@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "other/restart.js",
+    "fingerprint": "3a1470012ab6",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#重启": {
+      "keys": [
+        "重启",
+        "重启当前机器人的后台系统与服务进程"
+      ],
+      "args": {},
+      "ex": "#重启",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#关机": {
+      "keys": [
+        "关机",
+        "完全关闭机器人程序并停止后台进程运行"
+      ],
+      "args": {},
+      "ex": "#关机",
+      "risk": "w",
+      "interactive": false,
+      "used": 1
+    },
+    "#停机": {
+      "keys": [
+        "停机",
+        "停止当前机器人服务的运行状态"
+      ],
+      "args": {},
+      "ex": "#停机",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
