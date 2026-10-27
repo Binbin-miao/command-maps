@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "Atlas",
+    "fingerprint": "fa8020462da8",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#图鉴帮助": {
+      "keys": [
+        "图鉴帮助",
+        "查看Atlas游戏图鉴与百科的帮助菜单"
+      ],
+      "args": {},
+      "ex": "#图鉴帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "图鉴": {
+      "keys": [
+        "图鉴",
+        "查询原神角色材料与各类游戏图鉴资料"
+      ],
+      "args": {},
+      "ex": "图鉴",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "图鉴升级": {
+      "keys": [
+        "图鉴升级",
+        "升级或强制升级指定的Atlas图鉴拓展包"
+      ],
+      "args": {},
+      "ex": "图鉴升级",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "图鉴插件升级": {
+      "keys": [
+        "图鉴插件升级",
+        "升级或强制升级Atlas图鉴插件本身"
+      ],
+      "args": {},
+      "ex": "图鉴插件升级",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#原魔生命值": {
+      "keys": [
+        "原魔生命值",
+        "计算并查询原神原魔怪物的生命值与攻击力属性"
+      ],
+      "args": {},
+      "ex": "#原魔生命值",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
