@@ -1,0 +1,626 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "genshin",
+    "fingerprint": "f05f9dbf2c9e",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#七圣查询牌组": {
+      "keys": [
+        "七圣查询牌组",
+        "查询原神七圣召唤卡组或卡组列表"
+      ],
+      "args": {},
+      "ex": "#七圣查询牌组",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#七圣查询牌": {
+      "keys": [
+        "七圣查询牌",
+        "查询原神七圣召唤角色卡或行动卡列表"
+      ],
+      "args": {},
+      "ex": "#七圣查询牌",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#攻略": {
+      "keys": [
+        "攻略",
+        "查看米游社攻略插件的说明或帮助信息"
+      ],
+      "args": {},
+      "ex": "#攻略",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置默认攻略": {
+      "keys": [
+        "设置默认攻略",
+        "设置米游社攻略图的默认展示序号"
+      ],
+      "args": {},
+      "ex": "#设置默认攻略",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#角色3": {
+      "keys": [
+        "角色3",
+        "查询并生成原神角色的属性卡片"
+      ],
+      "args": {},
+      "ex": "#角色3",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#宝箱": {
+      "keys": [
+        "宝箱",
+        "查询原神大世界探索度、宝箱及成就统计"
+      ],
+      "args": {},
+      "ex": "#宝箱",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#幻想真境剧诗": {
+      "keys": [
+        "幻想真境剧诗",
+        "查询原神幻想真境剧诗模式的通关战绩"
+      ],
+      "args": {},
+      "ex": "#幻想真境剧诗",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#充值记录": {
+      "keys": [
+        "充值记录",
+        "查询米哈游游戏账号的历史充值消费统计"
+      ],
+      "args": {},
+      "ex": "#充值记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新充值记录": {
+      "keys": [
+        "更新充值记录",
+        "更新米哈游游戏账号的历史充值消费数据"
+      ],
+      "args": {},
+      "ex": "#更新充值记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "user-game-search": {
+      "keys": [
+        "user-game-search",
+        "识别米哈游记录链接并解析充值消费数据"
+      ],
+      "args": {},
+      "ex": "user-game-search",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#充值记录帮助": {
+      "keys": [
+        "充值记录帮助",
+        "查看充值消费记录功能的帮助说明"
+      ],
+      "args": {},
+      "ex": "#充值记录帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#绝区零邦布": {
+      "keys": [
+        "绝区零邦布",
+        "查询绝区零邦布或人偶的相关信息"
+      ],
+      "args": {},
+      "ex": "#绝区零邦布",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#体力": {
+      "keys": [
+        "体力",
+        "查询原神或星穹铁道账号当前体力树脂状态"
+      ],
+      "args": {},
+      "ex": "#体力",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#绝区零体力": {
+      "keys": [
+        "绝区零体力",
+        "查询绝区零账号当前的电量体力状态"
+      ],
+      "args": {},
+      "ex": "#绝区零体力",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#用户统计": {
+      "keys": [
+        "用户统计",
+        "统计当前已绑定的Cookie用户总数"
+      ],
+      "args": {},
+      "ex": "#用户统计",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#刷新用户缓存": {
+      "keys": [
+        "刷新用户缓存",
+        "刷新或重置所有用户的Cookie及缓存数据"
+      ],
+      "args": {},
+      "ex": "#刷新用户缓存",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除无效用户": {
+      "keys": [
+        "删除无效用户",
+        "清理并删除失效的Cookie用户信息"
+      ],
+      "args": {},
+      "ex": "#删除无效用户",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "authkey=": {
+      "keys": [
+        "authkey=",
+        "识别链接中的authkey并导入抽卡数据"
+      ],
+      "args": {},
+      "ex": "authkey=",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#导入记录": {
+      "keys": [
+        "导入记录",
+        "从JSON文件导入原神或星铁的历史抽卡记录"
+      ],
+      "args": {},
+      "ex": "#导入记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#抽卡池记录": {
+      "keys": [
+        "抽卡池记录",
+        "查询并分析指定卡池的历史抽卡记录"
+      ],
+      "args": {},
+      "ex": "#抽卡池记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#导出记录": {
+      "keys": [
+        "导出记录",
+        "将抽卡记录导出为本地JSON文件"
+      ],
+      "args": {},
+      "ex": "#导出记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#记录帮助": {
+      "keys": [
+        "记录帮助",
+        "查看获取抽卡记录的帮助与操作指南"
+      ],
+      "args": {},
+      "ex": "#记录帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#安卓帮助": {
+      "keys": [
+        "安卓帮助",
+        "查看不同平台获取抽卡链接的操作教程"
+      ],
+      "args": {},
+      "ex": "#安卓帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#抽卡池统计": {
+      "keys": [
+        "抽卡池统计",
+        "查看指定卡池的抽卡概率与统计概览"
+      ],
+      "args": {},
+      "ex": "#抽卡池统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置全量更新抽卡记录s": {
+      "keys": [
+        "设置全量更新抽卡记录s",
+        "设置是否开启全量获取历史抽卡记录"
+      ],
+      "args": {},
+      "ex": "#设置全量更新抽卡记录s",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#原石月": {
+      "keys": [
+        "原石月",
+        "查询指定月份的原石或星琼获取札记明细"
+      ],
+      "args": {},
+      "ex": "#原石月",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#原石任务": {
+      "keys": [
+        "原石任务",
+        "查询当前每日任务的原石或星琼完成情况"
+      ],
+      "args": {},
+      "ex": "#原石任务",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#原石统计": {
+      "keys": [
+        "原石统计",
+        "查询原石或星琼获取的历史总览统计"
+      ],
+      "args": {},
+      "ex": "#原石统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#去年原石统计": {
+      "keys": [
+        "去年原石统计",
+        "查询指定年度的原石或星琼获取统计数据"
+      ],
+      "args": {},
+      "ex": "#去年原石统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#体力帮助": {
+      "keys": [
+        "体力帮助",
+        "查看体力查询与米游社凭证绑定帮助说明"
+      ],
+      "args": {},
+      "ex": "#体力帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#绑定ck": {
+      "keys": [
+        "绑定ck",
+        "获取米游社账号凭证的具体绑定方式教程"
+      ],
+      "args": {},
+      "ex": "#绑定ck",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "_MHYUUID": {
+      "keys": [
+        "_MHYUUID",
+        "接收包含设备标识的凭证数据以完成绑定"
+      ],
+      "args": {},
+      "ex": "_MHYUUID",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#我的ck": {
+      "keys": [
+        "我的ck",
+        "查看当前用户在各游戏下绑定的凭证信息"
+      ],
+      "args": {},
+      "ex": "#我的ck",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除ck": {
+      "keys": [
+        "删除ck",
+        "删除当前用户在指定游戏下绑定的凭证数据"
+      ],
+      "args": {},
+      "ex": "#删除ck",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除uid": {
+      "keys": [
+        "删除uid",
+        "解绑或删除指定序号的游戏UID绑定数据"
+      ],
+      "args": {},
+      "ex": "#删除uid",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#uid": {
+      "keys": [
+        "uid",
+        "查询当前账号所绑定的游戏角色UID信息"
+      ],
+      "args": {},
+      "ex": "#uid",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#绑定用户": {
+      "keys": [
+        "绑定用户",
+        "发起或确认绑定对应的主账户或子账户"
+      ],
+      "args": {},
+      "ex": "#绑定用户",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除绑定主用户": {
+      "keys": [
+        "删除绑定主用户",
+        "解除或删除已绑定的主账户或子账户关联"
+      ],
+      "args": {},
+      "ex": "#删除绑定主用户",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#突破": {
+      "keys": [
+        "突破",
+        "查询指定角色养成所需的突破材料与培养素材"
+      ],
+      "args": {},
+      "ex": "#突破",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置别名": {
+      "keys": [
+        "设置别名",
+        "为指定游戏角色或星铁角色设置自定义别名"
+      ],
+      "args": {},
+      "ex": "#设置别名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除别名": {
+      "keys": [
+        "删除别名",
+        "删除已设置的游戏角色或星铁角色的别名昵称"
+      ],
+      "args": {},
+      "ex": "#删除别名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#别名": {
+      "keys": [
+        "别名",
+        "查询指定游戏角色或星铁角色已配置的所有别名"
+      ],
+      "args": {},
+      "ex": "#别名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#养成": {
+      "keys": [
+        "养成",
+        "计算指定原神或星铁角色的养成材料消耗需求"
+      ],
+      "args": {},
+      "ex": "#养成",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#角色养成": {
+      "keys": [
+        "角色养成",
+        "查询原神或星铁角色养成材料计算的使用帮助"
+      ],
+      "args": {},
+      "ex": "#角色养成",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#尘歌壶模数养成": {
+      "keys": [
+        "尘歌壶模数养成",
+        "查询原神尘歌壶模数及摆设制作的材料计算帮助"
+      ],
+      "args": {},
+      "ex": "#尘歌壶模数养成",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#配置ck": {
+      "keys": [
+        "配置ck",
+        "配置个人或公共查询所需的Cookie凭据"
+      ],
+      "args": {},
+      "ex": "#配置ck",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#使用全部ck": {
+      "keys": [
+        "使用全部ck",
+        "切换查询时使用全部Cookie还是用户专属Cookie"
+      ],
+      "args": {},
+      "ex": "#使用全部ck",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "兑换码": {
+      "keys": [
+        "兑换码",
+        "获取米家游戏前瞻直播兑换码"
+      ],
+      "args": {},
+      "ex": "兑换码",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#兑换码使用": {
+      "keys": [
+        "兑换码使用",
+        "为指定游戏账号使用并兑换礼品码"
+      ],
+      "args": {},
+      "ex": "#兑换码使用",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#留影": {
+      "keys": [
+        "留影",
+        "获取原神留影叙佳期角色生日贺图画片"
+      ],
+      "args": {},
+      "ex": "#留影",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#公告列表": {
+      "keys": [
+        "公告列表",
+        "查询指定米哈游游戏的公告或活动列表"
+      ],
+      "args": {},
+      "ex": "#公告列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#米游社": {
+      "keys": [
+        "米游社",
+        "通过米游社指令查询相关资讯内容"
+      ],
+      "args": {},
+      "ex": "#米游社",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#预估": {
+      "keys": [
+        "预估",
+        "查看指定米哈游游戏的抽卡资源预估盘点"
+      ],
+      "args": {},
+      "ex": "#预估",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启公告推送": {
+      "keys": [
+        "开启公告推送",
+        "开启或关闭指定游戏的米游社公告资讯推送"
+      ],
+      "args": {},
+      "ex": "#开启公告推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#推送公告": {
+      "keys": [
+        "推送公告",
+        "手动触发指定游戏的米游社公告资讯推送"
+      ],
+      "args": {},
+      "ex": "#推送公告",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#星铁开启到期活动": {
+      "keys": [
+        "星铁开启到期活动",
+        "开启或关闭原神或星铁到期活动预警推送"
+      ],
+      "args": {},
+      "ex": "#星铁开启到期活动",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
