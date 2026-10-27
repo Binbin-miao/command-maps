@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "other/sendLog.js",
+    "fingerprint": "a966dcc83e43",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#运行日志": {
+      "keys": [
+        "运行日志",
+        "查看并发送指定行数的系统运行或错误日志"
+      ],
+      "args": {},
+      "ex": "#运行日志",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
