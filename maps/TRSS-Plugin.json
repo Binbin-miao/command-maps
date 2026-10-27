@@ -1,0 +1,321 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "TRSS-Plugin",
+    "fingerprint": "a917ac32b060",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "文件查看": {
+      "keys": [
+        "文件查看",
+        "查看机器人运行环境下的指定文件内容"
+      ],
+      "args": {},
+      "ex": "文件查看",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "文件上传": {
+      "keys": [
+        "文件上传",
+        "向机器人所在目录或指定路径上传文件"
+      ],
+      "args": {},
+      "ex": "文件上传",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "文件下载": {
+      "keys": [
+        "文件下载",
+        "从机器人所在服务器下载指定的目标文件"
+      ],
+      "args": {},
+      "ex": "文件下载",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "脚本执行": {
+      "keys": [
+        "脚本执行",
+        "在机器人后台环境中执行指定的系统脚本"
+      ],
+      "args": {},
+      "ex": "脚本执行",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "sc": {
+      "keys": [
+        "sc",
+        "查看或提取指定插件与模块的源代码内容"
+      ],
+      "args": {},
+      "ex": "sc",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "阿里云盘上传": {
+      "keys": [
+        "阿里云盘上传",
+        "上传指定文件或资源至绑定的阿里云盘"
+      ],
+      "args": {},
+      "ex": "阿里云盘上传",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "阿里云盘下载": {
+      "keys": [
+        "阿里云盘下载",
+        "通过阿里云盘功能下载指定的文件"
+      ],
+      "args": {},
+      "ex": "阿里云盘下载",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "阿里云盘": {
+      "keys": [
+        "阿里云盘",
+        "调用阿里云盘相关功能或指令服务"
+      ],
+      "args": {},
+      "ex": "阿里云盘",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "百度网盘上传": {
+      "keys": [
+        "百度网盘上传",
+        "向百度网盘上传指定的文件内容"
+      ],
+      "args": {},
+      "ex": "百度网盘上传",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "百度网盘下载": {
+      "keys": [
+        "百度网盘下载",
+        "通过百度网盘功能下载指定的文件"
+      ],
+      "args": {},
+      "ex": "百度网盘下载",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "百度网盘": {
+      "keys": [
+        "百度网盘",
+        "调用百度网盘相关管理与服务功能"
+      ],
+      "args": {},
+      "ex": "百度网盘",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "md": {
+      "keys": [
+        "md"
+      ],
+      "args": {},
+      "ex": "md",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "二维码": {
+      "keys": [
+        "二维码",
+        "根据输入的文本或链接生成对应二维码"
+      ],
+      "args": {},
+      "ex": "二维码",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#图片修复": {
+      "keys": [
+        "图片修复",
+        "对发送的图片或动漫图片进行超分修复"
+      ],
+      "args": {},
+      "ex": "#图片修复",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#去除背景": {
+      "keys": [
+        "去除背景",
+        "自动抠图去除图片或动漫图片的背景"
+      ],
+      "args": {},
+      "ex": "#去除背景",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "rjp": {
+      "keys": [
+        "rjp"
+      ],
+      "args": {},
+      "ex": "rjp",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "rj": {
+      "keys": [
+        "rj"
+      ],
+      "args": {},
+      "ex": "rj",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "rcp": {
+      "keys": [
+        "rcp"
+      ],
+      "args": {},
+      "ex": "rcp",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "rc": {
+      "keys": [
+        "rc"
+      ],
+      "args": {},
+      "ex": "rc",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "dm": {
+      "keys": [
+        "dm"
+      ],
+      "args": {},
+      "ex": "dm",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "mm": {
+      "keys": [
+        "mm"
+      ],
+      "args": {},
+      "ex": "mm",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "fm": {
+      "keys": [
+        "fm"
+      ],
+      "args": {},
+      "ex": "fm",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#系统信息": {
+      "keys": [
+        "系统信息",
+        "以文本形式查看当前服务器的系统信息"
+      ],
+      "args": {},
+      "ex": "#系统信息",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#系统信息图片": {
+      "keys": [
+        "系统信息图片",
+        "生成并发送当前服务器的系统信息图片"
+      ],
+      "args": {},
+      "ex": "#系统信息图片",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#系统测试": {
+      "keys": [
+        "系统测试",
+        "执行系统性能测试或环境状态检测"
+      ],
+      "args": {},
+      "ex": "#系统测试",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#说": {
+      "keys": [
+        "说",
+        "调用指定角色声音将文字转换为语音"
+      ],
+      "args": {},
+      "ex": "#说",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#语音列表": {
+      "keys": [
+        "语音列表",
+        "查看语音合成支持的声音角色列表"
+      ],
+      "args": {},
+      "ex": "#语音列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#米哈游社登录": {
+      "keys": [
+        "米哈游社登录",
+        "提交参数登录或绑定米哈游通行证"
+      ],
+      "args": {},
+      "ex": "#米哈游社登录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#体力帮助": {
+      "keys": [
+        "体力帮助",
+        "查看米哈游体力或登录凭证获取教程"
+      ],
+      "args": {},
+      "ex": "#体力帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
