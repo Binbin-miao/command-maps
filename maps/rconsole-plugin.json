@@ -1,0 +1,334 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "rconsole-plugin",
+    "fingerprint": "fdc3e6d2c00e",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#点歌$": {
+      "keys": [
+        "点歌$",
+        "根据关键词搜索歌曲并进行点播试听"
+      ],
+      "args": {},
+      "ex": "#点歌$",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#播放": {
+      "keys": [
+        "播放",
+        "播放指定歌名或序号的歌曲音频"
+      ],
+      "args": {},
+      "ex": "#播放",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#上传": {
+      "keys": [
+        "上传",
+        "上传音频文件到点歌插件云盘中"
+      ],
+      "args": {},
+      "ex": "#上传",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#我的云盘": {
+      "keys": [
+        "我的云盘",
+        "查看个人点歌云盘已上传的音频列表"
+      ],
+      "args": {},
+      "ex": "#我的云盘",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#云盘更新": {
+      "keys": [
+        "云盘更新",
+        "刷新并同步点歌云盘中的音频文件列表"
+      ],
+      "args": {},
+      "ex": "#云盘更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#上传云盘": {
+      "keys": [
+        "上传云盘",
+        "将点播的歌曲上传到网盘或云盘保存"
+      ],
+      "args": {},
+      "ex": "#上传云盘",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#清除云盘缓存": {
+      "keys": [
+        "清除云盘缓存",
+        "清理点歌功能生成的云盘临时缓存"
+      ],
+      "args": {},
+      "ex": "#清除云盘缓存",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置海外解析": {
+      "keys": [
+        "设置海外解析",
+        "切换或配置海外解析相关服务设置"
+      ],
+      "args": {},
+      "ex": "#设置海外解析",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "清理垃圾": {
+      "keys": [
+        "清理垃圾",
+        "清理插件运行中产生的垃圾缓存数据"
+      ],
+      "args": {},
+      "ex": "清理垃圾",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置R信任用户": {
+      "keys": [
+        "设置R信任用户",
+        "将指定用户设置为受信任用户权限"
+      ],
+      "args": {},
+      "ex": "#设置R信任用户",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#R信任用户": {
+      "keys": [
+        "R信任用户",
+        "查询已添加到信任列表中的用户信息"
+      ],
+      "args": {},
+      "ex": "#R信任用户",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#查询R信任用户": {
+      "keys": [
+        "查询R信任用户",
+        "查询指定目标是否属于受信任用户"
+      ],
+      "args": {},
+      "ex": "#查询R信任用户",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除R信任用户": {
+      "keys": [
+        "删除R信任用户",
+        "从信任名单中移除指定的受信任用户"
+      ],
+      "args": {},
+      "ex": "#删除R信任用户",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "翻中": {
+      "keys": [
+        "翻中",
+        "在中文、日文、英文等语言间进行文本翻译"
+      ],
+      "args": {},
+      "ex": "翻中",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#RBQ": {
+      "keys": [
+        "RBQ"
+      ],
+      "args": {},
+      "ex": "#RBQ",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#RBS": {
+      "keys": [
+        "RBS"
+      ],
+      "args": {},
+      "ex": "#RBS",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "xhslink.com": {
+      "keys": [
+        "xhslink.com",
+        "解析小红书图文或视频分享链接的内容"
+      ],
+      "args": {},
+      "ex": "xhslink.com",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "weixin.qq.com/sph/": {
+      "keys": [
+        "weixin.qq.com/sph/",
+        "解析微信视频号分享链接并提取对应视频"
+      ],
+      "args": {},
+      "ex": "weixin.qq.com/sph/",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#网易云状态": {
+      "keys": [
+        "网易云状态",
+        "查询网易云音乐及网易云盘账号运行状态"
+      ],
+      "args": {},
+      "ex": "#网易云状态",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#rnq": {
+      "keys": [
+        "rnq"
+      ],
+      "args": {},
+      "ex": "#rnq",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#酷狗状态": {
+      "keys": [
+        "酷狗状态",
+        "查询酷狗音乐相关服务或账号的运行状态"
+      ],
+      "args": {},
+      "ex": "#酷狗状态",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#rkq": {
+      "keys": [
+        "rkq"
+      ],
+      "args": {},
+      "ex": "#rkq",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#R命令": {
+      "keys": [
+        "R命令",
+        "获取R插件的指令菜单、帮助文档与使用说明"
+      ],
+      "args": {},
+      "ex": "#R命令",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#医药查询": {
+      "keys": [
+        "医药查询",
+        "查询指定药品的医疗说明、功效及相关资料"
+      ],
+      "args": {},
+      "ex": "#医药查询",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#cat": {
+      "keys": [
+        "cat"
+      ],
+      "args": {},
+      "ex": "#cat",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#推荐软件": {
+      "keys": [
+        "推荐软件",
+        "获取机器人推荐的精选实用软件列表"
+      ],
+      "args": {},
+      "ex": "#推荐软件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#买家秀": {
+      "keys": [
+        "买家秀",
+        "随机获取精选买家秀图片或娱乐内容展示"
+      ],
+      "args": {},
+      "ex": "#买家秀",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#累了": {
+      "keys": [
+        "累了"
+      ],
+      "args": {},
+      "ex": "#累了",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#R版本": {
+      "keys": [
+        "R版本",
+        "查询R插件更新插件的当前版本号"
+      ],
+      "args": {},
+      "ex": "#R版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#R强制更新": {
+      "keys": [
+        "R强制更新",
+        "对R插件更新插件进行在线代码更新"
+      ],
+      "args": {},
+      "ex": "#R强制更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
