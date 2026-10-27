@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Yunzai command map patch",
+  "type": "object",
+  "required": ["schema", "plugin", "commands"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": 1 },
+    "plugin": {
+      "type": "object",
+      "required": ["key"],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "fingerprint": { "type": "string" },
+        "updated": { "type": "string" }
+      }
+    },
+    "commands": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["keys"],
+        "additionalProperties": false,
+        "properties": {
+          "keys": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "args": { "type": "object" },
+          "ex": { "type": "string" },
+          "risk": { "enum": ["q", "w", "a"] },
+          "interactive": { "type": "boolean" },
+          "used": { "type": "number" }
+        }
+      }
+    }
+  }
+}
