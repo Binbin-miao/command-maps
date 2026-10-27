@@ -41,6 +41,15 @@ reports/usage.md           用量与叫法差异（由日志统计生成）
 3. **必须比对 sha256**，不符即换下一个源；没有哈希声明的补丁一律不收；
 4. 按 `<插件>/<指纹>.json` 落盘，指纹命中不再联网。
 
+## 脚本
+
+| 脚本 | 用途 | 在哪跑 |
+| --- | --- | --- |
+| `scripts/analyze-logs.mjs` | 统计近一月指令用量与写法差异 | Yunzai 容器内（要读 logs 与能力表） |
+| `scripts/build-index.mjs` | 由能力表 + 日志生成首版补丁与索引 | 同上 |
+| `scripts/classify-index.mjs` | 按插件包聚合、打用途标签、重写索引与报告 | 同上 |
+| `scripts/expand-keys.mjs` | 给热门指令扩写口语 keys（**花 token**，先 `--dry-run` 看提示词） | 任意有网机器，需 `LLM_BASE_URL/LLM_API_KEY/LLM_MODEL` |
+
 ## 贡献
 
 补丁里的 `keys` 是**给匹配器吃的语料**：多写用户真实说法（整句口语优先），不要写「指令」「插件」这类元词，
