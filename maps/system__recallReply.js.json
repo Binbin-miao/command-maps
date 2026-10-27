@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "system/recallReply.js",
+    "fingerprint": "cb85b6c1fc95",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#撤回": {
+      "keys": [
+        "撤回",
+        "撤回机器人发送的消息或当前引用的消息"
+      ],
+      "args": {},
+      "ex": "#撤回",
+      "risk": "q",
+      "interactive": false,
+      "used": 1
+    }
+  }
+}
