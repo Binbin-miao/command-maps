@@ -3,7 +3,7 @@
   "plugin": {
     "key": "steam-plugin",
     "fingerprint": "bcfbd1ab299b",
-    "updated": "2026-10-27T19:28:31.607Z"
+    "updated": "2026-10-27T19:33:21.792Z"
   },
   "commands": {
     "#steam刷新access_token": {
@@ -608,16 +608,7 @@
     "#steam年度回顾分享图片": {
       "keys": [
         "steam年度回顾分享图片",
-        "生成并分享Steam年度游戏回顾图片",
-        "美图",
-        "看图",
-        "来点图",
-        "随机图片",
-        "发张图",
-        "来张图",
-        "图片来一张",
-        "看美女",
-        "来点好看的"
+        "生成并分享Steam年度游戏回顾图片"
       ],
       "args": {},
       "ex": "#steam年度回顾分享图片",
