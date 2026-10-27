@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "bililivePush-plugin",
+    "fingerprint": "ffed58922f08",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "订阅直播间": {
+      "keys": [
+        "订阅直播间",
+        "添加并订阅指定B站直播间的开播提醒"
+      ],
+      "args": {},
+      "ex": "订阅直播间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "取消订阅直播间": {
+      "keys": [
+        "取消订阅直播间",
+        "退订并移除指定B站直播间的开播通知"
+      ],
+      "args": {},
+      "ex": "取消订阅直播间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "订阅up": {
+      "keys": [
+        "订阅up",
+        "关注并订阅指定B站UP主的动态更新推送"
+      ],
+      "args": {},
+      "ex": "订阅up",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "取消订阅up": {
+      "keys": [
+        "取消订阅up",
+        "取消订阅指定B站UP主的动态推送通知"
+      ],
+      "args": {},
+      "ex": "取消订阅up",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "订阅": {
+      "keys": [
+        "订阅",
+        "查看当前群聊或个人已订阅的B站列表"
+      ],
+      "args": {},
+      "ex": "订阅",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#Bili推送命令": {
+      "keys": [
+        "Bili推送命令",
+        "查看B站推送插件的指令菜单与帮助说明"
+      ],
+      "args": {},
+      "ex": "#Bili推送命令",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#推送更新": {
+      "keys": [
+        "推送更新",
+        "检查并更新或强制更新直播推送插件"
+      ],
+      "args": {},
+      "ex": "#推送更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#推送更新日志": {
+      "keys": [
+        "推送更新日志",
+        "查看直播推送插件的版本更新日志"
+      ],
+      "args": {},
+      "ex": "#推送更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
