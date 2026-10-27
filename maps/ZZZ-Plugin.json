@@ -1,0 +1,736 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "ZZZ-Plugin",
+    "fingerprint": "3b7915609dd9",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "zzz式舆防卫战": {
+      "keys": [
+        "zzz式舆防卫战",
+        "查询绝区零当期或往期式舆防卫战战绩"
+      ],
+      "args": {},
+      "ex": "zzz式舆防卫战",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzzcal": {
+      "keys": [
+        "zzzcal",
+        "查询绝区零的游戏活动日历安排"
+      ],
+      "args": {},
+      "ex": "zzzcal",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzzcard": {
+      "keys": [
+        "zzzcard",
+        "生成并展示绝区零个人信息卡片"
+      ],
+      "args": {},
+      "ex": "zzzcard",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz拟真鏖战试炼": {
+      "keys": [
+        "zzz拟真鏖战试炼",
+        "查询绝区零拟真鏖战试炼爬塔进度"
+      ],
+      "args": {},
+      "ex": "zzz拟真鏖战试炼",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzzcode": {
+      "keys": [
+        "zzzcode",
+        "获取绝区零最新的可用兑换码列表"
+      ],
+      "args": {},
+      "ex": "zzzcode",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz危局强袭战": {
+      "keys": [
+        "zzz危局强袭战",
+        "查询绝区零当期或往期危局强袭战战绩"
+      ],
+      "args": {},
+      "ex": "zzz危局强袭战",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz区域收集": {
+      "keys": [
+        "zzz区域收集",
+        "查询绝区零各区域的探索度与收集进度"
+      ],
+      "args": {},
+      "ex": "zzz区域收集",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz抽卡链接": {
+      "keys": [
+        "zzz抽卡链接",
+        "获取或绑定绝区零抽卡记录的分析链接"
+      ],
+      "args": {},
+      "ex": "zzz抽卡链接",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz刷新抽卡": {
+      "keys": [
+        "zzz刷新抽卡",
+        "刷新或更新绝区零的抽卡记录数据"
+      ],
+      "args": {},
+      "ex": "zzz刷新抽卡",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz帮助": {
+      "keys": [
+        "zzz帮助",
+        "查看绝区零插件的全部指令帮助列表"
+      ],
+      "args": {},
+      "ex": "zzz帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz零号空洞": {
+      "keys": [
+        "zzz零号空洞",
+        "查询绝区零零号空洞玩法的通关进度"
+      ],
+      "args": {},
+      "ex": "zzz零号空洞",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz枯萎苗圃": {
+      "keys": [
+        "zzz枯萎苗圃",
+        "查询绝区零零号空洞枯萎苗圃挑战进度"
+      ],
+      "args": {},
+      "ex": "zzz枯萎苗圃",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz迷失之地": {
+      "keys": [
+        "zzz迷失之地",
+        "查询绝区零零号空洞迷失之地探索进度"
+      ],
+      "args": {},
+      "ex": "zzz迷失之地",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz拟境湮灭战": {
+      "keys": [
+        "zzz拟境湮灭战",
+        "查询绝区零当期或往期拟境湮灭战战绩"
+      ],
+      "args": {},
+      "ex": "zzz拟境湮灭战",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz下载全部资源": {
+      "keys": [
+        "zzz下载全部资源",
+        "下载绝区零插件所需的全部静态资源"
+      ],
+      "args": {},
+      "ex": "zzz下载全部资源",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz删除全部资源": {
+      "keys": [
+        "zzz删除全部资源",
+        "清理并删除绝区零插件已下载的所有资源"
+      ],
+      "args": {},
+      "ex": "zzz删除全部资源",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置默认攻略": {
+      "keys": [
+        "zzz设置默认攻略",
+        "设置绝区零角色攻略默认展示的版本序号"
+      ],
+      "args": {},
+      "ex": "zzz设置默认攻略",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置所有攻略显示个数": {
+      "keys": [
+        "zzz设置所有攻略显示个数",
+        "设置攻略查询时最多同时展示的攻略数量"
+      ],
+      "args": {},
+      "ex": "zzz设置所有攻略显示个数",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置渲染精度": {
+      "keys": [
+        "zzz设置渲染精度",
+        "设置绝区零插件生成图片的渲染精度倍率"
+      ],
+      "args": {},
+      "ex": "zzz设置渲染精度",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置撤回时间": {
+      "keys": [
+        "zzz设置撤回时间",
+        "设置机器人发送消息后自动撤回的秒数"
+      ],
+      "args": {},
+      "ex": "zzz设置撤回时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz刷新抽卡间隔": {
+      "keys": [
+        "zzz刷新抽卡间隔",
+        "设置更新绝区零抽卡记录时的请求间隔"
+      ],
+      "args": {},
+      "ex": "zzz刷新抽卡间隔",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz刷新面板间隔": {
+      "keys": [
+        "zzz刷新面板间隔",
+        "设置刷新绝区零角色面板数据的冷却间隔"
+      ],
+      "args": {},
+      "ex": "zzz刷新面板间隔",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz刷新角色间隔": {
+      "keys": [
+        "zzz刷新角色间隔",
+        "设置刷新绝区零角色列表数据的冷却间隔"
+      ],
+      "args": {},
+      "ex": "zzz刷新角色间隔",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz开启面板按钮": {
+      "keys": [
+        "zzz开启面板按钮",
+        "开启或关闭面板展示消息中的交互按钮"
+      ],
+      "args": {},
+      "ex": "zzz开启面板按钮",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz删除别名": {
+      "keys": [
+        "zzz删除别名",
+        "删除绝区零已设置的指定自定义别名"
+      ],
+      "args": {},
+      "ex": "zzz删除别名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz开启群式舆防卫战排名": {
+      "keys": [
+        "zzz开启群式舆防卫战排名",
+        "开启或关闭本群内指定玩法的战绩排名"
+      ],
+      "args": {},
+      "ex": "zzz开启群式舆防卫战排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz版本": {
+      "keys": [
+        "zzz版本",
+        "查看绝区零插件当前安装的版本号"
+      ],
+      "args": {},
+      "ex": "zzz版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置默认设备": {
+      "keys": [
+        "zzz设置默认设备",
+        "设置绝区零查询时默认使用绑定的设备"
+      ],
+      "args": {},
+      "ex": "zzz设置默认设备",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz开启更新推送": {
+      "keys": [
+        "zzz开启更新推送",
+        "开启或关闭绝区零插件版本更新的自动推送"
+      ],
+      "args": {},
+      "ex": "zzz开启更新推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置检查更新时间": {
+      "keys": [
+        "zzz设置检查更新时间",
+        "设置绝区零插件定时检查更新的触发时间"
+      ],
+      "args": {},
+      "ex": "zzz设置检查更新时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz重置式舆防卫战排名": {
+      "keys": [
+        "zzz重置式舆防卫战排名",
+        "清空或重置本群式舆防卫战的历史排名"
+      ],
+      "args": {},
+      "ex": "zzz重置式舆防卫战排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzzmonthly": {
+      "keys": [
+        "zzzmonthly",
+        "查询绝区零指定月份的菲林与邦布券收入"
+      ],
+      "args": {},
+      "ex": "zzzmonthly",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzzmonthly统计": {
+      "keys": [
+        "zzzmonthly统计",
+        "统计并展示绝区零菲林与邦布券的月度收支"
+      ],
+      "args": {},
+      "ex": "zzzmonthly统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzznote": {
+      "keys": [
+        "zzznote",
+        "查看绝区零当前体力与每日任务等实时便笺"
+      ],
+      "args": {},
+      "ex": "zzznote",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz面板": {
+      "keys": [
+        "zzz面板",
+        "查询或更新绝区零指定角色的属性面板"
+      ],
+      "args": {},
+      "ex": "zzz面板",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz练度": {
+      "keys": [
+        "zzz练度",
+        "统计并展示已绑定的绝区零角色练度概览"
+      ],
+      "args": {},
+      "ex": "zzz练度",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz原图": {
+      "keys": [
+        "zzz原图",
+        "获取上一张绝区零面板图对应的高清原图"
+      ],
+      "args": {},
+      "ex": "zzz原图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz卡池": {
+      "keys": [
+        "zzz卡池",
+        "查看绝区零当前正在开启的限定卡池信息"
+      ],
+      "args": {},
+      "ex": "zzz卡池",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz复刻统计": {
+      "keys": [
+        "zzz复刻统计",
+        "查询绝区零全部历史卡池与复刻时间统计"
+      ],
+      "args": {},
+      "ex": "zzz复刻统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz式舆防卫战排名": {
+      "keys": [
+        "zzz式舆防卫战排名",
+        "查看本群玩家式舆防卫战的成绩排名"
+      ],
+      "args": {},
+      "ex": "zzz式舆防卫战排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz危局强袭战排名": {
+      "keys": [
+        "zzz危局强袭战排名",
+        "查看本群玩家危局强袭战的成绩排名"
+      ],
+      "args": {},
+      "ex": "zzz危局强袭战排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz绝境排名": {
+      "keys": [
+        "zzz绝境排名",
+        "查看本群玩家危局强袭战绝境难度的排名"
+      ],
+      "args": {},
+      "ex": "zzz绝境排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz拟境湮灭战排名": {
+      "keys": [
+        "zzz拟境湮灭战排名",
+        "查看本群玩家拟境湮灭战的成绩排名"
+      ],
+      "args": {},
+      "ex": "zzz拟境湮灭战排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz临界推演排名": {
+      "keys": [
+        "zzz临界推演排名",
+        "查看本群玩家临界推演玩法的成绩排名"
+      ],
+      "args": {},
+      "ex": "zzz临界推演排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz爬塔排名": {
+      "keys": [
+        "zzz爬塔排名",
+        "查看本群玩家拟真鏖战试炼爬塔成绩排名"
+      ],
+      "args": {},
+      "ex": "zzz爬塔排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz爬塔S1排名": {
+      "keys": [
+        "zzz爬塔S1排名",
+        "查看本群鏖战试炼第一赛季爬塔排名"
+      ],
+      "args": {},
+      "ex": "zzz爬塔S1排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz爬塔S2排名": {
+      "keys": [
+        "zzz爬塔S2排名",
+        "查看本群鏖战试炼第二赛季末路的排名"
+      ],
+      "args": {},
+      "ex": "zzz爬塔S2排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz爬塔S3排名": {
+      "keys": [
+        "zzz爬塔S3排名",
+        "查看本群鏖战试炼第三赛季荣耀的排名"
+      ],
+      "args": {},
+      "ex": "zzz爬塔S3排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz爬塔S4排名": {
+      "keys": [
+        "zzz爬塔S4排名",
+        "查看本群鏖战试炼第四赛季狂澜的排名"
+      ],
+      "args": {},
+      "ex": "zzz爬塔S4排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz显示排名": {
+      "keys": [
+        "zzz显示排名",
+        "设置是否在本群展示指定玩法的成绩排名"
+      ],
+      "args": {},
+      "ex": "zzz显示排名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz开启挑战提醒": {
+      "keys": [
+        "zzz开启挑战提醒",
+        "开启或关闭个人的深渊挑战未完成提醒"
+      ],
+      "args": {},
+      "ex": "zzz开启挑战提醒",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz开启全局挑战提醒": {
+      "keys": [
+        "zzz开启全局挑战提醒",
+        "开启或关闭群内全局的深渊挑战未完成提醒"
+      ],
+      "args": {},
+      "ex": "zzz开启全局挑战提醒",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置式舆阈值": {
+      "keys": [
+        "zzz设置式舆阈值",
+        "设置式舆防卫战未完成提醒的层数阈值"
+      ],
+      "args": {},
+      "ex": "zzz设置式舆阈值",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz设置危局阈值": {
+      "keys": [
+        "zzz设置危局阈值",
+        "设置危局强袭战未完成提醒的层数阈值"
+      ],
+      "args": {},
+      "ex": "zzz设置危局阈值",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz查询挑战状态": {
+      "keys": [
+        "zzz查询挑战状态",
+        "查询当前深渊或危局玩法的通关提醒状态"
+      ],
+      "args": {},
+      "ex": "zzz查询挑战状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz个人提醒状态": {
+      "keys": [
+        "zzz个人提醒状态",
+        "查看当前设置的个人挑战提醒时间及状态"
+      ],
+      "args": {},
+      "ex": "zzz个人提醒状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz重置个人提醒时间": {
+      "keys": [
+        "zzz重置个人提醒时间",
+        "取消或重置已设置的个人深渊挑战提醒时间"
+      ],
+      "args": {},
+      "ex": "zzz重置个人提醒时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz全局提醒时间": {
+      "keys": [
+        "zzz全局提醒时间",
+        "查看当前群全局深渊挑战提醒的定时设置"
+      ],
+      "args": {},
+      "ex": "zzz全局提醒时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz绑定设备": {
+      "keys": [
+        "zzz绑定设备",
+        "绑定绝区零游戏米游社账号所用的登录设备"
+      ],
+      "args": {},
+      "ex": "zzz绑定设备",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz解绑设备": {
+      "keys": [
+        "zzz解绑设备",
+        "解绑绝区零已绑定的游戏设备"
+      ],
+      "args": {},
+      "ex": "zzz解绑设备",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz绑定设备帮助": {
+      "keys": [
+        "zzz绑定设备帮助",
+        "查看绝区零绑定设备的相关帮助说明"
+      ],
+      "args": {},
+      "ex": "zzz绑定设备帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz临界推演": {
+      "keys": [
+        "zzz临界推演",
+        "查询绝区零当期或往期临界推演战况"
+      ],
+      "args": {},
+      "ex": "zzz临界推演",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz天赋": {
+      "keys": [
+        "zzz天赋",
+        "查询绝区零指定角色的天赋或技能信息"
+      ],
+      "args": {},
+      "ex": "zzz天赋",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz意象影画": {
+      "keys": [
+        "zzz意象影画",
+        "查询绝区零指定角色的意象影画命座信息"
+      ],
+      "args": {},
+      "ex": "zzz意象影画",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz迷宫诡域": {
+      "keys": [
+        "zzz迷宫诡域",
+        "查询绝区零迷宫诡域玩法相关信息"
+      ],
+      "args": {},
+      "ex": "zzz迷宫诡域",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "zzz迷宫诡域战绩": {
+      "keys": [
+        "zzz迷宫诡域战绩",
+        "查询绝区零迷宫诡域的战绩记录或详情"
+      ],
+      "args": {},
+      "ex": "zzz迷宫诡域战绩",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
