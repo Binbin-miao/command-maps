@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "Daily-Attendance-plugin",
+    "fingerprint": "f3a42a69b54f",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#今日运势": {
+      "keys": [
+        "今日运势",
+        "获取今日运势信息或进行每日签到"
+      ],
+      "args": {},
+      "ex": "#今日运势",
+      "risk": "q",
+      "interactive": false,
+      "used": 197
+    },
+    "#运势统计": {
+      "keys": [
+        "运势统计",
+        "查看每日运势或签到的统计信息"
+      ],
+      "args": {},
+      "ex": "#运势统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#运势数据": {
+      "keys": [
+        "运势数据",
+        "查询用户的每日运势相关数据"
+      ],
+      "args": {},
+      "ex": "#运势数据",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#运势总数据": {
+      "keys": [
+        "运势总数据",
+        "查看运势相关的总体统计数据"
+      ],
+      "args": {},
+      "ex": "#运势总数据",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#运势排行榜": {
+      "keys": [
+        "运势排行榜",
+        "查看每日运势或签到的排行榜"
+      ],
+      "args": {},
+      "ex": "#运势排行榜",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#一言统计": {
+      "keys": [
+        "一言统计",
+        "查看一言与运势签到的统计数据"
+      ],
+      "args": {},
+      "ex": "#一言统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#运势帮助": {
+      "keys": [
+        "运势帮助",
+        "获取每日运势与签到插件帮助"
+      ],
+      "args": {},
+      "ex": "#运势帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
