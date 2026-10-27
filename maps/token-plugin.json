@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "token-plugin",
+    "fingerprint": "e0cdc27c8778",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#调用分析": {
+      "keys": [
+        "调用分析",
+        "生成并展示new-api的Token用量可视化分析图"
+      ],
+      "args": {},
+      "ex": "#调用分析",
+      "risk": "w",
+      "interactive": false,
+      "used": 57
+    }
+  }
+}
