@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "example/主动复读.js",
+    "fingerprint": "750ca2560663",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#复读": {
+      "keys": [
+        "复读",
+        "复读上一条发送的消息内容随后撤回"
+      ],
+      "args": {},
+      "ex": "#复读",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
