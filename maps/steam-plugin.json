@@ -1,0 +1,604 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "steam-plugin",
+    "fingerprint": "bcfbd1ab299b",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#steam刷新access_token": {
+      "keys": [
+        "steam刷新access_token",
+        "刷新当前绑定的Steam登录凭证或Cookie"
+      ],
+      "args": {},
+      "ex": "#steam刷新access_token",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam我的access_token": {
+      "keys": [
+        "steam我的access_token",
+        "查看当前绑定的Steam凭证或Token信息"
+      ],
+      "args": {},
+      "ex": "#steam我的access_token",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam删除access_token": {
+      "keys": [
+        "steam删除access_token",
+        "删除当前保存的Steam凭证或Cookie"
+      ],
+      "args": {},
+      "ex": "#steam删除access_token",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam双影奇境数据": {
+      "keys": [
+        "steam双影奇境数据",
+        "查询并分析双影奇境游戏的存档数据"
+      ],
+      "args": {},
+      "ex": "#steam双影奇境数据",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam成就": {
+      "keys": [
+        "steam成就",
+        "查询指定Steam游戏的成就获取统计"
+      ],
+      "args": {},
+      "ex": "#steam成就",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam成就统计": {
+      "keys": [
+        "steam成就统计",
+        "查看Steam个人或指定游戏的成就统计数据"
+      ],
+      "args": {},
+      "ex": "#steam成就统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam": {
+      "keys": [
+        "steam",
+        "进入或查看Steam账号绑定相关功能"
+      ],
+      "args": {},
+      "ex": "#steam",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam绑定": {
+      "keys": [
+        "steam绑定",
+        "绑定或更换绑定的Steam账号ID"
+      ],
+      "args": {},
+      "ex": "#steam绑定",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam解除绑定": {
+      "keys": [
+        "steam解除绑定",
+        "解除或取消已绑定的Steam账号关联"
+      ],
+      "args": {},
+      "ex": "#steam解除绑定",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam查看购物车": {
+      "keys": [
+        "steam查看购物车",
+        "查看当前Steam购物车内容或清空购物车"
+      ],
+      "args": {},
+      "ex": "#steam查看购物车",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam热玩排行榜单": {
+      "keys": [
+        "steam热玩排行榜单",
+        "查看Steam当前或每日热玩与在线人数榜"
+      ],
+      "args": {},
+      "ex": "#steam热玩排行榜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam最新品排行榜单": {
+      "keys": [
+        "steam最新品排行榜单",
+        "查看Steam平台的热门新品排行榜单"
+      ],
+      "args": {},
+      "ex": "#steam最新品排行榜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam热销排行榜单": {
+      "keys": [
+        "steam热销排行榜单",
+        "查看Steam平台每周游戏热销排行榜"
+      ],
+      "args": {},
+      "ex": "#steam热销排行榜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam年度最排行榜单": {
+      "keys": [
+        "steam年度最排行榜单",
+        "按年份分类查询Steam年度最佳排行榜单"
+      ],
+      "args": {},
+      "ex": "#steam年度最排行榜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam客户端信息": {
+      "keys": [
+        "steam客户端信息",
+        "查看本地Steam客户端的运行与连接状态"
+      ],
+      "args": {},
+      "ex": "#steam客户端信息",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam客户端游戏列表": {
+      "keys": [
+        "steam客户端游戏列表",
+        "获取本地Steam客户端中的游戏列表"
+      ],
+      "args": {},
+      "ex": "#steam客户端游戏列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam客户端安装": {
+      "keys": [
+        "steam客户端安装",
+        "控制Steam客户端下载或安装指定游戏"
+      ],
+      "args": {},
+      "ex": "#steam客户端安装",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam客户端启动": {
+      "keys": [
+        "steam客户端启动",
+        "控制本地Steam客户端启动运行指定游戏"
+      ],
+      "args": {},
+      "ex": "#steam客户端启动",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam客户端卸载": {
+      "keys": [
+        "steam客户端卸载",
+        "通过Steam客户端卸载或删除指定游戏"
+      ],
+      "args": {},
+      "ex": "#steam客户端卸载",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam客户端恢复": {
+      "keys": [
+        "steam客户端恢复",
+        "控制客户端游戏下载的暂停、继续或停止"
+      ],
+      "args": {},
+      "ex": "#steam客户端恢复",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steamdev": {
+      "keys": [
+        "steamdev",
+        "开发者调试Steam相关功能接口"
+      ],
+      "args": {},
+      "ex": "#steamdev",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steamdbdev": {
+      "keys": [
+        "steamdbdev",
+        "执行Steam插件的数据库调试指令"
+      ],
+      "args": {},
+      "ex": "#steamdbdev",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam优惠": {
+      "keys": [
+        "steam优惠",
+        "查询Steam特惠折扣、热销或新品游戏"
+      ],
+      "args": {},
+      "ex": "#steam优惠",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam探索队列": {
+      "keys": [
+        "steam探索队列",
+        "查看并生成当前的Steam探索队列游戏"
+      ],
+      "args": {},
+      "ex": "#steam探索队列",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam探索队列跳过": {
+      "keys": [
+        "steam探索队列跳过",
+        "跳过指定数量的Steam探索队列游戏"
+      ],
+      "args": {},
+      "ex": "#steam探索队列跳过",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam探索队列全部跳过": {
+      "keys": [
+        "steam探索队列全部跳过",
+        "一键跳过当前Steam探索队列中的全部游戏"
+      ],
+      "args": {},
+      "ex": "#steam探索队列全部跳过",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam总支出": {
+      "keys": [
+        "steam总支出",
+        "查询绑定的Steam账号历史累计总支出花费"
+      ],
+      "args": {},
+      "ex": "#steam总支出",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam帮助": {
+      "keys": [
+        "steam帮助",
+        "查看Steam插件的使用帮助与指令菜单"
+      ],
+      "args": {},
+      "ex": "#steam帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam游戏详细": {
+      "keys": [
+        "steam游戏详细",
+        "通过游戏ID查询Steam游戏的详细资料"
+      ],
+      "args": {},
+      "ex": "#steam游戏详细",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam我的steamid": {
+      "keys": [
+        "steam我的steamid",
+        "查询自己绑定的SteamID及好友代码"
+      ],
+      "args": {},
+      "ex": "#steam我的steamid",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam信息": {
+      "keys": [
+        "steam信息",
+        "查询指定或当前绑定的Steam账号个人状态"
+      ],
+      "args": {},
+      "ex": "#steam信息",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam库存": {
+      "keys": [
+        "steam库存",
+        "生成并查看Steam游戏库存卡片或列表"
+      ],
+      "args": {},
+      "ex": "#steam库存",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam最近游玩": {
+      "keys": [
+        "steam最近游玩",
+        "查询近期游玩过的Steam游戏及游戏时长"
+      ],
+      "args": {},
+      "ex": "#steam最近游玩",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam家庭库存": {
+      "keys": [
+        "steam家庭库存",
+        "查询Steam家庭共享库中的共享游戏列表"
+      ],
+      "args": {},
+      "ex": "#steam家庭库存",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam私密库存": {
+      "keys": [
+        "steam私密库存",
+        "查看个人设置的Steam私密游戏库存列表"
+      ],
+      "args": {},
+      "ex": "#steam私密库存",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam添加私密库存": {
+      "keys": [
+        "steam添加私密库存",
+        "将指定游戏添加至或移出私密游戏列表"
+      ],
+      "args": {},
+      "ex": "#steam添加私密库存",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam入库": {
+      "keys": [
+        "steam入库",
+        "查询或执行Steam免费游戏入库操作"
+      ],
+      "args": {},
+      "ex": "#steam入库",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam在线": {
+      "keys": [
+        "steam在线",
+        "查询Steam指定游戏或平台的当前在线人数"
+      ],
+      "args": {},
+      "ex": "#steam在线",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam开启推送": {
+      "keys": [
+        "steam开启推送",
+        "开启或关闭Steam游戏状态、库存等动态推送"
+      ],
+      "args": {},
+      "ex": "#steam开启推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam开启家庭库存推送": {
+      "keys": [
+        "steam开启家庭库存推送",
+        "开启或关闭Steam家庭库存变动的消息推送"
+      ],
+      "args": {},
+      "ex": "#steam开启家庭库存推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam开启降价推送": {
+      "keys": [
+        "steam开启降价推送",
+        "管理关注游戏的Steam降价提醒推送"
+      ],
+      "args": {},
+      "ex": "#steam开启降价推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam降价推送列表": {
+      "keys": [
+        "steam降价推送列表",
+        "查看当前群聊已添加的Steam降价推送列表"
+      ],
+      "args": {},
+      "ex": "#steam降价推送列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam推送列表": {
+      "keys": [
+        "steam推送列表",
+        "查看当前群聊已启用的Steam推送项目列表"
+      ],
+      "args": {},
+      "ex": "#steam推送列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam群友在玩什么呢": {
+      "keys": [
+        "steam群友在玩什么呢",
+        "查询当前群友正在游玩的Steam游戏状态"
+      ],
+      "args": {},
+      "ex": "#steam群友在玩什么呢",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam主动推送": {
+      "keys": [
+        "steam主动推送",
+        "立即手动触发一次Steam动态状态推送"
+      ],
+      "args": {},
+      "ex": "#steam主动推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam评论": {
+      "keys": [
+        "steam评论",
+        "查询指定Steam游戏的最新或热门玩家评论"
+      ],
+      "args": {},
+      "ex": "#steam评论",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam玩什么": {
+      "keys": [
+        "steam玩什么",
+        "在游戏库中随机抽取推荐一款游戏游玩"
+      ],
+      "args": {},
+      "ex": "#steam玩什么",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam搜索": {
+      "keys": [
+        "steam搜索",
+        "在Steam商城中根据关键词搜索游戏"
+      ],
+      "args": {},
+      "ex": "#steam搜索",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam设置": {
+      "keys": [
+        "steam设置",
+        "修改Steam插件的各项参数与推送配置"
+      ],
+      "args": {},
+      "ex": "#steam设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam群统计": {
+      "keys": [
+        "steam群统计",
+        "查看当前群聊成员的Steam综合数据统计"
+      ],
+      "args": {},
+      "ex": "#steam群统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steamapi统计": {
+      "keys": [
+        "steamapi统计",
+        "查看Steam插件接口的调用量统计数据"
+      ],
+      "args": {},
+      "ex": "#steamapi统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam用户统计": {
+      "keys": [
+        "steam用户统计",
+        "查看Steam插件已记录的用户数据统计"
+      ],
+      "args": {},
+      "ex": "#steam用户统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam愿望单": {
+      "keys": [
+        "steam愿望单",
+        "查看个人或指定用户的Steam愿望单列表"
+      ],
+      "args": {},
+      "ex": "#steam愿望单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#steam年度回顾分享图片": {
+      "keys": [
+        "steam年度回顾分享图片",
+        "生成并分享Steam年度游戏回顾图片"
+      ],
+      "args": {},
+      "ex": "#steam年度回顾分享图片",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
