@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "xiaofei-plugin",
+    "fingerprint": "f28d04326da5",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#获取stoken": {
+      "keys": [
+        "获取stoken",
+        "获取米游社stoken凭证并自动绑定"
+      ],
+      "args": {},
+      "ex": "#获取stoken",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#代": {
+      "keys": [
+        "代",
+        "代替指定用户或目标发送指定的发言内容"
+      ],
+      "args": {},
+      "ex": "#代",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#天气": {
+      "keys": [
+        "天气",
+        "查询指定地区天气并生成页面截图"
+      ],
+      "args": {},
+      "ex": "#天气",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#小飞帮助": {
+      "keys": [
+        "小飞帮助",
+        "查看小飞插件的功能列表与帮助说明"
+      ],
+      "args": {},
+      "ex": "#小飞帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#小飞更新": {
+      "keys": [
+        "小飞更新",
+        "检查并更新或强制更新小飞插件"
+      ],
+      "args": {},
+      "ex": "#小飞更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#小飞版本": {
+      "keys": [
+        "小飞版本",
+        "查看当前小飞插件的版本信息"
+      ],
+      "args": {},
+      "ex": "#小飞版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#小飞更新日志": {
+      "keys": [
+        "小飞更新日志",
+        "查看小飞插件的版本历史更新日志"
+      ],
+      "args": {},
+      "ex": "#小飞更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#机器人违规记录": {
+      "keys": [
+        "机器人违规记录",
+        "查询机器人当前账号的违规处罚记录"
+      ],
+      "args": {},
+      "ex": "#机器人违规记录",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#我的违规记录": {
+      "keys": [
+        "我的违规记录",
+        "查询发送者本人的违规处罚记录"
+      ],
+      "args": {},
+      "ex": "#我的违规记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "注册时间": {
+      "keys": [
+        "注册时间",
+        "查询原神星铁等游戏的账号注册时间"
+      ],
+      "args": {},
+      "ex": "注册时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "纪念册": {
+      "keys": [
+        "纪念册",
+        "查看崩坏星穹铁道游戏的角色纪念册"
+      ],
+      "args": {},
+      "ex": "纪念册",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#小飞设置": {
+      "keys": [
+        "小飞设置",
+        "配置小飞插件的点歌或天气等设置项"
+      ],
+      "args": {},
+      "ex": "#小飞设置",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#点歌ck检查": {
+      "keys": [
+        "点歌ck检查",
+        "检查点歌功能所用Cookie的有效状态"
+      ],
+      "args": {},
+      "ex": "#点歌ck检查",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#提交音乐ck": {
+      "keys": [
+        "提交音乐ck",
+        "提交并保存点歌功能所需的登录凭证"
+      ],
+      "args": {},
+      "ex": "#提交音乐ck",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#点播音乐": {
+      "keys": [
+        "点播音乐",
+        "在指定平台搜索点歌或播放推荐歌曲"
+      ],
+      "args": {},
+      "ex": "#点播音乐",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
