@@ -1,0 +1,263 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "xitian-plugin",
+    "fingerprint": "cfc3dddf329e",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#分组列表": {
+      "keys": [
+        "分组列表",
+        "查看已创建的JS插件分组列表"
+      ],
+      "args": {},
+      "ex": "#分组列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#创建分组": {
+      "keys": [
+        "创建分组",
+        "创建指定名称的JS插件管理分组"
+      ],
+      "args": {},
+      "ex": "#创建分组",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除分组": {
+      "keys": [
+        "删除分组",
+        "删除指定名称的JS插件管理分组"
+      ],
+      "args": {},
+      "ex": "#删除分组",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置分组": {
+      "keys": [
+        "设置分组",
+        "将指定插件设置归类到目标分组中"
+      ],
+      "args": {},
+      "ex": "#设置分组",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#同步分组": {
+      "keys": [
+        "同步分组",
+        "同步当前已配置的JS插件分组数据"
+      ],
+      "args": {},
+      "ex": "#同步分组",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#安装插件": {
+      "keys": [
+        "安装插件",
+        "通过Git仓库地址安装或新增指定插件"
+      ],
+      "args": {},
+      "ex": "#安装插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开始批量安装插件": {
+      "keys": [
+        "开始批量安装插件",
+        "开始批量下载并安装队列中的插件"
+      ],
+      "args": {},
+      "ex": "#开始批量安装插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#清空回收站": {
+      "keys": [
+        "清空回收站",
+        "清空插件管理器的回收站文件缓存"
+      ],
+      "args": {},
+      "ex": "#清空回收站",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插件菜单": {
+      "keys": [
+        "插件菜单",
+        "查看插件管理器的帮助说明与指令菜单"
+      ],
+      "args": {},
+      "ex": "#插件菜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查找插件": {
+      "keys": [
+        "查找插件",
+        "根据关键词查找已安装的JS插件"
+      ],
+      "args": {},
+      "ex": "#查找插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#停用插件": {
+      "keys": [
+        "停用插件",
+        "停用指定的JS插件使其停止运行"
+      ],
+      "args": {},
+      "ex": "#停用插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#启用插件": {
+      "keys": [
+        "启用插件",
+        "启用指定的JS插件恢复其正常运行"
+      ],
+      "args": {},
+      "ex": "#启用插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除插件": {
+      "keys": [
+        "删除插件",
+        "删除或彻底删除指定的js插件"
+      ],
+      "args": {},
+      "ex": "#删除插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#恢复插件": {
+      "keys": [
+        "恢复插件",
+        "恢复之前删除或禁用的指定插件"
+      ],
+      "args": {},
+      "ex": "#恢复插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插件重命名": {
+      "keys": [
+        "插件重命名",
+        "修改指定js插件的文件名称"
+      ],
+      "args": {},
+      "ex": "#插件重命名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查看插件": {
+      "keys": [
+        "查看插件",
+        "查看指定插件的代码或配置信息"
+      ],
+      "args": {},
+      "ex": "#查看插件",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#命令总览": {
+      "keys": [
+        "命令总览",
+        "查看插件所支持的全部指令总览与列表"
+      ],
+      "args": {},
+      "ex": "#命令总览",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#测试命令": {
+      "keys": [
+        "测试命令",
+        "调试并模拟执行指定格式的测试指令"
+      ],
+      "args": {},
+      "ex": "#测试命令",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插件更新日志": {
+      "keys": [
+        "插件更新日志",
+        "查看插件管理器的版本更新日志内容"
+      ],
+      "args": {},
+      "ex": "#插件更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插件强制更新": {
+      "keys": [
+        "插件强制更新",
+        "执行插件管理器或插件的在线更新"
+      ],
+      "args": {},
+      "ex": "#插件强制更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插件版本": {
+      "keys": [
+        "插件版本",
+        "查看当前插件管理器的版本信息"
+      ],
+      "args": {},
+      "ex": "#插件版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#插件列表": {
+      "keys": [
+        "插件列表",
+        "查看机器人已安装的插件列表"
+      ],
+      "args": {},
+      "ex": "#插件列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查看回收站": {
+      "keys": [
+        "查看回收站",
+        "查看已删除插件的回收站内容"
+      ],
+      "args": {},
+      "ex": "#查看回收站",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
