@@ -1,0 +1,472 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "Tlon-Sky",
+    "fingerprint": "faca9cf35db7",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "光遇状态": {
+      "keys": [
+        "光遇状态",
+        "查询光遇游戏服务器当前运行状态"
+      ],
+      "args": {},
+      "ex": "光遇状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇公告": {
+      "keys": [
+        "光遇公告",
+        "查询光遇游戏的官方最新公告内容"
+      ],
+      "args": {},
+      "ex": "光遇公告",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光翼统计": {
+      "keys": [
+        "光翼统计",
+        "统计光遇当前账号的光之翼收集情况"
+      ],
+      "args": {},
+      "ex": "光翼统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇剩余": {
+      "keys": [
+        "光遇剩余",
+        "查询光遇当前季节或活动剩余进度"
+      ],
+      "args": {},
+      "ex": "光遇剩余",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "季多久未复刻": {
+      "keys": [
+        "季多久未复刻",
+        "查询光遇指定季节先祖未复刻时长"
+      ],
+      "args": {},
+      "ex": "季多久未复刻",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "20年复刻日历": {
+      "keys": [
+        "20年复刻日历",
+        "查询光遇指定年份的历史复刻日历"
+      ],
+      "args": {},
+      "ex": "20年复刻日历",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇绑定": {
+      "keys": [
+        "光遇绑定",
+        "绑定光遇游戏账号ID以供后续查询"
+      ],
+      "args": {},
+      "ex": "光遇绑定",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇切换": {
+      "keys": [
+        "光遇切换",
+        "切换当前绑定的光遇游戏账号ID"
+      ],
+      "args": {},
+      "ex": "光遇切换",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇删除": {
+      "keys": [
+        "光遇删除",
+        "删除已绑定的光遇游戏账号ID"
+      ],
+      "args": {},
+      "ex": "光遇删除",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇ID列表": {
+      "keys": [
+        "光遇ID列表",
+        "查看当前已绑定的光遇账号ID列表"
+      ],
+      "args": {},
+      "ex": "光遇ID列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光翼查询": {
+      "keys": [
+        "光翼查询",
+        "查询指定ID光遇账号的光之翼收集"
+      ],
+      "args": {},
+      "ex": "光翼查询",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光翼详情": {
+      "keys": [
+        "光翼详情",
+        "查询指定ID光遇账号的光之翼详情"
+      ],
+      "args": {},
+      "ex": "光翼详情",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "全图鉴参考": {
+      "keys": [
+        "全图鉴参考",
+        "查看光遇全物品图鉴参考资料"
+      ],
+      "args": {},
+      "ex": "全图鉴参考",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "全部年复刻记录": {
+      "keys": [
+        "全部年复刻记录",
+        "查询光遇指定年份或全部复刻先祖记录"
+      ],
+      "args": {},
+      "ex": "全部年复刻记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "随机好友": {
+      "keys": [
+        "随机好友",
+        "随机抽取光遇盲盒中的好友码"
+      ],
+      "args": {},
+      "ex": "随机好友",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "任务": {
+      "keys": [
+        "任务",
+        "查询光遇每日任务、大蜡烛及魔法攻略"
+      ],
+      "args": {},
+      "ex": "任务",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "季节任务": {
+      "keys": [
+        "季节任务",
+        "查询光遇季节任务或红黑碎石路线图"
+      ],
+      "args": {},
+      "ex": "季节任务",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "碎石规律": {
+      "keys": [
+        "碎石规律",
+        "查看光遇碎石坠落规律及相关说明"
+      ],
+      "args": {},
+      "ex": "碎石规律",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇日历": {
+      "keys": [
+        "光遇日历",
+        "查询光遇本月活动日历及安排"
+      ],
+      "args": {},
+      "ex": "光遇日历",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇更新": {
+      "keys": [
+        "光遇更新",
+        "检查并更新光遇相关插件与数据"
+      ],
+      "args": {},
+      "ex": "光遇更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "添加蜡烛ID": {
+      "keys": [
+        "添加蜡烛ID",
+        "添加并绑定新的光遇蜡烛记录账号"
+      ],
+      "args": {},
+      "ex": "添加蜡烛ID",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "切换蜡烛ID": {
+      "keys": [
+        "切换蜡烛ID",
+        "切换当前用于记录蜡烛的光遇账号"
+      ],
+      "args": {},
+      "ex": "切换蜡烛ID",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "删除蜡烛ID": {
+      "keys": [
+        "删除蜡烛ID",
+        "删除指定的光遇蜡烛记录账号"
+      ],
+      "args": {},
+      "ex": "删除蜡烛ID",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "蜡烛记录": {
+      "keys": [
+        "蜡烛记录",
+        "查看光遇账号的历史蜡烛记录"
+      ],
+      "args": {},
+      "ex": "蜡烛记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "蜡烛ID列表": {
+      "keys": [
+        "蜡烛ID列表",
+        "查看已添加的光遇蜡烛记录账号列表"
+      ],
+      "args": {},
+      "ex": "蜡烛ID列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "蜡烛记录帮助": {
+      "keys": [
+        "蜡烛记录帮助",
+        "查看光遇蜡烛记录功能的使用帮助"
+      ],
+      "args": {},
+      "ex": "蜡烛记录帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇身高查询": {
+      "keys": [
+        "光遇身高查询",
+        "查询当前光遇角色的身高体型数据"
+      ],
+      "args": {},
+      "ex": "光遇身高查询",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇绑定好友码": {
+      "keys": [
+        "光遇绑定好友码",
+        "绑定光遇好友码以查询角色身高"
+      ],
+      "args": {},
+      "ex": "光遇绑定好友码",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "历史身高": {
+      "keys": [
+        "历史身高",
+        "查询光遇角色的历史测量身高记录"
+      ],
+      "args": {},
+      "ex": "历史身高",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "身高排行榜": {
+      "keys": [
+        "身高排行榜",
+        "查看光遇玩家身高排名榜单"
+      ],
+      "args": {},
+      "ex": "身高排行榜",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "开启每日任务推送": {
+      "keys": [
+        "开启每日任务推送",
+        "开启或关闭光遇每日任务推送通知"
+      ],
+      "args": {},
+      "ex": "开启每日任务推送",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "开启献祭刷新提醒": {
+      "keys": [
+        "开启献祭刷新提醒",
+        "开启或关闭光遇伊甸献祭刷新提醒"
+      ],
+      "args": {},
+      "ex": "开启献祭刷新提醒",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "开启碎石提醒": {
+      "keys": [
+        "开启碎石提醒",
+        "开启或关闭光遇碎石坠落提醒通知"
+      ],
+      "args": {},
+      "ex": "开启碎石提醒",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "开启老奶奶干饭提醒": {
+      "keys": [
+        "开启老奶奶干饭提醒",
+        "开启或关闭光遇老奶奶干饭时间提醒"
+      ],
+      "args": {},
+      "ex": "开启老奶奶干饭提醒",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "光遇下载": {
+      "keys": [
+        "光遇下载",
+        "获取光遇游戏官方客户端下载链接"
+      ],
+      "args": {},
+      "ex": "光遇下载",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "sky帮助": {
+      "keys": [
+        "sky帮助",
+        "查看光遇插件的帮助菜单及指令列表"
+      ],
+      "args": {},
+      "ex": "sky帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "季节列表": {
+      "keys": [
+        "季节列表",
+        "查看光遇历史季节及活动列表"
+      ],
+      "args": {},
+      "ex": "季节列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#国服id绑定": {
+      "keys": [
+        "国服id绑定",
+        "绑定光遇Sky国服游戏角色ID"
+      ],
+      "args": {},
+      "ex": "#国服id绑定",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#国服id切换": {
+      "keys": [
+        "国服id切换",
+        "切换当前操作的光遇Sky国服游戏ID"
+      ],
+      "args": {},
+      "ex": "#国服id切换",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#国服礼包查询": {
+      "keys": [
+        "国服礼包查询",
+        "查询光遇Sky国服当前可购买的礼包信息"
+      ],
+      "args": {},
+      "ex": "#国服礼包查询",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#国服id列表": {
+      "keys": [
+        "国服id列表",
+        "查看已绑定的光遇Sky国服游戏ID列表"
+      ],
+      "args": {},
+      "ex": "#国服id列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#礼包查询帮助": {
+      "keys": [
+        "礼包查询帮助",
+        "获取光遇国服礼包查询功能的帮助说明"
+      ],
+      "args": {},
+      "ex": "#礼包查询帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
