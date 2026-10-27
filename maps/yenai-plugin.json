@@ -1,0 +1,1552 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "yenai-plugin",
+    "fingerprint": "4e6b31525e8e",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#状态": {
+      "keys": [
+        "状态",
+        "查看椰奶插件及系统的当前运行状态与信息",
+        "#椰奶状态"
+      ],
+      "args": {},
+      "ex": "#状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 3
+    },
+    "#椰奶监控": {
+      "keys": [
+        "椰奶监控",
+        "打开并查看椰奶插件的后台性能监控数据"
+      ],
+      "args": {},
+      "ex": "#椰奶监控",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#原图": {
+      "keys": [
+        "原图",
+        "获取并展示上条消息中图片的无损原图"
+      ],
+      "args": {},
+      "ex": "#原图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发好友": {
+      "keys": [
+        "发好友",
+        "跨群或向指定好友发送自定义消息"
+      ],
+      "args": {},
+      "ex": "#发好友",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发群聊": {
+      "keys": [
+        "发群聊",
+        "向指定群聊发送自定义消息内容"
+      ],
+      "args": {},
+      "ex": "#发群聊",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发群列表": {
+      "keys": [
+        "发群列表",
+        "批量向指定群列表发送自定义消息"
+      ],
+      "args": {},
+      "ex": "#发群列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#新增违禁词": {
+      "keys": [
+        "新增违禁词",
+        "在群内添加指定处罚类型的违禁词"
+      ],
+      "args": {},
+      "ex": "#新增违禁词",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除违禁词": {
+      "keys": [
+        "删除违禁词",
+        "从群违禁词库中删除指定违禁词"
+      ],
+      "args": {},
+      "ex": "#删除违禁词",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查看违禁词": {
+      "keys": [
+        "查看违禁词",
+        "查看群内当前配置的违禁词内容"
+      ],
+      "args": {},
+      "ex": "#查看违禁词",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#违禁词列表": {
+      "keys": [
+        "违禁词列表",
+        "查看群违禁词列表或原始数据列表"
+      ],
+      "args": {},
+      "ex": "#违禁词列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置违禁词禁言时间": {
+      "keys": [
+        "设置违禁词禁言时间",
+        "设置群成员触发违禁词后的禁言时长"
+      ],
+      "args": {},
+      "ex": "#设置违禁词禁言时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#增加头衔屏蔽词": {
+      "keys": [
+        "增加头衔屏蔽词",
+        "增加、减少或查看群头衔屏蔽词"
+      ],
+      "args": {},
+      "ex": "#增加头衔屏蔽词",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#切换头衔屏蔽词匹配": {
+      "keys": [
+        "切换头衔屏蔽词匹配",
+        "切换群头衔屏蔽词的匹配模式"
+      ],
+      "args": {},
+      "ex": "#切换头衔屏蔽词匹配",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#违禁词帮助": {
+      "keys": [
+        "违禁词帮助",
+        "查看群违禁词管理相关的帮助说明"
+      ],
+      "args": {},
+      "ex": "#违禁词帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#重新验证": {
+      "keys": [
+        "重新验证",
+        "重新对指定群成员发起入群验证流程"
+      ],
+      "args": {},
+      "ex": "#重新验证",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#重新验证从未发言的人": {
+      "keys": [
+        "重新验证从未发言的人",
+        "对群内从未发言的成员重新发起入群验证"
+      ],
+      "args": {},
+      "ex": "#重新验证从未发言的人",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#绕过验证": {
+      "keys": [
+        "绕过验证",
+        "免除指定成员的入群验证要求"
+      ],
+      "args": {},
+      "ex": "#绕过验证",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启验证": {
+      "keys": [
+        "开启验证",
+        "开启或关闭群聊的新人入群验证功能"
+      ],
+      "args": {},
+      "ex": "#开启验证",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#切换验证模式": {
+      "keys": [
+        "切换验证模式",
+        "切换入群验证所使用的题目或验证方式"
+      ],
+      "args": {},
+      "ex": "#切换验证模式",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置验证超时时间": {
+      "keys": [
+        "设置验证超时时间",
+        "设置入群验证的等待超时时长"
+      ],
+      "args": {},
+      "ex": "#设置验证超时时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶娱乐设置sese开启": {
+      "keys": [
+        "椰奶娱乐设置sese开启",
+        "配置椰奶娱乐功能的开关或冷却时长"
+      ],
+      "args": {},
+      "ex": "#椰奶娱乐设置sese开启",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶娱乐设置": {
+      "keys": [
+        "椰奶娱乐设置",
+        "查看椰奶娱乐功能的当前配置状态"
+      ],
+      "args": {},
+      "ex": "#椰奶娱乐设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶设置状态开启": {
+      "keys": [
+        "椰奶设置状态开启",
+        "修改椰奶插件的基础配置项状态",
+        "#椰奶状态"
+      ],
+      "args": {},
+      "ex": "#椰奶设置状态开启",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶设置": {
+      "keys": [
+        "椰奶设置",
+        "查看椰奶插件当前的基础配置信息"
+      ],
+      "args": {},
+      "ex": "#椰奶设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶通知设置好友消息开启": {
+      "keys": [
+        "椰奶通知设置好友消息开启",
+        "配置椰奶插件各类事件的通知规则及开关"
+      ],
+      "args": {},
+      "ex": "#椰奶通知设置好友消息开启",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶通知设置": {
+      "keys": [
+        "椰奶通知设置",
+        "查看椰奶插件当前的通知配置列表"
+      ],
+      "args": {},
+      "ex": "#椰奶通知设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶启用全部通知": {
+      "keys": [
+        "椰奶启用全部通知",
+        "一键启用或禁用椰奶插件的全部通知"
+      ],
+      "args": {},
+      "ex": "#椰奶启用全部通知",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶版本": {
+      "keys": [
+        "椰奶版本",
+        "查看椰奶插件当前安装运行的版本信息"
+      ],
+      "args": {},
+      "ex": "#椰奶版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#唱歌": {
+      "keys": [
+        "唱歌",
+        "触发机器人点歌、演唱或发送音乐娱乐音频"
+      ],
+      "args": {},
+      "ex": "#唱歌",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#支付宝到账": {
+      "keys": [
+        "支付宝到账",
+        "模拟生成指定金额的支付宝到账语音提示"
+      ],
+      "args": {},
+      "ex": "#支付宝到账",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#翻译": {
+      "keys": [
+        "翻译",
+        "将输入文本翻译为指定的其他目标自然语言"
+      ],
+      "args": {},
+      "ex": "#翻译",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#coser": {
+      "keys": [
+        "coser",
+        "随机获取并展示精选Coser摄影图片"
+      ],
+      "args": {},
+      "ex": "#coser",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#acg": {
+      "keys": [
+        "acg",
+        "获取动漫、Cosplay或写真相关的二次元美图"
+      ],
+      "args": {},
+      "ex": "#acg",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#同意": {
+      "keys": [
+        "同意",
+        "对收到的待处理申请执行同意或拒绝操作"
+      ],
+      "args": {},
+      "ex": "#同意",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#回复": {
+      "keys": [
+        "回复",
+        "对收到的申请或通知消息执行回复操作"
+      ],
+      "args": {},
+      "ex": "#回复",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#同意好友申请": {
+      "keys": [
+        "同意好友申请",
+        "查看、批量同意或拒绝收到的好友添加申请"
+      ],
+      "args": {},
+      "ex": "#同意好友申请",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#加为好友": {
+      "keys": [
+        "加为好友",
+        "向目标用户发送添加好友请求或确认添加"
+      ],
+      "args": {},
+      "ex": "#加为好友",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#同意群申请": {
+      "keys": [
+        "同意群申请",
+        "查看、批量同意或拒绝收到的加入群聊申请"
+      ],
+      "args": {},
+      "ex": "#同意群申请",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#同意群邀请": {
+      "keys": [
+        "同意群邀请",
+        "查看、批量同意或拒绝收到的群聊邀请请求"
+      ],
+      "args": {},
+      "ex": "#同意群邀请",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查看全部请求": {
+      "keys": [
+        "查看全部请求",
+        "查询机器人当前所有待处理的申请通知请求"
+      ],
+      "args": {},
+      "ex": "#查看全部请求",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#pid搜图": {
+      "keys": [
+        "pid搜图",
+        "根据输入的Pixiv插画作品ID查询并展示原图"
+      ],
+      "args": {},
+      "ex": "#pid搜图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#看看日榜": {
+      "keys": [
+        "看看日榜",
+        "按分类与日期分页浏览Pixiv各类插画排行榜"
+      ],
+      "args": {},
+      "ex": "#看看日榜",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#tag搜图": {
+      "keys": [
+        "tag搜图",
+        "按指定标签和页码在Pixiv上搜索图片"
+      ],
+      "args": {},
+      "ex": "#tag搜图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#uid搜图": {
+      "keys": [
+        "uid搜图",
+        "根据画师UID和页码在Pixiv上搜索作品"
+      ],
+      "args": {},
+      "ex": "#uid搜图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#user搜索": {
+      "keys": [
+        "user搜索",
+        "根据画师昵称和页码在Pixiv上搜索画师"
+      ],
+      "args": {},
+      "ex": "#user搜索",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#来张好康的": {
+      "keys": [
+        "来张好康的",
+        "随机发送指定数量的好看插画或涩图"
+      ],
+      "args": {},
+      "ex": "#来张好康的",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#热门tag": {
+      "keys": [
+        "热门tag",
+        "查看或获取Pixiv当前的热门标签列表"
+      ],
+      "args": {},
+      "ex": "#热门tag",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#看看相关作品": {
+      "keys": [
+        "看看相关作品",
+        "根据作品ID查看Pixiv上的相关推荐作品"
+      ],
+      "args": {},
+      "ex": "#看看相关作品",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#来张推荐图": {
+      "keys": [
+        "来张推荐图",
+        "随机获取指定数量的Pixiv推荐插画"
+      ],
+      "args": {},
+      "ex": "#来张推荐图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#Pximg": {
+      "keys": [
+        "Pximg"
+      ],
+      "args": {},
+      "ex": "#Pximg",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#p站查看代理": {
+      "keys": [
+        "p站查看代理",
+        "查看或更换Pixiv搜索所使用的网络代理"
+      ],
+      "args": {},
+      "ex": "#p站查看代理",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#p站开启直连": {
+      "keys": [
+        "p站开启直连",
+        "开启或关闭Pixiv网络直连访问模式"
+      ],
+      "args": {},
+      "ex": "#p站开启直连",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#p站登录信息": {
+      "keys": [
+        "p站登录信息",
+        "查看机器人当前绑定的Pixiv账号登录信息"
+      ],
+      "args": {},
+      "ex": "#p站登录信息",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#4399搜索": {
+      "keys": [
+        "4399搜索",
+        "使用指定搜索引擎或平台检索对应关键词内容"
+      ],
+      "args": {},
+      "ex": "#4399搜索",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#搜索菜单": {
+      "keys": [
+        "搜索菜单",
+        "查看支持的各平台搜索指令及帮助菜单"
+      ],
+      "args": {},
+      "ex": "#搜索菜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#桌游搜索": {
+      "keys": [
+        "桌游搜索",
+        "搜索指定桌游的相关介绍与详细资料"
+      ],
+      "args": {},
+      "ex": "#桌游搜索",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#桌游排行": {
+      "keys": [
+        "桌游排行",
+        "查询并展示当前热门桌游的排行榜单"
+      ],
+      "args": {},
+      "ex": "#桌游排行",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶tag": {
+      "keys": [
+        "椰奶tag",
+        "根据指定标签搜索并发送对应的插画图片"
+      ],
+      "args": {},
+      "ex": "#椰奶tag",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#setu": {
+      "keys": [
+        "setu",
+        "随机发送指定数量的特色插画或福利图片"
+      ],
+      "args": {},
+      "ex": "#setu",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#撤回间隔": {
+      "keys": [
+        "撤回间隔",
+        "设置当前群聊发送图片的自动撤回间隔时间"
+      ],
+      "args": {},
+      "ex": "#撤回间隔",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启涩涩": {
+      "keys": [
+        "开启涩涩",
+        "开启或关闭群聊或私聊环境下的插画发送功能"
+      ],
+      "args": {},
+      "ex": "#开启涩涩",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置cd": {
+      "keys": [
+        "设置cd",
+        "设置指定群聊或当前群指令调用的冷却时间"
+      ],
+      "args": {},
+      "ex": "#设置cd",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#点赞": {
+      "keys": [
+        "点赞",
+        "为发送者或指定目标的QQ个人资料卡点赞"
+      ],
+      "args": {},
+      "ex": "#点赞",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#获取直链": {
+      "keys": [
+        "获取直链",
+        "解析并获取引用或附带媒体资源的直接链接"
+      ],
+      "args": {},
+      "ex": "#获取直链",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#取face": {
+      "keys": [
+        "取face",
+        "提取并获取指定表情或头像的原始图片资源"
+      ],
+      "args": {},
+      "ex": "#取face",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ocr": {
+      "keys": [
+        "ocr",
+        "识别并提取指定图片中的文字内容"
+      ],
+      "args": {},
+      "ex": "#ocr",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查看头像": {
+      "keys": [
+        "查看头像",
+        "查看或获取指定用户或当前群聊的头像图片"
+      ],
+      "args": {},
+      "ex": "#查看头像",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置日志等级": {
+      "keys": [
+        "设置日志等级",
+        "调整并设置机器人后台运行时的日志输出级别"
+      ],
+      "args": {},
+      "ex": "#设置日志等级",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#获取说说列表": {
+      "keys": [
+        "获取说说列表",
+        "获取并展示指定页码的QQ空间说说动态列表"
+      ],
+      "args": {},
+      "ex": "#获取说说列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删除说说": {
+      "keys": [
+        "删除说说",
+        "根据指定的说说编号删除对应的QQ空间说说"
+      ],
+      "args": {},
+      "ex": "#删除说说",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发说说": {
+      "keys": [
+        "发说说",
+        "编辑并发布一条全新的QQ空间说说动态"
+      ],
+      "args": {},
+      "ex": "#发说说",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#禁言": {
+      "keys": [
+        "禁言",
+        "对群内指定成员执行设定时长的禁言操作"
+      ],
+      "args": {},
+      "ex": "#禁言",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#解禁": {
+      "keys": [
+        "解禁",
+        "通过私聊指令解除指定群聊中某成员的禁言"
+      ],
+      "args": {},
+      "ex": "#解禁",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#全体禁言": {
+      "keys": [
+        "全体禁言",
+        "通过私聊指令控制指定群聊开启或关闭全员禁言"
+      ],
+      "args": {},
+      "ex": "#全体禁言",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#踢黑": {
+      "keys": [
+        "踢黑",
+        "将指定成员移出群聊并可选择拉入黑名单"
+      ],
+      "args": {},
+      "ex": "#踢黑",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置管理": {
+      "keys": [
+        "设置管理",
+        "为群内指定成员设置或取消管理员权限"
+      ],
+      "args": {},
+      "ex": "#设置管理",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#修改头衔": {
+      "keys": [
+        "修改头衔",
+        "为指定群成员设置或修改专属群头衔"
+      ],
+      "args": {},
+      "ex": "#修改头衔",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#申请头衔": {
+      "keys": [
+        "申请头衔",
+        "群成员向机器人申请设置自己的专属群头衔"
+      ],
+      "args": {},
+      "ex": "#申请头衔",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#禁言列表": {
+      "keys": [
+        "禁言列表",
+        "查看当前群聊中正处于禁言状态的成员列表"
+      ],
+      "args": {},
+      "ex": "#禁言列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#解除全部禁言": {
+      "keys": [
+        "解除全部禁言",
+        "一键解除当前群聊中所有已被禁言成员的限制"
+      ],
+      "args": {},
+      "ex": "#解除全部禁言",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查看从未发言过的人": {
+      "keys": [
+        "查看从未发言过的人",
+        "查看或清理群内自入群起从未发言过的成员"
+      ],
+      "args": {},
+      "ex": "#查看从未发言过的人",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#不活跃排行榜": {
+      "keys": [
+        "不活跃排行榜",
+        "查看群内长期不发言成员的潜水排行榜单"
+      ],
+      "args": {},
+      "ex": "#不活跃排行榜",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#最近的入群情况": {
+      "keys": [
+        "最近的入群情况",
+        "查看群内最近新成员入群的时间与审核记录"
+      ],
+      "args": {},
+      "ex": "#最近的入群情况",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发通知": {
+      "keys": [
+        "发通知",
+        "在群内编辑并推送一条重要的群通知消息"
+      ],
+      "args": {},
+      "ex": "#发通知",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#定时禁言$": {
+      "keys": [
+        "定时禁言$",
+        "设置、查看或取消群聊的定时禁言与解禁任务"
+      ],
+      "args": {},
+      "ex": "#定时禁言$",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启加群通知": {
+      "keys": [
+        "开启加群通知",
+        "开启或关闭新成员加入本群时的提示通知"
+      ],
+      "args": {},
+      "ex": "#开启加群通知",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#加精": {
+      "keys": [
+        "加精",
+        "将指定的消息添加至或移出本群精华消息"
+      ],
+      "args": {},
+      "ex": "#加精",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#我要自闭个": {
+      "keys": [
+        "我要自闭个",
+        "对自己申请执行指定时长的自我禁言操作"
+      ],
+      "args": {},
+      "ex": "#我要自闭个",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#谁是龙王": {
+      "keys": [
+        "谁是龙王",
+        "查询并展示当前群聊中发言最多的龙王成员"
+      ],
+      "args": {},
+      "ex": "#谁是龙王",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#群星级": {
+      "keys": [
+        "群星级",
+        "查询当前群聊在腾讯QQ官方评定的群星级"
+      ],
+      "args": {},
+      "ex": "#群星级",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#群数据": {
+      "keys": [
+        "群数据",
+        "查询当前群聊近期或七天内的活跃统计数据"
+      ],
+      "args": {},
+      "ex": "#群数据",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#今日打卡": {
+      "keys": [
+        "今日打卡",
+        "在群内完成今日打卡签到并记录状态"
+      ],
+      "args": {},
+      "ex": "#今日打卡",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#群发言榜单": {
+      "keys": [
+        "群发言榜单",
+        "查询群聊今日或近七天内成员发言排行"
+      ],
+      "args": {},
+      "ex": "#群发言榜单",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发群公告": {
+      "keys": [
+        "发群公告",
+        "向当前群聊发布一条全新的群公告内容"
+      ],
+      "args": {},
+      "ex": "#发群公告",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删群公告": {
+      "keys": [
+        "删群公告",
+        "根据公告ID删除当前群聊已发布的指定公告"
+      ],
+      "args": {},
+      "ex": "#删群公告",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查群公告": {
+      "keys": [
+        "查群公告",
+        "查看当前群聊已发布的最新或所有群公告列表"
+      ],
+      "args": {},
+      "ex": "#查群公告",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#字符": {
+      "keys": [
+        "字符",
+        "查看群聊当前拥有或支持抽取的幸运字符列表"
+      ],
+      "args": {},
+      "ex": "#字符",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#抽字符": {
+      "keys": [
+        "抽字符",
+        "在群内随机抽取一个新的专属群聊幸运字符"
+      ],
+      "args": {},
+      "ex": "#抽字符",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#替换字符": {
+      "keys": [
+        "替换字符",
+        "将当前生效的群聊幸运字符替换为指定编号字符"
+      ],
+      "args": {},
+      "ex": "#替换字符",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启字符": {
+      "keys": [
+        "开启字符",
+        "开启或关闭当前群聊的幸运字符展示功能"
+      ],
+      "args": {},
+      "ex": "#开启字符",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#群管加白": {
+      "keys": [
+        "群管加白",
+        "将指定用户添加至或移出群管黑白名单"
+      ],
+      "args": {},
+      "ex": "#群管加白",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启白名单解禁": {
+      "keys": [
+        "开启白名单解禁",
+        "开启或关闭白名单成员被禁言时的自动解禁功能"
+      ],
+      "args": {},
+      "ex": "#开启白名单解禁",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#踢": {
+      "keys": [
+        "踢",
+        "通过私聊指令将指定成员从指定群聊中移出"
+      ],
+      "args": {},
+      "ex": "#踢",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶更新": {
+      "keys": [
+        "椰奶更新",
+        "检查并更新或强制更新椰奶插件"
+      ],
+      "args": {},
+      "ex": "#椰奶更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶更新日志": {
+      "keys": [
+        "椰奶更新日志",
+        "查看椰奶插件的版本更新日志记录"
+      ],
+      "args": {},
+      "ex": "#椰奶更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改头像": {
+      "keys": [
+        "改头像",
+        "修改或更换机器人账号的当前头像"
+      ],
+      "args": {},
+      "ex": "#改头像",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改昵称": {
+      "keys": [
+        "改昵称",
+        "修改或更换机器人账号的当前昵称"
+      ],
+      "args": {},
+      "ex": "#改昵称",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改签名": {
+      "keys": [
+        "改签名",
+        "修改机器人当前账号的个性签名"
+      ],
+      "args": {},
+      "ex": "#改签名",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改状态": {
+      "keys": [
+        "改状态",
+        "修改机器人当前账号的在线状态",
+        "#状态"
+      ],
+      "args": {},
+      "ex": "#改状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#退群": {
+      "keys": [
+        "退群",
+        "控制机器人退出当前所在的群聊"
+      ],
+      "args": {},
+      "ex": "#退群",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#删好友": {
+      "keys": [
+        "删好友",
+        "控制机器人删除指定的QQ好友账号"
+      ],
+      "args": {},
+      "ex": "#删好友",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改性别": {
+      "keys": [
+        "改性别",
+        "修改机器人当前账号的个人资料性别"
+      ],
+      "args": {},
+      "ex": "#改性别",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改群名片": {
+      "keys": [
+        "改群名片",
+        "修改机器人在当前群聊中的群名片"
+      ],
+      "args": {},
+      "ex": "#改群名片",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改群头像": {
+      "keys": [
+        "改群头像",
+        "修改或更换当前群聊的群头像"
+      ],
+      "args": {},
+      "ex": "#改群头像",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#改群昵称": {
+      "keys": [
+        "改群昵称",
+        "修改当前群聊的群名称"
+      ],
+      "args": {},
+      "ex": "#改群昵称",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#群列表": {
+      "keys": [
+        "群列表",
+        "获取机器人加入的群聊或好友列表"
+      ],
+      "args": {},
+      "ex": "#群列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启戳一戳": {
+      "keys": [
+        "开启戳一戳",
+        "开启或关闭机器人对戳一戳的响应"
+      ],
+      "args": {},
+      "ex": "#开启戳一戳",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#撤回": {
+      "keys": [
+        "撤回",
+        "撤回机器人发送的消息或指定消息"
+      ],
+      "args": {},
+      "ex": "#撤回",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启好友添加": {
+      "keys": [
+        "开启好友添加",
+        "开启或关闭机器人接收好友申请功能"
+      ],
+      "args": {},
+      "ex": "#开启好友添加",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更改好友申请方式": {
+      "keys": [
+        "更改好友申请方式",
+        "修改机器人的好友申请验证方式或问题"
+      ],
+      "args": {},
+      "ex": "#更改好友申请方式",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置机型": {
+      "keys": [
+        "设置机型",
+        "设置机器人在线显示的客户端机型"
+      ],
+      "args": {},
+      "ex": "#设置机型",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika搜索": {
+      "keys": [
+        "bika搜索",
+        "在哔咔中按关键词分类或作者搜索漫画"
+      ],
+      "args": {},
+      "ex": "#bika搜索",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bikaid": {
+      "keys": [
+        "bikaid",
+        "根据指定漫画ID获取哔咔章节内容"
+      ],
+      "args": {},
+      "ex": "#bikaid",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika看": {
+      "keys": [
+        "bika看",
+        "根据编号查看指定的哔咔漫画内容"
+      ],
+      "args": {},
+      "ex": "#bika看",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika下一页": {
+      "keys": [
+        "bika下一页",
+        "翻至哔咔漫画或搜索结果的下一页"
+      ],
+      "args": {},
+      "ex": "#bika下一页",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika下一话": {
+      "keys": [
+        "bika下一话",
+        "切换查看当前哔咔漫画的下一话内容"
+      ],
+      "args": {},
+      "ex": "#bika下一话",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika类别列表": {
+      "keys": [
+        "bika类别列表",
+        "获取并显示哔咔支持的所有分类列表"
+      ],
+      "args": {},
+      "ex": "#bika类别列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika详情": {
+      "keys": [
+        "bika详情",
+        "查看指定哔咔漫画的详细信息和简介"
+      ],
+      "args": {},
+      "ex": "#bika详情",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika修改图片质量": {
+      "keys": [
+        "bika修改图片质量",
+        "修改哔咔漫画浏览时加载的图片质量"
+      ],
+      "args": {},
+      "ex": "#bika修改图片质量",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#bika开启直连": {
+      "keys": [
+        "bika开启直连",
+        "开启或关闭哔咔漫画的网络直连模式"
+      ],
+      "args": {},
+      "ex": "#bika开启直连",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#椰奶帮助": {
+      "keys": [
+        "椰奶帮助",
+        "查看椰奶插件的群管或娱乐帮助菜单"
+      ],
+      "args": {},
+      "ex": "#椰奶帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#搜图": {
+      "keys": [
+        "搜图",
+        "上传图片进行网络以图搜图"
+      ],
+      "args": {},
+      "ex": "#搜图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#SauceNAO搜图": {
+      "keys": [
+        "SauceNAO搜图",
+        "使用SauceNAO引擎进行以图搜图"
+      ],
+      "args": {},
+      "ex": "#SauceNAO搜图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#搜番": {
+      "keys": [
+        "搜番",
+        "通过截图检索对应的动漫番剧出处"
+      ],
+      "args": {},
+      "ex": "#搜番",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#Ascii2D搜图": {
+      "keys": [
+        "Ascii2D搜图",
+        "使用Ascii2D引擎进行以图搜图"
+      ],
+      "args": {},
+      "ex": "#Ascii2D搜图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置SauceNAOApiKey": {
+      "keys": [
+        "设置SauceNAOApiKey",
+        "配置或保存SauceNAO搜图密钥"
+      ],
+      "args": {},
+      "ex": "#设置SauceNAOApiKey",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#投票禁言": {
+      "keys": [
+        "投票禁言",
+        "发起对群成员的禁言或踢人投票"
+      ],
+      "args": {},
+      "ex": "#投票禁言",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#支持投票": {
+      "keys": [
+        "支持投票",
+        "对当前发起的群管投票进行表决"
+      ],
+      "args": {},
+      "ex": "#支持投票",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#启用投票禁言": {
+      "keys": [
+        "启用投票禁言",
+        "启用或禁用群内的投票禁言或踢人功能"
+      ],
+      "args": {},
+      "ex": "#启用投票禁言",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#投票设置": {
+      "keys": [
+        "投票设置",
+        "设置投票超时、最低票数或禁言时长"
+      ],
+      "args": {},
+      "ex": "#投票设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
