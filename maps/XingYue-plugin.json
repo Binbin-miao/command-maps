@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "XingYue-plugin",
+    "fingerprint": "da672304fdf7",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#xy帮助": {
+      "keys": [
+        "xy帮助",
+        "查看XingYue插件的帮助菜单及指令"
+      ],
+      "args": {},
+      "ex": "#xy帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#xy强制更新": {
+      "keys": [
+        "xy强制更新",
+        "强制拉取并更新XingYue插件最新代码"
+      ],
+      "args": {},
+      "ex": "#xy强制更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#xy更新": {
+      "keys": [
+        "xy更新",
+        "检查并更新XingYue插件到最新版本"
+      ],
+      "args": {},
+      "ex": "#xy更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
