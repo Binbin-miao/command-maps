@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "system/botOperate.js",
+    "fingerprint": "49da334820bf",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#Bot验证": {
+      "keys": [
+        "Bot验证",
+        "提交账号认证信息以完成机器人的身份验证"
+      ],
+      "args": {},
+      "ex": "#Bot验证",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#Bot上线": {
+      "keys": [
+        "Bot上线",
+        "控制指定的机器人账号执行上线或下线操作"
+      ],
+      "args": {},
+      "ex": "#Bot上线",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
