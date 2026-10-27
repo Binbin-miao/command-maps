@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "DF-Plugin",
+    "fingerprint": "0f6d1c2e8b1a",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#联系主人": {
+      "keys": [
+        "联系主人",
+        "向机器人管理员发送留言或反馈联系信息"
+      ],
+      "args": {},
+      "ex": "#联系主人",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#回复": {
+      "keys": [
+        "回复",
+        "对指定用户或留言内容进行针对性回复"
+      ],
+      "args": {},
+      "ex": "#回复",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#来张jk": {
+      "keys": [
+        "来张jk",
+        "随机发送一张JK、丝袜或Cosplay主题图片"
+      ],
+      "args": {},
+      "ex": "#来张jk",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#来张柴郡猫": {
+      "keys": [
+        "来张柴郡猫",
+        "随机发送指定角色、主播或主题的相关图片表情"
+      ],
+      "args": {},
+      "ex": "#来张柴郡猫",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#DF表情列表": {
+      "keys": [
+        "DF表情列表",
+        "查看当前支持的所有随机角色与图片类别列表"
+      ],
+      "args": {},
+      "ex": "#DF表情列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#DF更新": {
+      "keys": [
+        "DF更新",
+        "检查更新DF插件或查看更新日志"
+      ],
+      "args": {},
+      "ex": "#DF更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#DF安装图库": {
+      "keys": [
+        "DF安装图库",
+        "安装或更新DF插件的戳一戳图库"
+      ],
+      "args": {},
+      "ex": "#DF安装图库",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启图片外显": {
+      "keys": [
+        "开启图片外显",
+        "开启或关闭图片外显功能"
+      ],
+      "args": {},
+      "ex": "#开启图片外显",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#检查仓库更新": {
+      "keys": [
+        "检查仓库更新",
+        "手动检查并推送Git仓库更新"
+      ],
+      "args": {},
+      "ex": "#检查仓库更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#DF清理无效数据": {
+      "keys": [
+        "DF清理无效数据",
+        "清理仓库更新监听插件中的无效数据"
+      ],
+      "args": {},
+      "ex": "#DF清理无效数据",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#DF版本": {
+      "keys": [
+        "DF版本",
+        "查看DF插件当前版本信息"
+      ],
+      "args": {},
+      "ex": "#DF版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#DF帮助": {
+      "keys": [
+        "DF帮助",
+        "查看DF插件帮助菜单"
+      ],
+      "args": {},
+      "ex": "#DF帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "原神": {
+      "keys": [
+        "原神",
+        "检测到原神关键词时触发发送表情图片"
+      ],
+      "args": {},
+      "ex": "原神",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
