@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "ws-plugin",
+    "fingerprint": "b2e1a202b975",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#ws设置": {
+      "keys": [
+        "ws设置",
+        "修改WS插件的心跳、端口及通知等设置"
+      ],
+      "args": {},
+      "ex": "#ws设置",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws禁用群": {
+      "keys": [
+        "ws禁用群",
+        "查看、添加或删除WS插件禁用启用的群"
+      ],
+      "args": {},
+      "ex": "#ws禁用群",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws状态": {
+      "keys": [
+        "ws状态",
+        "查看WS插件当前的运行状态"
+      ],
+      "args": {},
+      "ex": "#ws状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws清除缓存": {
+      "keys": [
+        "ws清除缓存",
+        "清除WS插件当前缓存的数据"
+      ],
+      "args": {},
+      "ex": "#ws清除缓存",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws查询s": {
+      "keys": [
+        "ws查询s",
+        "根据输入内容查询WS数据库信息"
+      ],
+      "args": {},
+      "ex": "#ws查询s",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws获取群成员列表": {
+      "keys": [
+        "ws获取群成员列表",
+        "获取当前群聊的成员列表信息"
+      ],
+      "args": {},
+      "ex": "#ws获取群成员列表",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws转图片": {
+      "keys": [
+        "ws转图片",
+        "使用WS工具将指定内容转换为图片"
+      ],
+      "args": {},
+      "ex": "#ws转图片",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws查看s": {
+      "keys": [
+        "ws查看s",
+        "根据ID查看WS工具的相关信息"
+      ],
+      "args": {},
+      "ex": "#ws查看s",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws版本": {
+      "keys": [
+        "ws版本",
+        "查看当前安装的WS插件版本号"
+      ],
+      "args": {},
+      "ex": "#ws版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws帮助": {
+      "keys": [
+        "ws帮助",
+        "查看WS插件的使用帮助说明菜单"
+      ],
+      "args": {},
+      "ex": "#ws帮助",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#wsme": {
+      "keys": [
+        "wsme",
+        "查看当前用户的WS个人标识或信息"
+      ],
+      "args": {},
+      "ex": "#wsme",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws修改群": {
+      "keys": [
+        "ws修改群",
+        "修改或绑定WS插件关联的群聊ID"
+      ],
+      "args": {},
+      "ex": "#ws修改群",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws接受群绑定": {
+      "keys": [
+        "ws接受群绑定",
+        "确认并接受群聊绑定的申请操作"
+      ],
+      "args": {},
+      "ex": "#ws接受群绑定",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws更新": {
+      "keys": [
+        "ws更新",
+        "常规或强制更新WS插件至最新版"
+      ],
+      "args": {},
+      "ex": "#ws更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ws更新日志": {
+      "keys": [
+        "ws更新日志",
+        "查看WS插件的版本更新日志信息"
+      ],
+      "args": {},
+      "ex": "#ws更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
