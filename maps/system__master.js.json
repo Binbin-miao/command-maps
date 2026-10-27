@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "system/master.js",
+    "fingerprint": "629943821ae1",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#设置主人验证码": {
+      "keys": [
+        "设置主人验证码",
+        "生成并获取用于绑定机器人主人的验证码",
+        "#设置主人"
+      ],
+      "args": {},
+      "ex": "#设置主人验证码",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置主人": {
+      "keys": [
+        "设置主人",
+        "将当前发送者绑定或设置为机器人的主人"
+      ],
+      "args": {},
+      "ex": "#设置主人",
+      "risk": "q",
+      "interactive": false,
+      "used": 10
+    }
+  }
+}
