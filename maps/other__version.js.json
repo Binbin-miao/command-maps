@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "other/version.js",
+    "fingerprint": "cfc7a95bcc0f",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#版本": {
+      "keys": [
+        "版本",
+        "查看喵喵插件当前的运行版本信息"
+      ],
+      "args": {},
+      "ex": "#版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
