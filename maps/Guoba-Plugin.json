@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "Guoba-Plugin",
+    "fingerprint": "01c2d91e31f2",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#锅巴登录": {
+      "keys": [
+        "锅巴登录",
+        "获取锅巴管理面板的快捷登录链接",
+        "#锅巴登陆"
+      ],
+      "args": {},
+      "ex": "#锅巴登录",
+      "risk": "q",
+      "interactive": false,
+      "used": 63
+    },
+    "#锅巴版本": {
+      "keys": [
+        "锅巴版本",
+        "查看当前安装的锅巴插件版本信息"
+      ],
+      "args": {},
+      "ex": "#锅巴版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#锅巴更新": {
+      "keys": [
+        "锅巴更新",
+        "更新或升级锅巴面板插件至最新版本"
+      ],
+      "args": {},
+      "ex": "#锅巴更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#锅巴帮助": {
+      "keys": [
+        "锅巴帮助",
+        "查看锅巴面板插件的使用帮助和指令列表"
+      ],
+      "args": {},
+      "ex": "#锅巴帮助",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#锅巴重启": {
+      "keys": [
+        "锅巴重启",
+        "重新启动锅巴插件或服务"
+      ],
+      "args": {},
+      "ex": "#锅巴重启",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
