@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "TianRu-plugin",
+    "fingerprint": "d07d58804d0d",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#我是": {
+      "keys": [
+        "我是",
+        "模拟群内其他成员的身份执行后续指令"
+      ],
+      "args": {},
+      "ex": "#我是",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#sub": {
+      "keys": [
+        "sub",
+        "查询当前的订阅信息及内容"
+      ],
+      "args": {},
+      "ex": "#sub",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#获取小助手记录": {
+      "keys": [
+        "获取小助手记录",
+        "导入并更新提瓦特小助手的抽卡记录数据"
+      ],
+      "args": {},
+      "ex": "#获取小助手记录",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#天如命令": {
+      "keys": [
+        "天如命令",
+        "查看天如插件的命令菜单与使用说明"
+      ],
+      "args": {},
+      "ex": "#天如命令",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#天如更新": {
+      "keys": [
+        "天如更新",
+        "检查并更新或强制更新天如插件"
+      ],
+      "args": {},
+      "ex": "#天如更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#天如更新日志": {
+      "keys": [
+        "天如更新日志",
+        "查看天如插件的版本更新日志记录"
+      ],
+      "args": {},
+      "ex": "#天如更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#伪造聊天": {
+      "keys": [
+        "伪造聊天",
+        "伪造并生成合并转发群聊记录消息"
+      ],
+      "args": {},
+      "ex": "#伪造聊天",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#执行sh": {
+      "keys": [
+        "执行sh",
+        "在系统后台执行指定的Shell命令"
+      ],
+      "args": {},
+      "ex": "#执行sh",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#执行js": {
+      "keys": [
+        "执行js",
+        "执行指定的JavaScript脚本代码"
+      ],
+      "args": {},
+      "ex": "#执行js",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#帮我选": {
+      "keys": [
+        "帮我选",
+        "让机器人从提供的多个选项中随机选择一项"
+      ],
+      "args": {},
+      "ex": "#帮我选",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "code r": {
+      "keys": [
+        "code r",
+        "在沙盒环境中运行代码并返回执行结果"
+      ],
+      "args": {},
+      "ex": "code r",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#Homo": {
+      "keys": [
+        "Homo",
+        "将输入的数字转化为恶臭数字论证表达式"
+      ],
+      "args": {},
+      "ex": "#Homo",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
