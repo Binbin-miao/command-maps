@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "other/install.js",
+    "fingerprint": "e8b4aa83f804",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#安装插件": {
+      "keys": [
+        "安装插件",
+        "下载并安装指定的机器人功能扩展插件"
+      ],
+      "args": {},
+      "ex": "#安装插件",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#卸载": {
+      "keys": [
+        "卸载",
+        "卸载并清理指定名称的机器人扩展插件"
+      ],
+      "args": {},
+      "ex": "#卸载",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
