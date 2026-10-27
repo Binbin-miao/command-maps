@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "windoge-plugin",
+    "fingerprint": "da39a3ee5e6b",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {}
+}
