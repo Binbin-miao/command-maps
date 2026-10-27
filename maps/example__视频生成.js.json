@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "example/视频生成.js",
+    "fingerprint": "561b3ff503a6",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#生成视频": {
+      "keys": [
+        "生成视频",
+        "根据指定提示词调用Gemini生成视频"
+      ],
+      "args": {},
+      "ex": "#生成视频",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
