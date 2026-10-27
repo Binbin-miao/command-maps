@@ -1,0 +1,657 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "FanSky_Qs",
+    "fingerprint": "ae10e698503e",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#检测仓库更新": {
+      "keys": [
+        "检测仓库更新",
+        "检测GitHub仓库或插件是否有更新"
+      ],
+      "args": {},
+      "ex": "#检测仓库更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#fan更新": {
+      "keys": [
+        "fan更新",
+        "强制或常规更新FanSky插件"
+      ],
+      "args": {},
+      "ex": "#fan更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#重置打卡": {
+      "keys": [
+        "重置打卡",
+        "重置或清除用户的每日打卡签到状态"
+      ],
+      "args": {},
+      "ex": "#重置打卡",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#fan设置": {
+      "keys": [
+        "fan设置",
+        "修改或查看FanSky插件的相关配置设置"
+      ],
+      "args": {},
+      "ex": "#fan设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#fan帮助": {
+      "keys": [
+        "fan帮助",
+        "查看FanSky插件的功能列表与帮助菜单"
+      ],
+      "args": {},
+      "ex": "#fan帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#清屏": {
+      "keys": [
+        "清屏",
+        "发送清屏内容以清理聊天窗口记录"
+      ],
+      "args": {},
+      "ex": "#清屏",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#批量撤回": {
+      "keys": [
+        "批量撤回",
+        "批量撤回群内指定数量或条件的消息"
+      ],
+      "args": {},
+      "ex": "#批量撤回",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#拉黑": {
+      "keys": [
+        "拉黑",
+        "对指定QQ或群聊执行拉黑或解黑操作"
+      ],
+      "args": {},
+      "ex": "#拉黑",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#加白": {
+      "keys": [
+        "加白",
+        "将指定QQ群添加到群管白名单中"
+      ],
+      "args": {},
+      "ex": "#加白",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#减魔晶": {
+      "keys": [
+        "减魔晶",
+        "增加或扣除用户的魔晶/魔石点数"
+      ],
+      "args": {},
+      "ex": "#减魔晶",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#打卡": {
+      "keys": [
+        "打卡",
+        "参与群内打卡或冒泡签到"
+      ],
+      "args": {},
+      "ex": "#打卡",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "🌨️🔥": {
+      "keys": [
+        "🌨️🔥"
+      ],
+      "args": {},
+      "ex": "🌨️🔥",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#首次打卡时间": {
+      "keys": [
+        "首次打卡时间",
+        "查询用户的首次打卡或签到时间"
+      ],
+      "args": {},
+      "ex": "#首次打卡时间",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#打卡用户": {
+      "keys": [
+        "打卡用户",
+        "查看打卡或冒泡的用户统计记录"
+      ],
+      "args": {},
+      "ex": "#打卡用户",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#emoji猜成语": {
+      "keys": [
+        "emoji猜成语",
+        "发起emoji猜成语互动小游戏"
+      ],
+      "args": {},
+      "ex": "#emoji猜成语",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#魔晶抽卡": {
+      "keys": [
+        "魔晶抽卡",
+        "消耗魔晶进行抽卡或抽奖"
+      ],
+      "args": {},
+      "ex": "#魔晶抽卡",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#清空所有": {
+      "keys": [
+        "清空所有",
+        "清除所有AI对话上下文或记忆数据"
+      ],
+      "args": {},
+      "ex": "#清空所有",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#重置对话": {
+      "keys": [
+        "重置对话",
+        "重置当前与AI模型的对话上下文记忆"
+      ],
+      "args": {},
+      "ex": "#重置对话",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#dd": {
+      "keys": [
+        "dd"
+      ],
+      "args": {},
+      "ex": "#dd",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#拉黑模型使用": {
+      "keys": [
+        "拉黑模型使用",
+        "禁止或拉黑指定对象使用AI模型"
+      ],
+      "args": {},
+      "ex": "#拉黑模型使用",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置模型人设": {
+      "keys": [
+        "设置模型人设",
+        "设置或修改AI模型的对话人设提示词"
+      ],
+      "args": {},
+      "ex": "#设置模型人设",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置模型模式": {
+      "keys": [
+        "设置模型模式",
+        "更改AI模型的运行或交互模式"
+      ],
+      "args": {},
+      "ex": "#设置模型模式",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置模型打卡开启": {
+      "keys": [
+        "设置模型打卡开启",
+        "开启或关闭模型打卡限制功能"
+      ],
+      "args": {},
+      "ex": "#设置模型打卡开启",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置OpenAIkey": {
+      "keys": [
+        "设置OpenAIkey",
+        "配置、修改或查看OpenAI模型密钥"
+      ],
+      "args": {},
+      "ex": "#设置OpenAIkey",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置OpenAI开启": {
+      "keys": [
+        "设置OpenAI开启",
+        "开启或关闭AI对话模型功能"
+      ],
+      "args": {},
+      "ex": "#设置OpenAI开启",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#OpenAI额度查询": {
+      "keys": [
+        "OpenAI额度查询",
+        "查询OpenAI模型的Key余额及额度使用情况"
+      ],
+      "args": {},
+      "ex": "#OpenAI额度查询",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置OpenAI转合并": {
+      "keys": [
+        "设置OpenAI转合并",
+        "设置AI模型回复转为合并转发消息的阈值"
+      ],
+      "args": {},
+      "ex": "#设置OpenAI转合并",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启群模型": {
+      "keys": [
+        "开启群模型",
+        "开启或关闭指定群聊的AI模型对话功能"
+      ],
+      "args": {},
+      "ex": "#开启群模型",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#useOpenAI人设": {
+      "keys": [
+        "useOpenAI人设",
+        "切换并使用指定编号的AI预设人设"
+      ],
+      "args": {},
+      "ex": "#useOpenAI人设",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#OpenAI人设列表": {
+      "keys": [
+        "OpenAI人设列表",
+        "查看可选的AI模型人设预设列表"
+      ],
+      "args": {},
+      "ex": "#OpenAI人设列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置全局人设": {
+      "keys": [
+        "设置全局人设",
+        "设置或删除AI模型的全局通用人设"
+      ],
+      "args": {},
+      "ex": "#设置全局人设",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置模型代理地址": {
+      "keys": [
+        "设置模型代理地址",
+        "设置或修改AI模型接口的代理服务器地址"
+      ],
+      "args": {},
+      "ex": "#设置模型代理地址",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#查询模型密钥": {
+      "keys": [
+        "查询模型密钥",
+        "查询当前配置的AI模型接口密钥"
+      ],
+      "args": {},
+      "ex": "#查询模型密钥",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#设置fan代理": {
+      "keys": [
+        "设置fan代理",
+        "设置或删除fan相关服务代理配置"
+      ],
+      "args": {},
+      "ex": "#设置fan代理",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#点赞": {
+      "keys": [
+        "点赞",
+        "请求机器人为用户QQ名片点赞"
+      ],
+      "args": {},
+      "ex": "#点赞",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#票房": {
+      "keys": [
+        "票房",
+        "查询当前最新的电影实时票房榜单"
+      ],
+      "args": {},
+      "ex": "#票房",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#一眼丁真": {
+      "keys": [
+        "一眼丁真",
+        "发送一眼丁真相关的梗图或表情"
+      ],
+      "args": {},
+      "ex": "#一眼丁真",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#发病": {
+      "keys": [
+        "发病",
+        "生成针对指定对象的发癫发病小作文"
+      ],
+      "args": {},
+      "ex": "#发病",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#开启fan点赞": {
+      "keys": [
+        "开启fan点赞",
+        "开启或关闭自动点赞功能开关"
+      ],
+      "args": {},
+      "ex": "#开启fan点赞",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#鸡哥": {
+      "keys": [
+        "鸡哥",
+        "发送ikun或鸡哥相关的趣味梗图与语录"
+      ],
+      "args": {},
+      "ex": "#鸡哥",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#抽象帮助": {
+      "keys": [
+        "抽象帮助",
+        "获取抽象话转换功能的帮助菜单"
+      ],
+      "args": {},
+      "ex": "#抽象帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#抽象": {
+      "keys": [
+        "抽象",
+        "将输入的文本内容转换为抽象话形式"
+      ],
+      "args": {},
+      "ex": "#抽象",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#还抽": {
+      "keys": [
+        "还抽",
+        "对文本继续进行抽象话转换处理"
+      ],
+      "args": {},
+      "ex": "#还抽",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#化学": {
+      "keys": [
+        "化学",
+        "将输入文本转换为化学元素符号风格内容"
+      ],
+      "args": {},
+      "ex": "#化学",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#转拼": {
+      "keys": [
+        "转拼",
+        "将指定中文文本转换为拼音或拼音缩写"
+      ],
+      "args": {},
+      "ex": "#转拼",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新d图": {
+      "keys": [
+        "更新d图",
+        "更新或重新加载本地屌图表情库资源"
+      ],
+      "args": {},
+      "ex": "#更新d图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新l图": {
+      "keys": [
+        "更新l图",
+        "更新或重新加载本地龙图表情库资源"
+      ],
+      "args": {},
+      "ex": "#更新l图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#Diao图": {
+      "keys": [
+        "Diao图",
+        "随机发送一张图库中的屌图表情包"
+      ],
+      "args": {},
+      "ex": "#Diao图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#加Diao图": {
+      "keys": [
+        "加Diao图",
+        "上传并添加新的图片到屌图图库中"
+      ],
+      "args": {},
+      "ex": "#加Diao图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#有多少Diao图": {
+      "keys": [
+        "有多少Diao图",
+        "查询当前屌图图库中的图片收录总数"
+      ],
+      "args": {},
+      "ex": "#有多少Diao图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#long图": {
+      "keys": [
+        "long图",
+        "随机发送一张图库中的龙图表情包"
+      ],
+      "args": {},
+      "ex": "#long图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#加long图": {
+      "keys": [
+        "加long图",
+        "上传并添加新的图片到龙图图库中"
+      ],
+      "args": {},
+      "ex": "#加long图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#有多少long图": {
+      "keys": [
+        "有多少long图",
+        "查询当前龙图图库中的图片收录总数"
+      ],
+      "args": {},
+      "ex": "#有多少long图",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#队伍伤害": {
+      "keys": [
+        "队伍伤害",
+        "计算并展示原神指定队伍的伤害详情"
+      ],
+      "args": {},
+      "ex": "#队伍伤害",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#单人评级": {
+      "keys": [
+        "单人评级",
+        "查询原神角色的单人练度与圣遗物评级"
+      ],
+      "args": {},
+      "ex": "#单人评级",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新小助手配置": {
+      "keys": [
+        "更新小助手配置",
+        "更新提瓦特小助手的配置与数据源"
+      ],
+      "args": {},
+      "ex": "#更新小助手配置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#成就排行": {
+      "keys": [
+        "成就排行",
+        "查询原神成就完成度或成就排行榜单"
+      ],
+      "args": {},
+      "ex": "#成就排行",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#宝箱排行": {
+      "keys": [
+        "宝箱排行",
+        "查询原神大世界宝箱收集统计或排行榜"
+      ],
+      "args": {},
+      "ex": "#宝箱排行",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#历史队伍伤害": {
+      "keys": [
+        "历史队伍伤害",
+        "查询过往测算过的原神队伍伤害历史记录"
+      ],
+      "args": {},
+      "ex": "#历史队伍伤害",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
