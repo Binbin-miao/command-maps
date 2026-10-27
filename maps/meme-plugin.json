@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "meme-plugin",
+    "fingerprint": "587482dbb646",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#清语表情设置": {
+      "keys": [
+        "清语表情设置",
+        "配置清语表情插件的各项服务与规则设置"
+      ],
+      "args": {},
+      "ex": "#清语表情设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情命令": {
+      "keys": [
+        "表情命令",
+        "查看清语表情包插件的指令菜单与帮助说明"
+      ],
+      "args": {},
+      "ex": "#表情命令",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情版本": {
+      "keys": [
+        "表情版本",
+        "查看清语表情包插件的当前版本与版本信息"
+      ],
+      "args": {},
+      "ex": "#表情版本",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情详情": {
+      "keys": [
+        "表情详情",
+        "查询指定表情包模板的详细参数与用法说明"
+      ],
+      "args": {},
+      "ex": "#表情详情",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情列表": {
+      "keys": [
+        "表情列表",
+        "展示清语表情插件支持制作的表情包列表"
+      ],
+      "args": {},
+      "ex": "#表情列表",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#群青": {
+      "keys": [
+        "群青",
+        "根据指定触发词生成对应模版的趣味表情包"
+      ],
+      "args": {},
+      "ex": "#群青",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#KAITO说": {
+      "keys": [
+        "KAITO说",
+        "制作角色对话或特定动作主题的趣味表情包"
+      ],
+      "args": {},
+      "ex": "#KAITO说",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#随机表情": {
+      "keys": [
+        "随机表情",
+        "随机抽取并生成一张清语插件的趣味表情包"
+      ],
+      "args": {},
+      "ex": "#随机表情",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情搜索": {
+      "keys": [
+        "表情搜索",
+        "根据关键词搜索匹配可用的表情包模板"
+      ],
+      "args": {},
+      "ex": "#表情搜索",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#表情统计": {
+      "keys": [
+        "表情统计",
+        "查看清语表情插件的使用频率与调用统计"
+      ],
+      "args": {},
+      "ex": "#表情统计",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#清语表情更新": {
+      "keys": [
+        "清语表情更新",
+        "更新或下载清语表情包的素材数据与资源"
+      ],
+      "args": {},
+      "ex": "#清语表情更新",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#清语表情更新日志": {
+      "keys": [
+        "清语表情更新日志",
+        "查看清语表情插件的近期版本更新日志"
+      ],
+      "args": {},
+      "ex": "#清语表情更新日志",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
