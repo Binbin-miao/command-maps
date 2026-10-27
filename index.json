@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-10-27T19:33:21.818Z",
+  "updated": "2026-10-28T04:40:00.000Z",
   "plugins": {
     "system/botOperate.js": {
       "display": "botOperate",
@@ -61,8 +61,8 @@
       "display": "更新",
       "file": "maps/other__update.js.json",
       "fingerprint": "42c59a0511c1",
-      "sha256": "c977b1e2217e61895207e2bca239549dc6d32f0beea3e77b5401a7b757bbd2d1",
-      "bytes": 930,
+      "sha256": "2630938a24858feca6f6e0ee66ff610819b3a7f96838b02f89e084e980853e1a",
+      "bytes": 1014,
       "command_count": 3,
       "package": "other",
       "category": "系统",
