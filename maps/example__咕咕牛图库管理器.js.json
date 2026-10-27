@@ -1,0 +1,207 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "example/咕咕牛图库管理器.js",
+    "fingerprint": "26885d0b0c8e",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#原图": {
+      "keys": [
+        "原图",
+        "回复消息获取对应图片的清晰原图"
+      ],
+      "args": {},
+      "ex": "#原图",
+      "risk": "q",
+      "interactive": false,
+      "used": 2
+    },
+    "#下载咕咕牛": {
+      "keys": [
+        "下载咕咕牛",
+        "下载并安装咕咕牛图库的资源文件"
+      ],
+      "args": {},
+      "ex": "#下载咕咕牛",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#更新咕咕牛": {
+      "keys": [
+        "更新咕咕牛",
+        "更新咕咕牛图库资源至最新版本"
+      ],
+      "args": {},
+      "ex": "#更新咕咕牛",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#重置咕咕牛": {
+      "keys": [
+        "重置咕咕牛",
+        "重置咕咕牛图库的本地配置或数据"
+      ],
+      "args": {},
+      "ex": "#重置咕咕牛",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛状态": {
+      "keys": [
+        "咕咕牛状态",
+        "查看咕咕牛图库当前的运行与资源状态"
+      ],
+      "args": {},
+      "ex": "#咕咕牛状态",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#ban列表": {
+      "keys": [
+        "ban列表",
+        "查看封禁列表或执行图库封禁解禁操作"
+      ],
+      "args": {},
+      "ex": "#ban列表",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛导出": {
+      "keys": [
+        "咕咕牛导出",
+        "导出咕咕牛图库中指定的数据或图片"
+      ],
+      "args": {},
+      "ex": "#咕咕牛导出",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛查看": {
+      "keys": [
+        "咕咕牛查看",
+        "查看咕咕牛图库中的指定图片或内容"
+      ],
+      "args": {},
+      "ex": "#咕咕牛查看",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛帮助": {
+      "keys": [
+        "咕咕牛帮助",
+        "查看咕咕牛图库管理器的使用帮助"
+      ],
+      "args": {},
+      "ex": "#咕咕牛帮助",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛测速": {
+      "keys": [
+        "咕咕牛测速",
+        "测试咕咕牛图库下载源的连接速度"
+      ],
+      "args": {},
+      "ex": "#咕咕牛测速",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛设置": {
+      "keys": [
+        "咕咕牛设置",
+        "查看或打开咕咕牛图库的配置面板"
+      ],
+      "args": {},
+      "ex": "#咕咕牛设置",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#启用咕咕牛": {
+      "keys": [
+        "启用咕咕牛",
+        "启禁用咕咕牛或修改图库各项功能设置"
+      ],
+      "args": {},
+      "ex": "#启用咕咕牛",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#可视化": {
+      "keys": [
+        "可视化"
+      ],
+      "args": {},
+      "ex": "#可视化",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛安装": {
+      "keys": [
+        "咕咕牛安装",
+        "获取咕咕牛图库安装或更新的操作指引"
+      ],
+      "args": {},
+      "ex": "#咕咕牛安装",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛更新": {
+      "keys": [
+        "咕咕牛更新",
+        "更新指定的咕咕牛社区图库资源包"
+      ],
+      "args": {},
+      "ex": "#咕咕牛更新",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛卸载": {
+      "keys": [
+        "咕咕牛卸载",
+        "卸载指定的咕咕牛社区图库资源包"
+      ],
+      "args": {},
+      "ex": "#咕咕牛卸载",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛列表": {
+      "keys": [
+        "咕咕牛列表",
+        "查看咕咕牛图库管理器中的资源列表"
+      ],
+      "args": {},
+      "ex": "#咕咕牛列表",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    },
+    "#咕咕牛诊断": {
+      "keys": [
+        "咕咕牛诊断",
+        "运行咕咕牛哨兵进行全域系统诊断监控"
+      ],
+      "args": {},
+      "ex": "#咕咕牛诊断",
+      "risk": "w",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
