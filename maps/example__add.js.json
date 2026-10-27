@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "plugin": {
+    "key": "example/add.js",
+    "fingerprint": "1577abe88fdc",
+    "updated": "2026-10-27T18:37:30.657Z"
+  },
+  "commands": {
+    "#添加": {
+      "keys": [
+        "添加",
+        "全局或本群添加自定义回复词条"
+      ],
+      "args": {},
+      "ex": "#添加",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#add删除": {
+      "keys": [
+        "add删除",
+        "全局或本群删除自定义添加的消息"
+      ],
+      "args": {},
+      "ex": "#add删除",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    },
+    "#消息": {
+      "keys": [
+        "消息",
+        "查看已添加的全局或群聊消息词条"
+      ],
+      "args": {},
+      "ex": "#消息",
+      "risk": "q",
+      "interactive": false,
+      "used": 0
+    }
+  }
+}
