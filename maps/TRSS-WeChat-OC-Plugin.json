@@ -3,7 +3,8 @@
   "plugin": {
     "key": "TRSS-WeChat-OC-Plugin",
     "fingerprint": "b4a1c5109f31",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#微信个人号更新": {

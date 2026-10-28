@@ -3,7 +3,8 @@
   "plugin": {
     "key": "DF-Plugin",
     "fingerprint": "0f6d1c2e8b1a",
-    "updated": "2026-10-27T19:33:21.810Z"
+    "updated": "2026-10-27T19:33:21.810Z",
+    "revision": 1
   },
   "commands": {
     "#联系主人": {

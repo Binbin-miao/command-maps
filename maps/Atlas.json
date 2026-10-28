@@ -3,7 +3,8 @@
   "plugin": {
     "key": "Atlas",
     "fingerprint": "fa8020462da8",
-    "updated": "2026-10-27T19:33:21.795Z"
+    "updated": "2026-10-27T19:33:21.795Z",
+    "revision": 1
   },
   "commands": {
     "#图鉴帮助": {

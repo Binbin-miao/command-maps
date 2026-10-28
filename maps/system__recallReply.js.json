@@ -3,7 +3,8 @@
   "plugin": {
     "key": "system/recallReply.js",
     "fingerprint": "cb85b6c1fc95",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#撤回": {

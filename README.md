@@ -19,7 +19,7 @@ reports/usage.md           用量与叫法差异（由日志统计生成）
 ```jsonc
 {
   "schema": 1,
-  "plugin": { "key": "delta-force-plugin", "fingerprint": "a1b2c3d4e5f6" },
+  "plugin": { "key": "delta-force-plugin", "fingerprint": "a1b2c3d4e5f6", "revision": 7 },
   "commands": {
     "#三角洲战绩": {
       "keys": ["战绩", "我的战绩", "帮我看看我打得怎么样"],
@@ -33,6 +33,20 @@ reports/usage.md           用量与叫法差异（由日志统计生成）
 ```
 
 **不要在这里写 `call` 或 `what`**：那两份事实属于运行时枚举，写两份必然漂移。
+
+## 版本号（revision）
+
+`index.json` 顶层有 `revision`，每份地图的 `plugin.revision` 各有一个，都是**单调递增整数**。
+
+- `index.revision`：全局发布序号，任何一份地图内容变化时整体 +1。
+- `plugin.revision`：该地图最后一次内容变化时的全局序号。
+
+下载方每天只拉 `index.json`（几 KB）比一下 `revision` 大小，就知道云端有没有新版，
+不用把全文下下来。指纹只看写法集合（`keys` 改了它不变），`sha256` 要下全文才能比，
+所以这两个都不能拿来当"有没有更新"的判据。
+
+**发布流程**：改完地图 → `node scripts/bump-revision.mjs` → 提交。脚本幂等，
+连跑两次第二次不会有任何变动；`--dry-run` 只报告不落盘。
 
 ## 下载方规则（chatgpt-plugin 的指令地图同步）
 
@@ -49,6 +63,7 @@ reports/usage.md           用量与叫法差异（由日志统计生成）
 | `scripts/build-index.mjs` | 由能力表 + 日志生成首版补丁与索引 | 同上 |
 | `scripts/classify-index.mjs` | 按插件包聚合、打用途标签、重写索引与报告 | 同上 |
 | `scripts/expand-keys.mjs` | 给热门指令扩写口语 keys（**花 token**，先 `--dry-run` 看提示词） | 任意有网机器，需 `LLM_BASE_URL/LLM_API_KEY/LLM_MODEL` |
+| `scripts/bump-revision.mjs` | 生成后**必跑**：按内容变化给每份地图与索引写版本号（幂等，支持 `--dry-run`） | 任意有 node 的机器 |
 
 ## 贡献
 

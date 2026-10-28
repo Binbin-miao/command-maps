@@ -3,7 +3,8 @@
   "plugin": {
     "key": "StarRail-plugin",
     "fingerprint": "bd76e5b49bdc",
-    "updated": "2026-10-27T19:33:21.761Z"
+    "updated": "2026-10-27T19:33:21.761Z",
+    "revision": 1
   },
   "commands": {
     "星铁抽卡": {

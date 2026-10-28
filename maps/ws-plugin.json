@@ -3,7 +3,8 @@
   "plugin": {
     "key": "ws-plugin",
     "fingerprint": "b2e1a202b975",
-    "updated": "2026-10-27T19:33:21.784Z"
+    "updated": "2026-10-27T19:33:21.784Z",
+    "revision": 1
   },
   "commands": {
     "#ws设置": {

@@ -3,7 +3,8 @@
   "plugin": {
     "key": "steam-plugin",
     "fingerprint": "bcfbd1ab299b",
-    "updated": "2026-10-27T19:33:21.792Z"
+    "updated": "2026-10-27T19:33:21.792Z",
+    "revision": 1
   },
   "commands": {
     "#steam刷新access_token": {

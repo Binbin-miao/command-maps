@@ -3,7 +3,8 @@
   "plugin": {
     "key": "other/speakRank.js",
     "fingerprint": "88bf5c5f8742",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#发言榜": {

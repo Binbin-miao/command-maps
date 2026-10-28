@@ -3,7 +3,8 @@
   "plugin": {
     "key": "GT-Manual",
     "fingerprint": "f59ccf4f96be",
-    "updated": "2026-10-27T19:33:21.757Z"
+    "updated": "2026-10-27T19:33:21.757Z",
+    "revision": 1
   },
   "commands": {
     "#手动签到": {

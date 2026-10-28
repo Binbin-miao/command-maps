@@ -3,7 +3,8 @@
   "plugin": {
     "key": "ZZZ-Plugin",
     "fingerprint": "3b7915609dd9",
-    "updated": "2026-10-27T19:33:21.804Z"
+    "updated": "2026-10-27T19:33:21.804Z",
+    "revision": 1
   },
   "commands": {
     "zzz式舆防卫战": {

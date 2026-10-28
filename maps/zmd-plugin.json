@@ -3,7 +3,8 @@
   "plugin": {
     "key": "zmd-plugin",
     "fingerprint": "3fca59ea7828",
-    "updated": "2026-10-27T19:33:21.802Z"
+    "updated": "2026-10-27T19:33:21.802Z",
+    "revision": 1
   },
   "commands": {
     "#终末地更新插件": {

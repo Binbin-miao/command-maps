@@ -3,7 +3,8 @@
   "plugin": {
     "key": "genshin",
     "fingerprint": "f05f9dbf2c9e",
-    "updated": "2026-10-27T19:33:21.777Z"
+    "updated": "2026-10-27T19:33:21.777Z",
+    "revision": 1
   },
   "commands": {
     "#七圣查询牌组": {

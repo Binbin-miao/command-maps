@@ -3,7 +3,8 @@
   "plugin": {
     "key": "yenai-plugin",
     "fingerprint": "4e6b31525e8e",
-    "updated": "2026-10-28T02:00:00.000Z"
+    "updated": "2026-10-28T02:00:00.000Z",
+    "revision": 1
   },
   "commands": {
     "#状态": {

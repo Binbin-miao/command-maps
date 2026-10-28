@@ -3,7 +3,8 @@
   "plugin": {
     "key": "meme-plugin",
     "fingerprint": "587482dbb646",
-    "updated": "2026-10-27T19:33:21.754Z"
+    "updated": "2026-10-27T19:33:21.754Z",
+    "revision": 1
   },
   "commands": {
     "#清语表情设置": {

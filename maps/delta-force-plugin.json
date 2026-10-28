@@ -3,7 +3,8 @@
   "plugin": {
     "key": "delta-force-plugin",
     "fingerprint": "fea64c800791",
-    "updated": "2026-10-27T19:33:21.770Z"
+    "updated": "2026-10-27T19:33:21.770Z",
+    "revision": 1
   },
   "commands": {
     "#三角洲订阅 战绩": {
