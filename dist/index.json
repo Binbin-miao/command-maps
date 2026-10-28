@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 26,
-  "updated": "2026-10-28T23:13:33.483Z",
+  "revision": 27,
+  "updated": "2026-10-28T23:21:25.058Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -85,6 +85,20 @@
       "fingerprint": "4d3cc31a8b33",
       "sha256": "297ffbd27bf8c0e0f73eec0278e1f6b493f76f2ee97864c226a498c942688488",
       "bytes": 103465,
+      "used": 0
+    },
+    "TaJiDuo-plugin": {
+      "file": "maps/TaJiDuo-plugin.json",
+      "display": "塔吉多",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 48,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "c8644218f00b",
+      "sha256": "a66e26607a6bfccd754be1e5c8df2108d98ede9cbbb6665586b80a01e6e39df0",
+      "bytes": 104680,
       "used": 0
     },
     "yenai-plugin": {
@@ -182,6 +196,15 @@
       "command_count": 53,
       "units": [
         "StarRail-plugin"
+      ],
+      "used": 0
+    },
+    "TaJiDuo-plugin": {
+      "display": "塔吉多",
+      "category": "游戏",
+      "command_count": 48,
+      "units": [
+        "TaJiDuo-plugin"
       ],
       "used": 0
     },

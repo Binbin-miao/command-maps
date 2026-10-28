@@ -32,6 +32,32 @@ function readPrefixes(dir) {
 }
 
 const prefixes = readPrefixes(srcDir)
+
+// 有的插件不用 rulePrefix，而是导出 PREFIX = { tajiduo: '...', huanta: '...' }
+// 这里把对象里的键值也抓出来，供 ${PREFIX.xxx} 替换
+function readPrefixObject(dir) {
+  const out = {}
+  const walk = d => {
+    for (const f of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, f.name)
+      if (f.isDirectory()) {
+        if (['node_modules', '.git', 'dist'].includes(f.name)) continue
+        walk(p)
+      } else if (f.name.endsWith('.js')) {
+        const t = fs.readFileSync(p, 'utf8')
+        const obj = t.match(/(?:export\s+)?const\s+PREFIX\s*=\s*\{([\s\S]*?)\}/)
+        if (!obj) continue
+        const re = /(\w+)\s*:\s*(['"`])((?:\\.|(?!\2).)*)\2/g
+        let m
+        while ((m = re.exec(obj[1]))) out[m[1]] = m[3].replace(/\\\\/g, '\\')
+      }
+    }
+  }
+  walk(dir)
+  return out
+}
+
+const prefixMap = readPrefixObject(srcDir)
 const regs = []
 const walk = d => {
   for (const f of fs.readdirSync(d, { withFileTypes: true })) {
@@ -47,6 +73,7 @@ const walk = d => {
       while ((m = re.exec(t))) {
         let s = m[1].slice(1, -1).replace(/\\\\/g, '\\')
         for (const pf of prefixes) s = s.split('${rulePrefix}').join(pf)
+        for (const [k, v] of Object.entries(prefixMap)) s = s.split('${PREFIX.' + k + '}').join(v)
         // 剩下的 ${...} 是运行时拼进来的变量：字符类里的当成「任意一个字符」，其它当成 .*
         // 只能近似校验，但比整条判死强
         s = s.replace(/\[\$\{[^}]*\}\]/g, '[^]').replace(/\$\{[^}]*\}/g, '.*')
