@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updated": "2026-10-28T04:40:00.000Z",
+  "updated": "2026-10-28T02:00:00.000Z",
   "plugins": {
     "system/botOperate.js": {
       "display": "botOperate",
@@ -149,8 +149,8 @@
       "display": "椰奶状态",
       "file": "maps/yenai-plugin.json",
       "fingerprint": "4e6b31525e8e",
-      "sha256": "2a1de64a3148786cbe58d6f7762e3e2d37bdd1c2608d59237ef83cdaa58afedf",
-      "bytes": 37826,
+      "sha256": "13fe22b5de225b42b1fa4a348786e96997760bb5f706ca0c963f0af24b15e836",
+      "bytes": 37960,
       "command_count": 140,
       "package": "yenai-plugin",
       "category": "群管理",
