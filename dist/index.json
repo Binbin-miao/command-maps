@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 27,
-  "updated": "2026-10-28T23:21:25.058Z",
+  "revision": 28,
+  "updated": "2026-10-28T23:54:12.796Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -99,6 +99,20 @@
       "fingerprint": "c8644218f00b",
       "sha256": "a66e26607a6bfccd754be1e5c8df2108d98ede9cbbb6665586b80a01e6e39df0",
       "bytes": 104680,
+      "used": 0
+    },
+    "Tlon-Sky": {
+      "file": "maps/Tlon-Sky.json",
+      "display": "光遇",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 51,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "21bf9ec8ebbc",
+      "sha256": "d4832e6a41c12ec5ff6ced30e63ae531d629ceda83ae99ee7b5e24f4c0de20ad",
+      "bytes": 106299,
       "used": 0
     },
     "yenai-plugin": {
@@ -205,6 +219,15 @@
       "command_count": 48,
       "units": [
         "TaJiDuo-plugin"
+      ],
+      "used": 0
+    },
+    "Tlon-Sky": {
+      "display": "光遇",
+      "category": "游戏",
+      "command_count": 51,
+      "units": [
+        "Tlon-Sky"
       ],
       "used": 0
     },
