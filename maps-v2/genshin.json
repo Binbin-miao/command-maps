@@ -1,0 +1,4505 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "genshin",
+    "display": "原神",
+    "category": "游戏",
+    "summary": "原神/星铁/绝区零的账号与查询基础模块：CK 与 UID 绑定、体力与札记、展柜角色/深渊/探索、抽卡记录、七圣召唤卡组、米游社公告推送、养成计算、攻略与素材",
+    "homepage": "https://github.com/yoimiya-kokomi/miao-plugin",
+    "notes": "这是 miao-plugin 的依赖模块，提供 CK/UID 绑定能力，被多个插件复用；Cookie 相关操作全部限制私聊；#体力/#深渊/#角色 等同名指令会被 miao-plugin 与 Yunzai 原生抢，返回哪个取决于插件优先级与配置开关",
+    "interactsWith": [
+      "miao-plugin（依赖本模块的绑定，且同名指令互相抢）",
+      "StarRail-plugin",
+      "ZZZ-Plugin",
+      "xiaoyao-cvs-plugin（#体力/#签到 重叠）"
+    ],
+    "batches": {
+      "covered": [
+        "账号与CK绑定",
+        "角色/深渊/探索查询",
+        "武器与剧诗",
+        "七圣召唤",
+        "邦布",
+        "体力",
+        "抽卡记录",
+        "十连与定轨",
+        "兑换码",
+        "札记",
+        "充值记录",
+        "米游社公告",
+        "别名",
+        "养成计算",
+        "攻略",
+        "突破材料",
+        "生日留影",
+        "公共CK配置"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "genshin/ck-help",
+      "command": "#ck帮助",
+      "aliases": [
+        "#体力帮助",
+        "#cookie帮助"
+      ],
+      "title": "查看 Cookie 绑定教程",
+      "summary": "给出教程链接，并强调要私聊发",
+      "what": "读配置里的 `cookieDoc` 链接，回一句带教程地址的提示。",
+      "returns": "一条纯文本消息。",
+      "returnsDetail": "「Cookie绑定配置教程：<链接>\\n获取Cookie后【私聊发送】进行绑定」。",
+      "timing": "即时。",
+      "cost": "纯本地读配置。",
+      "keywords": [
+        "ck帮助",
+        "体力帮助",
+        "cookie教程",
+        "怎么绑定ck",
+        "绑定教程"
+      ],
+      "params": [],
+      "example": "#ck帮助",
+      "moreExamples": [
+        "#体力帮助",
+        "#cookie帮助"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "正则 `^#?(体力|[Cc](oo)?[Kk](ie)?)帮助` **末尾没有 `$`**，所以 `#ck帮助xxx` 也算命中",
+        "只认 `ck` / `cook` / `ckie` / `cookie` 这几种拼法，**`#cokie帮助` 这种拼错的不认**",
+        "回复内容来自配置项 `cookieDoc`，该链接失效时只会回一个打不开的地址"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "拼成了 cokie 之类正则不覆盖的写法"
+        },
+        {
+          "symptom": "回了打不开的链接",
+          "cause": "配置里的 cookieDoc 已失效"
+        }
+      ],
+      "edgeCases": [
+        "`#ck` 的拼写容错很宽（ck/cookie/cokie/k 等），见 `[Cc](oo)?[Kk](ie)?`"
+      ],
+      "scenarios": [
+        "第一次绑定不知道去哪拿 Cookie"
+      ],
+      "vs": [
+        {
+          "command": "#ck代码",
+          "diff": "那个给的是取 Cookie 的 JS 代码"
+        },
+        {
+          "command": "#绑定ck",
+          "diff": "那个才是真正执行绑定"
+        }
+      ],
+      "related": [
+        "#ck代码",
+        "#绑定ck",
+        "#我的ck",
+        "#检查ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/ck-code",
+      "command": "#ck代码",
+      "aliases": [
+        "#cookie代码"
+      ],
+      "title": "获取一键取 Cookie 的 JS",
+      "summary": "回一段 javascript: 代码",
+      "what": "回一段 `javascript:(()=>{prompt('',document.cookie)})();` 供你在米游社网页地址栏执行。",
+      "returns": "一条纯文本消息（代码本身）。",
+      "returnsDetail": "完整的一行 `javascript:` 伪协议代码，复制到浏览器地址栏回车即可弹出 Cookie。",
+      "timing": "即时。",
+      "cost": "纯本地文本。",
+      "keywords": [
+        "ck代码",
+        "cookie代码",
+        "取cookie",
+        "cookie脚本"
+      ],
+      "params": [],
+      "example": "#ck代码",
+      "moreExamples": [
+        "#cookie代码"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "只认 `ck` / `cook` / `ckie` / `cookie`，**`#cokie代码` 不认**",
+        "这条只回一段 `javascript:` 伪协议代码，需要你自己粘到米游社网页地址栏执行"
+      ],
+      "failures": [
+        {
+          "symptom": "粘贴到地址栏没反应",
+          "cause": "浏览器剥掉了 `javascript:` 前缀，需手动补"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想在浏览器里一键取 Cookie"
+      ],
+      "vs": [
+        {
+          "command": "#ck帮助",
+          "diff": "那个给教程链接"
+        }
+      ],
+      "related": [
+        "#ck帮助",
+        "#绑定ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/bind-ck",
+      "command": "#绑定ck",
+      "aliases": [
+        "#绑定cookie"
+      ],
+      "title": "绑定米游社 Cookie（手动触发）",
+      "summary": "必须先私聊发过 Cookie 内容",
+      "what": "把上一条私聊消息里的 Cookie 写入账号库。没检测到 Cookie 时只回教程。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "没 Cookie 时回「请【私聊】发送米游社Cookie，获取教程：<链接>」；有则执行绑定并回结果。",
+      "timing": "2~8 秒。",
+      "cost": "会调米游社接口校验 Cookie。",
+      "keywords": [
+        "绑定ck",
+        "绑定cookie",
+        "绑ck",
+        "ck绑定"
+      ],
+      "params": [],
+      "example": "#绑定ck",
+      "moreExamples": [
+        "#绑定cookie"
+      ],
+      "preconditions": [
+        "**必须先私聊发一条含 Cookie 的消息**，或直接用 `#绑定ck` 后紧跟着发 Cookie"
+      ],
+      "pitfalls": [
+        "**必须先私聊把 Cookie 发给 bot，再发 `#绑定ck`** —— 它读的是上一条消息",
+        "只认 `ck` / `cook` / `ckie` / `cookie` 四种拼法，**`#绑定cokie` 不认**",
+        "正则 `^#绑定c(oo)?k(ie)?$` **带 `$`**，后面多一个字符都不算"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请【私聊】发送米游社Cookie…」",
+          "cause": "没先发 Cookie，或 Cookie 内容没被识别"
+        },
+        {
+          "symptom": "回「请私聊发送Cookie」（群里）",
+          "cause": "在群里发的"
+        },
+        {
+          "symptom": "回「绑定Cookie失败\\n请先【登录米游社】或【登录通行证】再获取Cookie」",
+          "cause": "Cookie 里缺 `_MHYUUID`，说明是未登录状态抓的"
+        }
+      ],
+      "edgeCases": [
+        "私聊直接粘贴含 ltoken 的内容会自动触发绑定，无需这条命令",
+        "手机端取不到 `ltuid` 时可用 `login_uid` 代替"
+      ],
+      "scenarios": [
+        "绑定米游社账号以使用体力/札记等功能"
+      ],
+      "vs": [
+        {
+          "command": "#绑定123456789",
+          "diff": "那个只绑 UID，不需要 Cookie"
+        },
+        {
+          "command": "#我的ck",
+          "diff": "那个查看已绑的 Cookie"
+        }
+      ],
+      "related": [
+        "#ck帮助",
+        "#ck代码",
+        "#我的ck",
+        "#删除ck",
+        "#检查ck"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/paste-ck",
+      "command": "（私聊直接粘贴 Cookie）",
+      "aliases": [
+        "（私聊发送含 ltoken 与 ltuid 的内容）"
+      ],
+      "title": "私聊粘贴 Cookie 自动绑定",
+      "summary": "不用发指令，检测到就自动绑",
+      "what": "私聊消息里同时出现 `ltoken`/`ltoken_v2` 和 `ltuid`/`login_uid`/`ltmid_v2` 时，插件自动当作 Cookie 并绑定。",
+      "returns": "绑定结果。",
+      "returnsDetail": "成功则提示绑定成功；群里会先提示「请私聊发送Cookie」。",
+      "timing": "2~8 秒。",
+      "cost": "会调米游社接口校验。",
+      "keywords": [
+        "粘贴cookie",
+        "自动绑定",
+        "私聊发cookie",
+        "ltoken"
+      ],
+      "params": [],
+      "example": "（私聊直接粘贴 Cookie 字符串）",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须私聊**",
+        "内容里要有完整的 ltoken + ltuid 组合"
+      ],
+      "pitfalls": [
+        "**群里粘贴会被拦**，只回一句「请私聊发送Cookie」",
+        "只粘贴一半（缺 ltuid 或 ltmid）不会被识别，消息就当普通聊天处理",
+        "含 `_MHYUUID` 但没有 ltoken 时，走的是「未登录」提示分支，回「请先【登录米游社】或【登录通行证】再获取Cookie」",
+        "Cookie 等同账号凭证，粘贴后建议撤回消息（插件不会自动撤回）"
+      ],
+      "failures": [
+        {
+          "symptom": "群里粘贴只回「请私聊发送Cookie」",
+          "cause": "公开场合，被拦"
+        },
+        {
+          "symptom": "回「请先【登录米游社】或【登录通行证】再获取Cookie」",
+          "cause": "抓的是未登录页面的 Cookie"
+        },
+        {
+          "symptom": "粘贴后完全没反应",
+          "cause": "内容里缺 ltoken 或缺 ltuid，没被识别"
+        }
+      ],
+      "edgeCases": [
+        "识别是逐条消息的，一条消息里两段都齐才生效"
+      ],
+      "scenarios": [
+        "最省事的绑定方式"
+      ],
+      "vs": [
+        {
+          "command": "#绑定ck",
+          "diff": "那个是手动触发的兜底入口"
+        }
+      ],
+      "related": [
+        "#绑定ck",
+        "#ck帮助",
+        "#我的ck",
+        "#检查ck"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/my-ck",
+      "command": "#我的ck",
+      "aliases": [
+        "#原神我的ck",
+        "#星铁我的ck",
+        "#绝区零我的ck",
+        "#我的cookie"
+      ],
+      "title": "查看已绑定的 Cookie",
+      "summary": "只能私聊看",
+      "what": "列出当前用户已绑定的 Cookie 账号信息。",
+      "returns": "一条纯文本消息（或图片）。",
+      "returnsDetail": "列出已绑账号与状态。群里调用只回一句「请私聊查看」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读库。",
+      "keywords": [
+        "我的ck",
+        "查看ck",
+        "我的cookie",
+        "绑了哪些号"
+      ],
+      "params": [],
+      "example": "#我的ck",
+      "moreExamples": [
+        "#我的cookie",
+        "#星铁我的ck"
+      ],
+      "preconditions": [
+        "**必须私聊**"
+      ],
+      "pitfalls": [
+        "**群里调用只回「请私聊查看」**，这是防止 Cookie 信息泄露",
+        "只显示已绑的，不显示 UID 绑定",
+        "看 UID 绑定要用 `#uid`"
+      ],
+      "failures": [
+        {
+          "symptom": "群里只回「请私聊查看」",
+          "cause": "这是群聊限制"
+        }
+      ],
+      "edgeCases": [
+        "多个账号时按顺序列出"
+      ],
+      "scenarios": [
+        "确认自己绑了哪些账号"
+      ],
+      "vs": [
+        {
+          "command": "#uid",
+          "diff": "那个看 UID 绑定与当前选中项"
+        },
+        {
+          "command": "#检查ck",
+          "diff": "那个检测 Cookie 是否还有效"
+        }
+      ],
+      "related": [
+        "#uid",
+        "#检查ck",
+        "#删除ck",
+        "#绑定ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/del-ck",
+      "command": "#删除ck",
+      "aliases": [
+        "#原神删除ck",
+        "#星铁删除ck",
+        "#绝区零删除ck",
+        "#删除cookie"
+      ],
+      "title": "删除已绑定的 Cookie",
+      "summary": "清掉 Cookie 绑定",
+      "what": "从账号库移除当前用户的 Cookie 绑定。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "提示删除结果。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地删库。",
+      "keywords": [
+        "删除ck",
+        "解绑ck",
+        "删除cookie",
+        "取消绑定"
+      ],
+      "params": [],
+      "example": "#删除ck",
+      "moreExamples": [
+        "#删除cookie",
+        "#星铁删除ck"
+      ],
+      "preconditions": [
+        "之前绑过 Cookie"
+      ],
+      "pitfalls": [
+        "**删 Cookie 不等于删 UID** —— 想连 UID 一起删要另外 `#删除uid1`",
+        "删完体力/札记/深渊等依赖 CK 的功能会全部失效",
+        "不带游戏前缀时可能只删默认游戏的，或删全部（取决于实现）"
+      ],
+      "failures": [
+        {
+          "symptom": "说没绑定",
+          "cause": "本来就没绑或已删"
+        }
+      ],
+      "edgeCases": [
+        "重新绑定需要重新抓 Cookie"
+      ],
+      "scenarios": [
+        "换号或担心凭证泄露"
+      ],
+      "vs": [
+        {
+          "command": "#删除uid1",
+          "diff": "那个删的是 UID 绑定"
+        }
+      ],
+      "related": [
+        "#我的ck",
+        "#删除uid1",
+        "#绑定ck"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "genshin/bind-uid",
+      "command": "#绑定123456789",
+      "aliases": [
+        "#原神绑定123456789",
+        "#星铁绑定123456789",
+        "#绝区零绑定123456789",
+        "#绑定uid+123456789"
+      ],
+      "title": "绑定游戏 UID",
+      "summary": "9 位或 8 位数字，不需要 Cookie",
+      "what": "把 UID 写进当前用户的绑定列表。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "提示绑定成功与 UID。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地写库（可能校验一次）。",
+      "keywords": [
+        "绑定uid",
+        "绑定原神",
+        "绑定星铁",
+        "绑定绝区零",
+        "uid绑定"
+      ],
+      "params": [
+        {
+          "name": "UID",
+          "required": true,
+          "desc": "8~9 位数字；可用 `+` 分隔，如 `#绑定uid+123456789`"
+        }
+      ],
+      "example": "#绑定123456789",
+      "moreExamples": [
+        "#原神绑定123456789",
+        "#星铁绑定123456789",
+        "#绑定uid+123456789"
+      ],
+      "preconditions": [
+        "无需 Cookie"
+      ],
+      "pitfalls": [
+        "**UID 必须是 8~9 位**（`(1[0-9]|[1-9])[0-9]{8}` 或 `[1-9][0-9]{7}`），位数不对不匹配",
+        "**只绑 UID 不能查体力/札记/深渊**（那些要 Cookie），只能查展柜公开数据",
+        "不带游戏前缀时按默认游戏（原神）理解",
+        "绑 UID 不校验该 UID 是否属于你",
+        "**`#绑定uid` 单独发没有反应** —— 正则要求末尾必须是 8~10 位数字，`user.js` 里那段 `if (/^#?(原神)?绑定uid$/)` 在没有数字时根本进不到函数，属于死代码",
+        "`uid` 两个字可以省：`#绑定123456789` 与 `#绑定uid123456789` 等价"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "UID 位数不对（少于 8 位或多于 9 位）"
+        },
+        {
+          "symptom": "发 `#绑定uid` 完全没反应",
+          "cause": "这条指令没有对应规则，必须把 UID 一起发"
+        }
+      ],
+      "edgeCases": [
+        "同一游戏可绑多个 UID，用 `#uid` 查看并用序号切换"
+      ],
+      "scenarios": [
+        "只想看别人展柜数据",
+        "不想给 Cookie"
+      ],
+      "vs": [
+        {
+          "command": "#绑定ck",
+          "diff": "那个绑 Cookie，功能更全"
+        },
+        {
+          "command": "#uid",
+          "diff": "那个查看已绑 UID"
+        }
+      ],
+      "related": [
+        "#uid",
+        "#删除uid1",
+        "#绑定ck",
+        "#原神绑定uid"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/show-uid",
+      "command": "#uid",
+      "aliases": [
+        "#我的uid",
+        "#uid1",
+        "#原神uid",
+        "#星铁uid",
+        "#绝区零uid"
+      ],
+      "title": "查看或切换已绑 UID",
+      "summary": "不带数字是查看，带数字是切换",
+      "what": "不带数字时列出已绑 UID 与序号；带 1~2 位数字时把该序号的 UID 切换为当前。",
+      "returns": "一条纯文本消息。",
+      "returnsDetail": "列出各 UID 与序号，当前选中的会标注。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读写。",
+      "keywords": [
+        "uid",
+        "我的uid",
+        "切换uid",
+        "绑了哪些uid"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": false,
+          "desc": "1~2 位数字；不写则只查看"
+        }
+      ],
+      "example": "#uid",
+      "moreExamples": [
+        "#uid1",
+        "#我的uid",
+        "#星铁uid"
+      ],
+      "preconditions": [
+        "已绑过 UID"
+      ],
+      "pitfalls": [
+        "**带数字是切换，不是查询那个 UID 的信息** —— 容易误解",
+        "序号从 1 起，来自 `#uid` 的列表",
+        "切换后再查面板/深渊，用的就是新 UID"
+      ],
+      "failures": [
+        {
+          "symptom": "说没绑定",
+          "cause": "一个 UID 都没绑"
+        }
+      ],
+      "edgeCases": [
+        "序号超出范围时切换无效"
+      ],
+      "scenarios": [
+        "在多账号间切换",
+        "确认当前用的是哪个 UID"
+      ],
+      "vs": [
+        {
+          "command": "#我的ck",
+          "diff": "那个看 Cookie 绑定"
+        },
+        {
+          "command": "#删除uid1",
+          "diff": "那个删指定序号"
+        }
+      ],
+      "related": [
+        "#我的ck",
+        "#绑定123456789",
+        "#删除uid1"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/del-uid",
+      "command": "#删除uid1",
+      "aliases": [
+        "#解绑uid1",
+        "#原神删除uid1",
+        "#星铁解绑uid2"
+      ],
+      "title": "删除指定序号的 UID",
+      "summary": "必须带序号",
+      "what": "按序号删除已绑定的 UID。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "不带序号时回「删除uid请带上序号\\n例如：#删除uid1\\n发送【#uid】可查看绑定的uid以及对应的序号」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地删库。",
+      "keywords": [
+        "删除uid",
+        "解绑uid",
+        "移除uid"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": true,
+          "desc": "1~2 位数字，从 `#uid` 列表里抄"
+        }
+      ],
+      "example": "#删除uid1",
+      "moreExamples": [
+        "#解绑uid1",
+        "#星铁解绑uid2"
+      ],
+      "preconditions": [
+        "该序号已绑 UID"
+      ],
+      "pitfalls": [
+        "**必须带序号**，不带只回使用提示",
+        "序号来自 `#uid` 列表，删错会误删他人？不会 —— 只操作自己的",
+        "删完序号会重排，连续删多个时要重新看列表"
+      ],
+      "failures": [
+        {
+          "symptom": "回「删除uid请带上序号…」",
+          "cause": "没写序号"
+        }
+      ],
+      "edgeCases": [
+        "`+` 分隔的写法也支持（正则里允许 `\\s|\\+`）"
+      ],
+      "scenarios": [
+        "清理不再用的 UID"
+      ],
+      "vs": [
+        {
+          "command": "#删除ck",
+          "diff": "那个删 Cookie"
+        }
+      ],
+      "related": [
+        "#uid",
+        "#删除ck",
+        "#绑定123456789"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "genshin/check-ck",
+      "command": "#检查ck",
+      "aliases": [
+        "#我的ck状态",
+        "#检查ck状态",
+        "#检查cookie"
+      ],
+      "title": "检测 Cookie 是否有效",
+      "summary": "排查「功能突然不能用」",
+      "what": "逐个校验已绑 Cookie 的登录状态。",
+      "returns": "本该是一条状态文本，**当前版本大概率完全没有反应**。",
+      "returnsDetail": "正则写坏后即使命中，也只会走 `checkCkStatus` 逐条校验并回文本。",
+      "timing": "3~15 秒（要挨个打接口）。",
+      "cost": "走米游社接口，每个账号一次请求。",
+      "keywords": [
+        "检查ck",
+        "ck状态",
+        "cookie有效吗",
+        "ck过期"
+      ],
+      "params": [],
+      "example": "#检查ck",
+      "moreExamples": [
+        "#我的ck状态",
+        "#检查cookie"
+      ],
+      "preconditions": [
+        "已绑 Cookie"
+      ],
+      "pitfalls": [
+        "**这条正则在当前版本是坏的** —— 源码里是 `/^#\\\\s*(检查|我的)*c(oo)?k(ie)?(状态)*$/i`，正则字面量里的 `\\\\s` 是两个反斜杠，等价于「字面反斜杠 + 若干个 s」，所以 `#检查ck`、`#ck`、`#我的ck状态` **全部匹配不上**",
+        "唯一能命中的写法是 `#\\检查ck`（真打一个反斜杠），显然不是给人用的 —— 属插件 bug，不是用法问题",
+        "想确认 CK 是否有效，暂时改用 `#我的ck` 看有没有记录，或用 `#体力` 试一次看是否报登录失效"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#检查ck` 完全没反应",
+          "cause": "正则里的 `\\\\s` 写成了字面反斜杠，这条规则实际失效"
+        },
+        {
+          "symptom": "想查 CK 状态但没有别的入口",
+          "cause": "当前版本没有替代指令，只能看 `#我的ck` 或直接试 `#体力`"
+        }
+      ],
+      "edgeCases": [
+        "`(检查|我的)*` 和 `(状态)*` 都是零次以上，所以即使正则正常，`#ck` 这一种也会命中"
+      ],
+      "scenarios": [
+        "功能突然不能用"
+      ],
+      "vs": [
+        {
+          "command": "#我的ck",
+          "diff": "那个只列账号，不校验"
+        }
+      ],
+      "related": [
+        "#我的ck",
+        "#绑定ck",
+        "#体力"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/bind-note-user",
+      "command": "#绑定用户",
+      "aliases": [
+        "#绑定主用户",
+        "#绑定子账号",
+        "#绑定账户",
+        "#接受绑定用户[gs]",
+        "#绑定主用户[gs]"
+      ],
+      "title": "绑定主/子用户关系",
+      "summary": "主子账号互查用的绑定",
+      "what": "在多用户场景下建立主子账号绑定关系，支持带 `[gs]`/`[sr]`/`[zzz]` 这类游戏标注。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "提示绑定结果。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写库。",
+      "keywords": [
+        "绑定用户",
+        "绑定主用户",
+        "绑定子账号",
+        "主子绑定"
+      ],
+      "params": [
+        {
+          "name": "类型",
+          "required": false,
+          "desc": "`主`/`子` + `用户`/`账户`/`账号`"
+        },
+        {
+          "name": "游戏标注",
+          "required": false,
+          "desc": "`[gs]` / `[sr]` / `[zzz]`，可写两段"
+        }
+      ],
+      "example": "#绑定用户",
+      "moreExamples": [
+        "#绑定主用户",
+        "#绑定子账号[gs]",
+        "#绑定用户[sr][gs]"
+      ],
+      "preconditions": [
+        "无需 Cookie"
+      ],
+      "pitfalls": [
+        "这是**多用户/多账号场景**用的，日常单人使用用不到",
+        "游戏标注是方括号加小写缩写（`[gs]`/`[sr]`/`[zzz]`），写成 `[GS]` 不匹配（正则只允许小写和数字符号）",
+        "和 `#绑定uid`、`#绑定ck` 完全是三件事"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "方括号里内容不合规（只允许字母数字和 `_-:`）"
+        }
+      ],
+      "edgeCases": [
+        "最多两段标注"
+      ],
+      "scenarios": [
+        "一个 QQ 号管理多个游戏账号"
+      ],
+      "vs": [
+        {
+          "command": "#解绑主账号",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#解绑主账号",
+        "#绑定123456789",
+        "#绑定ck"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/unbind-note-user",
+      "command": "#解绑主账号",
+      "aliases": [
+        "#删除绑定主用户",
+        "#取消绑定子账号",
+        "#解除绑定主账户",
+        "#解绑子账号"
+      ],
+      "title": "解除主子用户绑定",
+      "summary": "六个动词都能用",
+      "what": "解除已建立的主/子用户绑定关系。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "提示解绑结果。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地删库。",
+      "keywords": [
+        "解绑主账号",
+        "取消绑定",
+        "解除绑定",
+        "解绑子账号"
+      ],
+      "params": [
+        {
+          "name": "类型",
+          "required": true,
+          "desc": "`删除绑定`/`取消绑定`/`解除绑定`/`解绑`/`删除`/`取消` + `主`/`子` + `用户`/`账户`/`账号`"
+        }
+      ],
+      "example": "#解绑主账号",
+      "moreExamples": [
+        "#取消绑定子用户",
+        "#解除绑定主账户"
+      ],
+      "preconditions": [
+        "之前绑过主子关系"
+      ],
+      "pitfalls": [
+        "六个动词 × 两种主次 × 三种称呼 = 很多组合，都能匹配",
+        "**这条不解绑 UID 也不删 Cookie**，只解除用户间关系",
+        "注意和 `#删除` 的区别：`#删除ck` 是删凭证，`#删除主账号` 是解除关系"
+      ],
+      "failures": [
+        {
+          "symptom": "说没有绑定关系",
+          "cause": "本来就没绑"
+        }
+      ],
+      "edgeCases": [
+        "没带主/子时不匹配（规则要求必须有）"
+      ],
+      "scenarios": [
+        "不再需要多账号管理"
+      ],
+      "vs": [
+        {
+          "command": "#绑定用户",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#绑定用户",
+        "#删除ck",
+        "#删除uid1"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "genshin/user-admin",
+      "command": "#用户统计",
+      "aliases": [],
+      "title": "查看全站用户统计",
+      "summary": "主人专用：一张统计图",
+      "what": "统计已绑用户/UID/Cookie 数量与状态，渲染成一张管理图。",
+      "returns": "一张统计图片（带按钮）。",
+      "returnsDetail": "含用户总数、各游戏 UID 数、Cookie 有效/失效数等。",
+      "timing": "3~15 秒。",
+      "cost": "读本地库 + 渲染。",
+      "keywords": [
+        "用户统计",
+        "统计",
+        "多少用户",
+        "绑定统计"
+      ],
+      "params": [],
+      "example": "#用户统计",
+      "moreExamples": [],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**这条在别的插件里也有同名指令**（如 miao 帮助里也列了 `#用户统计`），容易撞",
+        "会暴露绑定规模，属运营数据",
+        "非主人调用无响应"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "库很大时统计会慢"
+      ],
+      "scenarios": [
+        "巡检绑定情况"
+      ],
+      "vs": [
+        {
+          "command": "#刷新用户缓存",
+          "diff": "那个是重建缓存"
+        }
+      ],
+      "related": [
+        "#刷新用户缓存",
+        "#删除无效用户",
+        "#检查ck"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "genshin/reset-user-cache",
+      "command": "#刷新用户缓存",
+      "aliases": [
+        "#重置用户缓存",
+        "#刷新用户统计",
+        "#重置用户ck",
+        "#刷新用户ck"
+      ],
+      "title": "重建用户缓存",
+      "summary": "主人专用：刷新或重置",
+      "what": "重新初始化用户在内存里的缓存；带「重置」时会先清空老数据再重建。",
+      "returns": "一条纯文本结果（带按钮）。",
+      "returnsDetail": "「用户缓存已刷新...」或「用户缓存已重置...\\n通过【#用户统计】命令可查看详情」。",
+      "timing": "2~10 秒。",
+      "cost": "纯本地重建缓存。",
+      "keywords": [
+        "刷新用户缓存",
+        "重置用户缓存",
+        "重建缓存",
+        "用户ck缓存"
+      ],
+      "params": [],
+      "example": "#刷新用户缓存",
+      "moreExamples": [
+        "#重置用户缓存",
+        "#刷新用户ck"
+      ],
+      "preconditions": [
+        "必须是机器人主人"
+      ],
+      "pitfalls": [
+        "**「重置」会清空老数据**，比「刷新」重；不确定时先用刷新",
+        "只重建内存缓存，不动磁盘上的绑定文件",
+        "改完这个再 `#用户统计` 才能看到效果"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "重置后如果磁盘数据有问题，可能重建出空缓存"
+      ],
+      "scenarios": [
+        "改了绑定数据后让插件重新加载"
+      ],
+      "vs": [
+        {
+          "command": "#删除无效用户",
+          "diff": "那个是清理失效账号"
+        }
+      ],
+      "related": [
+        "#用户统计",
+        "#删除无效用户"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "genshin/del-disable-user",
+      "command": "#删除无效用户",
+      "aliases": [
+        "#删除失效用户",
+        "#删除无效ck",
+        "#删除失效ck"
+      ],
+      "title": "清理失效账号",
+      "summary": "主人专用：批量删掉过期绑定",
+      "what": "扫描并删除 Cookie 已失效的用户绑定。",
+      "returns": "一条纯文本结果（带按钮）。",
+      "returnsDetail": "「已删除N个无效用户」或「暂无无效用户...」。",
+      "timing": "5~60 秒（用户多时较久）。",
+      "cost": "需逐个校验 Cookie 有效性，请求量大。",
+      "keywords": [
+        "删除无效用户",
+        "清理失效ck",
+        "删除失效用户",
+        "清理过期"
+      ],
+      "params": [],
+      "example": "#删除无效用户",
+      "moreExamples": [
+        "#删除失效ck"
+      ],
+      "preconditions": [
+        "必须是机器人主人"
+      ],
+      "pitfalls": [
+        "**会真的删数据，不可恢复**",
+        "判断依据是 Cookie 校验失败，可能把临时风控的账号也当无效删掉",
+        "用户多时耗时且请求密集，容易触发风控",
+        "删之前建议先 `#用户统计` 看一眼规模"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无无效用户...」",
+          "cause": "没有失效的"
+        },
+        {
+          "symptom": "删完用户抱怨要重新绑",
+          "cause": "被误判为失效"
+        }
+      ],
+      "edgeCases": [
+        "临时风控导致的校验失败也可能被算作无效"
+      ],
+      "scenarios": [
+        "定期清理瘦身"
+      ],
+      "vs": [
+        {
+          "command": "#刷新用户缓存",
+          "diff": "那个只重建缓存，不删数据"
+        }
+      ],
+      "related": [
+        "#用户统计",
+        "#刷新用户缓存",
+        "#检查ck"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "genshin/role-card",
+      "command": "#角色卡片",
+      "aliases": [
+        "#角色3",
+        "角色"
+      ],
+      "title": "查看展柜角色列表",
+      "summary": "从米游社展柜读角色，不需要 CK",
+      "what": "读该 UID 在米游社公开的角色展柜数据，渲染成角色列表图。",
+      "returns": "一张角色列表图片（带按钮）。",
+      "returnsDetail": "列出展柜里的角色（等级、命座等），底部带「角色/探索/武器/深渊/剧诗」按钮。",
+      "timing": "4~15 秒。",
+      "cost": "走米游社公开接口（不需要 CK）。",
+      "keywords": [
+        "角色",
+        "角色卡片",
+        "角色列表",
+        "展柜角色",
+        "我有哪些角色"
+      ],
+      "params": [],
+      "example": "#角色卡片",
+      "moreExamples": [
+        "#角色3",
+        "角色"
+      ],
+      "preconditions": [
+        "已绑 UID",
+        "**游戏内展柜要放角色并开放查看**"
+      ],
+      "pitfalls": [
+        "**`#角色` 加井号反而不认** —— 正则是 `^(#*角色3|#*角色卡片|角色)$`，第三个分支是裸的「角色」二字，前两个分支必须带「3」或「卡片」后缀",
+        "所以正确写法只有三种：`角色`、`#角色卡片`、`#角色3`",
+        "**`#角色` 在 miao-plugin 里是另一条指令**，两边不是一回事"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#角色` 没反应",
+          "cause": "井号 + 角色 不在正则的三个分支里，去掉井号或改成 `#角色卡片`"
+        },
+        {
+          "symptom": "出来的不是这个插件的图",
+          "cause": "被 miao-plugin 或原生接手"
+        },
+        {
+          "symptom": "角色不全",
+          "cause": "展柜只放了几个角色"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "没绑 UID 或展柜未开放"
+        }
+      ],
+      "edgeCases": [
+        "`#角色3` 这个写法是历史遗留别名"
+      ],
+      "scenarios": [
+        "快速看展柜角色"
+      ],
+      "vs": [
+        {
+          "command": "#雷神面板",
+          "diff": "miao 的详细面板，含圣遗物评分"
+        },
+        {
+          "command": "#喵喵角色",
+          "diff": "miao 的角色列表，含好感度与武器"
+        }
+      ],
+      "related": [
+        "#武器",
+        "#深渊",
+        "#探索",
+        "#绑定123456789"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/abyss",
+      "command": "#深渊",
+      "aliases": [
+        "#深境螺旋",
+        "#深境",
+        "#上期深渊",
+        "#本期深渊",
+        "#往期深渊"
+      ],
+      "title": "查看深渊战绩",
+      "summary": "需要 CK，与 miao 版互抢",
+      "what": "读该 UID 的深境螺旋战绩并渲染。",
+      "returns": "一张深渊战绩图片（带按钮）。",
+      "returnsDetail": "列出各层通关情况、队伍与星数。",
+      "timing": "4~15 秒。",
+      "cost": "走米游社接口（部分数据需 CK）。",
+      "keywords": [
+        "深渊",
+        "深境螺旋",
+        "深渊战绩",
+        "深境",
+        "打了几层"
+      ],
+      "params": [],
+      "example": "#深渊",
+      "moreExamples": [
+        "#深境螺旋",
+        "#本期深渊",
+        "#上期深渊"
+      ],
+      "preconditions": [
+        "已绑 UID",
+        "部分数据需要 CK"
+      ],
+      "pitfalls": [
+        "**`#深渊` 是三方争夺的指令**：miao-plugin（开了「深渊」配置项后）、Yunzai 原生、还有这条。谁响应取决于优先级和开关",
+        "正则里的 `[上期|往期|本期]` 是**字符类不是分组** —— `|` 被当字面字符处理。所以它能匹配 `#上期深渊`（因为「上」「期」都在字符类里），但这是凑巧，不是设计",
+        "带「层」字（如 `#深渊12层`）走的是另一条规则 `#深渊12层`",
+        "刚打完深渊需要等米游社同步，不同步会显示旧数据"
+      ],
+      "failures": [
+        {
+          "symptom": "出来的不是这个插件的图",
+          "cause": "被 miao 或原生接手"
+        },
+        {
+          "symptom": "数据是上期的",
+          "cause": "米游社还没同步本期数据"
+        }
+      ],
+      "edgeCases": [
+        "正则末尾没有 `$`，后面带空格数字也能匹配"
+      ],
+      "scenarios": [
+        "看本期深渊进度"
+      ],
+      "vs": [
+        {
+          "command": "#深渊12层",
+          "diff": "那个只看 12 层"
+        },
+        {
+          "command": "#雷神排名",
+          "diff": "miao 的群排名，不是自己的战绩"
+        }
+      ],
+      "related": [
+        "#深渊12层",
+        "#角色",
+        "#体力"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/abyss-floor",
+      "command": "#深渊12层",
+      "aliases": [
+        "#深境螺旋第12层",
+        "#本期深渊12层",
+        "#深渊9层",
+        "#深渊十一层"
+      ],
+      "title": "只看深渊指定层",
+      "summary": "支持 9~12 层，中文数字也行",
+      "what": "只展示指定层的深渊详情。",
+      "returns": "一张该层的详情图片。",
+      "returnsDetail": "该层的通关情况、队伍与星数。",
+      "timing": "4~12 秒。",
+      "cost": "走米游社接口。",
+      "keywords": [
+        "深渊12层",
+        "深渊9层",
+        "第12层",
+        "单层深渊"
+      ],
+      "params": [
+        {
+          "name": "层数",
+          "required": true,
+          "desc": "9/10/11/12 或 九/十/十一/十二"
+        }
+      ],
+      "example": "#深渊12层",
+      "moreExamples": [
+        "#深渊9层",
+        "#深渊十一层",
+        "#深境螺旋第12层"
+      ],
+      "preconditions": [
+        "已绑 UID"
+      ],
+      "pitfalls": [
+        "**只支持 9~12 层**（正则写死 `(9|10|11|12|九|十|十一|十二)`），8 层及以下不匹配",
+        "「层」字前面可以带「第」，写 `#深渊第12层` 也行",
+        "`#深渊12层` 命中的是**这条规则**，不是 `#深渊` 那条 —— 之前 miao 的调研里说「`#深渊12层` 不匹配 miao 版」，指的就是这个：它落到 genshin 这条来了"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写了 8 层或更低"
+        }
+      ],
+      "edgeCases": [
+        "中文数字十一/十二 也认"
+      ],
+      "scenarios": [
+        "只看最难的 12 层"
+      ],
+      "vs": [
+        {
+          "command": "#深渊",
+          "diff": "那个看全部层"
+        }
+      ],
+      "related": [
+        "#深渊",
+        "#角色"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/weapon",
+      "command": "#武器",
+      "aliases": [
+        "#五星武器",
+        "#四星武器",
+        "#5星武器",
+        "#4星武器"
+      ],
+      "title": "查看展柜武器列表",
+      "summary": "可按星级筛",
+      "what": "读展柜里的武器数据并渲染列表图。",
+      "returns": "一张武器列表图片（带按钮）。",
+      "returnsDetail": "列出武器（星级、等级、精炼等）。",
+      "timing": "4~12 秒。",
+      "cost": "走米游社公开接口。",
+      "keywords": [
+        "武器",
+        "武器列表",
+        "五星武器",
+        "四星武器",
+        "我有哪些武器"
+      ],
+      "params": [
+        {
+          "name": "星级",
+          "required": false,
+          "desc": "五/四/5/4星"
+        }
+      ],
+      "example": "#武器",
+      "moreExamples": [
+        "#五星武器",
+        "#四星武器"
+      ],
+      "preconditions": [
+        "已绑 UID",
+        "展柜/米游社有武器数据"
+      ],
+      "pitfalls": [
+        "**星级筛选写法的正则也是字符类**（`[五星|四星|5星|4星]*`），所以它其实匹配的是这些单字的任意组合，`#星武器` 之类也可能命中",
+        "只显示已公开的武器数据",
+        "`#武器` 这个裸词可能被其他插件的武器查询抢"
+      ],
+      "failures": [
+        {
+          "symptom": "列表为空",
+          "cause": "米游社没有公开武器数据"
+        }
+      ],
+      "edgeCases": [
+        "星级不写时列全部"
+      ],
+      "scenarios": [
+        "看自己有哪些武器"
+      ],
+      "vs": [
+        {
+          "command": "#角色",
+          "diff": "那个是角色列表"
+        }
+      ],
+      "related": [
+        "#角色",
+        "#深渊"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/explore",
+      "command": "#探索",
+      "aliases": [
+        "#宝箱",
+        "#成就",
+        "#尘歌壶",
+        "#家园",
+        "#探险",
+        "#声望",
+        "#探险度",
+        "#探索度"
+      ],
+      "title": "查看探索与收集进度",
+      "summary": "宝箱/成就/家园/声望一起看",
+      "what": "读该 UID 的探索类数据（宝箱数、成就数、尘歌壶、声望、探索度）并渲染。",
+      "returns": "一张探索进度图片（带按钮）。",
+      "returnsDetail": "列出宝箱、成就、家园、声望、各区域探索度等。",
+      "timing": "4~15 秒。",
+      "cost": "走米游社接口（部分需 CK）。",
+      "keywords": [
+        "探索",
+        "探索度",
+        "宝箱",
+        "成就",
+        "声望",
+        "尘歌壶",
+        "家园"
+      ],
+      "params": [],
+      "example": "#探索",
+      "moreExamples": [
+        "#宝箱",
+        "#成就",
+        "#探索度",
+        "#声望"
+      ],
+      "preconditions": [
+        "已绑 UID"
+      ],
+      "pitfalls": [
+        "**八个词是同一功能的别名**，写哪个都出同一张图",
+        "`#探索` 这个裸词在 miao 帮助里被列为「借用别家」，说明它常被误认为 miao 的功能 —— 实际是这条",
+        "数据来自米游社，游戏内没同步前是旧值"
+      ],
+      "failures": [
+        {
+          "symptom": "无数据或图空白",
+          "cause": "米游社无公开数据，或缺 CK"
+        }
+      ],
+      "edgeCases": [
+        "不同游戏的探索项不一样，星铁可能只有部分"
+      ],
+      "scenarios": [
+        "查探索度还差多少"
+      ],
+      "vs": [
+        {
+          "command": "#角色",
+          "diff": "那个是角色列表"
+        }
+      ],
+      "related": [
+        "#角色",
+        "#武器",
+        "#体力"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/combat",
+      "command": "#剧诗",
+      "aliases": [
+        "#幻想真境剧诗"
+      ],
+      "title": "查看幻想真境剧诗",
+      "summary": "与 miao 的幻想统计不同",
+      "what": "渲染幻想真境剧诗相关数据。",
+      "returns": "一张剧诗图片（带按钮）。",
+      "returnsDetail": "剧诗进度与相关信息。",
+      "timing": "4~15 秒。",
+      "cost": "走米游社接口。",
+      "keywords": [
+        "剧诗",
+        "幻想真境剧诗",
+        "剧诗进度"
+      ],
+      "params": [],
+      "example": "#剧诗",
+      "moreExamples": [
+        "#幻想真境剧诗"
+      ],
+      "preconditions": [
+        "已绑 UID"
+      ],
+      "pitfalls": [
+        "**和 miao 的 `#幻想` 不是一回事** —— miao 那个是「上传并展示出场/使用数据」，这条是 genshin 模块自己的剧诗查询",
+        "`#剧诗` 必须精确结尾，带「数据」二字不匹配（那是 miao 的写法）",
+        "`#幻想` 单独一个词不匹配这条"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写成了 `#剧诗数据` 或 `#幻想`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看剧诗进度"
+      ],
+      "vs": [
+        {
+          "command": "#幻想",
+          "diff": "miao 的剧诗数据统计"
+        },
+        {
+          "command": "#幻想真境剧诗数据",
+          "diff": "miao 的写法"
+        }
+      ],
+      "related": [
+        "#深渊",
+        "#角色"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/seven-saints-deck",
+      "command": "#七圣查询牌组",
+      "aliases": [
+        "#七圣召唤查询牌组",
+        "#七圣查询卡组",
+        "#七圣查询牌组3"
+      ],
+      "title": "查七圣召唤牌组",
+      "summary": "带数字看具体牌组",
+      "what": "不带数字时列出牌组索引；带 1~2 位数字时看该牌组详情。",
+      "returns": "一张牌组图片（带按钮）。",
+      "returnsDetail": "不带数字出索引列表；带数字出该牌组的组成。底部带「牌组/角色牌/行动牌」按钮。",
+      "timing": "3~12 秒。",
+      "cost": "本地卡牌数据 + 渲染。",
+      "keywords": [
+        "七圣召唤",
+        "七圣牌组",
+        "牌组查询",
+        "卡组"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": false,
+          "desc": "1~2 位数字"
+        }
+      ],
+      "example": "#七圣查询牌组",
+      "moreExamples": [
+        "#七圣召唤查询牌组",
+        "#七圣查询牌组3"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "「牌组」和「卡组」都认",
+        "带数字是看具体牌组，不带是列表",
+        "序号只支持 1~2 位（`[0-9]{0,2}`）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "序号超过 2 位"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "查某个牌组怎么配"
+      ],
+      "vs": [
+        {
+          "command": "#七圣查询角色牌",
+          "diff": "那个查卡牌，不是牌组"
+        }
+      ],
+      "related": [
+        "#七圣查询角色牌",
+        "#七圣查询行动牌"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/seven-saints-cards",
+      "command": "#七圣查询角色牌",
+      "aliases": [
+        "#七圣查询行动牌",
+        "#七圣召唤查询角色牌",
+        "#七圣查询卡牌",
+        "#七圣查询牌"
+      ],
+      "title": "查七圣召唤卡牌",
+      "summary": "角色牌 / 行动牌 / 全部",
+      "what": "按消息里有没有「角色」「行动」决定查角色牌、行动牌还是全部卡牌。",
+      "returns": "一张卡牌图片（带按钮）。",
+      "returnsDetail": "先回「卡牌数据获取中...」，再出图。",
+      "timing": "3~12 秒。",
+      "cost": "本地卡牌数据 + 渲染。",
+      "keywords": [
+        "七圣召唤卡牌",
+        "角色牌",
+        "行动牌",
+        "七圣卡牌列表"
+      ],
+      "params": [
+        {
+          "name": "类型",
+          "required": false,
+          "desc": "写「角色」→ 角色牌；写「行动」→ 行动牌；都不写 → 默认"
+        }
+      ],
+      "example": "#七圣查询角色牌",
+      "moreExamples": [
+        "#七圣查询行动牌",
+        "#七圣查询卡牌"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**类型靠消息里有没有「角色」/「行动」这几个字来判断**，不是靠参数位置",
+        "会先回一句「卡牌数据获取中...」，别以为卡住了"
+      ],
+      "failures": [
+        {
+          "symptom": "出的是默认牌而不是角色牌",
+          "cause": "消息里没有「角色」二字"
+        }
+      ],
+      "edgeCases": [
+        "两个词都出现时「角色」优先（代码先判角色）"
+      ],
+      "scenarios": [
+        "查七圣有哪些角色牌"
+      ],
+      "vs": [
+        {
+          "command": "#七圣查询牌组",
+          "diff": "那个查牌组"
+        }
+      ],
+      "related": [
+        "#七圣查询牌组"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/buddy",
+      "command": "#绝区零邦布",
+      "aliases": [
+        "#绝区邦布",
+        "#绝区零人偶",
+        "#绝区人偶"
+      ],
+      "title": "查看绝区零邦布",
+      "summary": "一小块数据图",
+      "what": "读邦布数据并渲染图片。",
+      "returns": "一张邦布图片。",
+      "returnsDetail": "邦布列表/详情。",
+      "timing": "3~10 秒。",
+      "cost": "走米游社接口。",
+      "keywords": [
+        "邦布",
+        "绝区零邦布",
+        "人偶"
+      ],
+      "params": [],
+      "example": "#绝区零邦布",
+      "moreExamples": [
+        "#绝区邦布",
+        "#绝区零人偶"
+      ],
+      "preconditions": [
+        "已绑绝区零 UID"
+      ],
+      "pitfalls": [
+        "**`#邦布` 不认** —— 正则是 `^#*绝区零?(邦布|人偶)$`，「绝区」两字是硬性要求，只有末尾的「零」可省",
+        "所以只有 `#绝区邦布` / `#绝区零邦布` / `#绝区人偶` / `#绝区零人偶` 四种写法"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#邦布` 没反应",
+          "cause": "缺「绝区」前缀，改成 `#绝区邦布`"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "没绑绝区零 UID，或接口无数据"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看自己的邦布"
+      ],
+      "vs": [
+        {
+          "command": "#绝区零体力",
+          "diff": "那个看体力"
+        }
+      ],
+      "related": [
+        "#绝区零体力",
+        "#绑定123456789"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/note",
+      "command": "#体力",
+      "aliases": [
+        "#树脂",
+        "#查询体力",
+        "#原神体力",
+        "#星铁体力"
+      ],
+      "title": "查看体力",
+      "summary": "多账号会连环出多张图",
+      "what": "读已绑 CK 账号的体力数据渲染成图；**绑了多个 UID 时会逐个账号各出一张图**。",
+      "returns": "一张或多张体力图片。",
+      "returnsDetail": "含当前体力/树脂、回满时间、每日任务、探索派遣等。",
+      "timing": "3~10 秒（每个账号）。",
+      "cost": "走米游社接口，**每个 UID 一次请求**。",
+      "keywords": [
+        "体力",
+        "树脂",
+        "查询体力",
+        "树脂回满",
+        "还剩多少体力"
+      ],
+      "params": [],
+      "example": "#体力",
+      "moreExamples": [
+        "#树脂",
+        "#原神体力",
+        "#星铁体力"
+      ],
+      "preconditions": [
+        "已绑 UID + **CK**（体力必须 CK）"
+      ],
+      "pitfalls": [
+        "**这条和 miao、xiaoyao-cvs 等同名指令严重冲突**，谁响应看优先级（本模块 priority 300）",
+        "**绑了多个 CK 账号时会连续发多张图**，群里看着像刷屏",
+        "必须绑 CK，只有 UID 查不到体力",
+        "`#体力帮助` 走的是 CK 教程，不是这条"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "没绑 CK，或被其他插件接手"
+        },
+        {
+          "symptom": "连发好几张图",
+          "cause": "绑了多个账号，每个各出一张"
+        },
+        {
+          "symptom": "数据不准",
+          "cause": "米游社接口有延迟"
+        }
+      ],
+      "edgeCases": [
+        "不带游戏前缀时按 `e.game` 或默认原神",
+        "绝区零体力走的是 `#绝区零体力` 那条独立规则"
+      ],
+      "scenarios": [
+        "看树脂回满时间"
+      ],
+      "vs": [
+        {
+          "command": "#绝区零体力",
+          "diff": "那个是绝区零的独立实现"
+        },
+        {
+          "command": "#原石",
+          "diff": "那个是札记收入"
+        }
+      ],
+      "related": [
+        "#绝区零体力",
+        "#原石",
+        "#检查ck",
+        "#绑定ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/note-zzz",
+      "command": "#绝区零体力",
+      "aliases": [
+        "#绝区零树脂",
+        "#绝区零查询体力"
+      ],
+      "title": "查看绝区零体力",
+      "summary": "独立实现，不是复用原神那条",
+      "what": "读绝区零体力数据并渲染。",
+      "returns": "一张绝区零体力图片。",
+      "returnsDetail": "含电量/体力、恢复时间、每日任务等。",
+      "timing": "3~10 秒。",
+      "cost": "走米游社接口。",
+      "keywords": [
+        "绝区零体力",
+        "zzz体力",
+        "绝区零树脂"
+      ],
+      "params": [],
+      "example": "#绝区零体力",
+      "moreExamples": [
+        "#绝区零树脂"
+      ],
+      "preconditions": [
+        "已绑绝区零 UID + CK"
+      ],
+      "pitfalls": [
+        "**必须带「绝区零」前缀**，单发 `#体力` 走的是原神/星铁那条",
+        "绝区零的体力叫「电量」，但指令沿用「体力/树脂」",
+        "取不到数据时静默返回"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "没绑绝区零 CK"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看绝区零电量"
+      ],
+      "vs": [
+        {
+          "command": "#体力",
+          "diff": "那个是原神/星铁"
+        }
+      ],
+      "related": [
+        "#体力",
+        "#邦布",
+        "#绑定123456789"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/gacha-link",
+      "command": "（发送含 authkey 的抽卡链接）",
+      "aliases": [
+        "（粘贴抽卡记录页 URL）"
+      ],
+      "title": "粘贴抽卡链接自动导入",
+      "summary": "检测到 authkey 就自动拉记录",
+      "what": "消息里出现 `authkey=` 时自动解析该链接，拉取抽卡记录并出图；群里会额外提示撤回。",
+      "returns": "一张抽卡记录图片；群里再加一句「已收到链接，请撤回」。",
+      "returnsDetail": "按池子展示抽卡记录与出金情况。",
+      "timing": "5~25 秒。",
+      "cost": "走米游社抽卡接口（authkey 有效期很短）。",
+      "keywords": [
+        "抽卡链接",
+        "authkey",
+        "导入抽卡",
+        "粘贴链接"
+      ],
+      "params": [],
+      "example": "（粘贴 https://...authkey=xxx 的抽卡记录页链接）",
+      "moreExamples": [],
+      "preconditions": [
+        "**链接里的 authkey 必须还有效**（通常几小时内）"
+      ],
+      "pitfalls": [
+        "**链接里必须有 `authkey=`**，否则不会被识别",
+        "authkey **过期很快**，隔天再贴就拉不到数据",
+        "群里粘贴会提示「已收到链接，请撤回」，但**插件不会自动帮你撤回**",
+        "链接等同账号凭证，群里粘贴有泄露风险"
+      ],
+      "failures": [
+        {
+          "symptom": "粘贴后没反应",
+          "cause": "链接里没有 `authkey=`"
+        },
+        {
+          "symptom": "有反应但没数据",
+          "cause": "authkey 已过期"
+        }
+      ],
+      "edgeCases": [
+        "星铁抽卡链接格式相同，靠链接内容判断游戏"
+      ],
+      "scenarios": [
+        "第一次导入抽卡记录"
+      ],
+      "vs": [
+        {
+          "command": "#导入记录",
+          "diff": "那个是导入 JSON 文件，不是链接"
+        },
+        {
+          "command": "#抽卡记录",
+          "diff": "那个是查看已有数据"
+        }
+      ],
+      "related": [
+        "#导入记录",
+        "#导出记录",
+        "#抽卡记录",
+        "#记录帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/import-log",
+      "command": "#导入记录",
+      "aliases": [
+        "#强制导入记录",
+        "#导入记录json",
+        "#原神导入记录",
+        "#星铁导入记录"
+      ],
+      "title": "导入抽卡记录 JSON",
+      "summary": "群里要加「强制」",
+      "what": "进入上下文，等你发 JSON 文件（或含 http 的链接）后导入。",
+      "returns": "一条文本确认 + 导入结果。",
+      "returnsDetail": "群里不带「强制」时回「建议私聊导入，若你确认要在此导入，请发送【#强制导入记录】」；私聊或带强制则回「请发送Json文件」。收到文件后「已收到文件，请撤回」。",
+      "timing": "3~20 秒。",
+      "cost": "纯本地解析。",
+      "keywords": [
+        "导入记录",
+        "导入抽卡",
+        "json导入",
+        "uigf"
+      ],
+      "params": [],
+      "example": "#导入记录",
+      "moreExamples": [
+        "#强制导入记录",
+        "#星铁导入记录"
+      ],
+      "preconditions": [
+        "**群里必须加「强制」二字**"
+      ],
+      "pitfalls": [
+        "**群里不带「强制」会被拦下**，只给一句建议私聊的提示",
+        "分两步：先发这条进上下文，再发文件",
+        "收到文件后会提示撤回（同样不会自动撤）",
+        "JSON 需是 UIGF 格式，格式不对会导入失败"
+      ],
+      "failures": [
+        {
+          "symptom": "回「建议私聊导入…」",
+          "cause": "群里没加「强制」"
+        },
+        {
+          "symptom": "发了文件没反应",
+          "cause": "上下文超时，或文件不是 JSON"
+        }
+      ],
+      "edgeCases": [
+        "也支持发一个含 JSON 的 http 链接"
+      ],
+      "scenarios": [
+        "从别的工具迁移抽卡数据"
+      ],
+      "vs": [
+        {
+          "command": "#导出记录",
+          "diff": "反向操作"
+        },
+        {
+          "command": "（粘贴 authkey 链接）",
+          "diff": "那个是直接从接口拉，不用文件"
+        }
+      ],
+      "related": [
+        "#导出记录",
+        "#抽卡记录",
+        "#记录帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/gacha-show",
+      "command": "#抽卡记录",
+      "aliases": [
+        "#角色记录",
+        "#武器记录",
+        "#常驻记录",
+        "#集录记录",
+        "#up记录",
+        "#新手记录",
+        "#全部记录",
+        "#光锥记录",
+        "#抽卡祈愿",
+        "#抽卡分析"
+      ],
+      "title": "查看抽卡记录",
+      "summary": "按池子看，也可看全部",
+      "what": "读本地抽卡数据渲染记录图；消息里含「全部」时合并所有池子。",
+      "returns": "一张抽卡记录图片（带按钮）。",
+      "returnsDetail": "按池子展示抽卡条目与出金；含「全部」时出合并版。",
+      "timing": "4~15 秒。",
+      "cost": "纯本地读数据 + 渲染。",
+      "keywords": [
+        "抽卡记录",
+        "角色记录",
+        "武器记录",
+        "常驻记录",
+        "全部记录",
+        "抽卡分析"
+      ],
+      "params": [
+        {
+          "name": "池子",
+          "required": false,
+          "desc": "角色/武器/集录/常驻/up/新手/光锥；写「全部」则合并"
+        }
+      ],
+      "example": "#抽卡记录",
+      "moreExamples": [
+        "#角色记录",
+        "#武器记录",
+        "#全部记录",
+        "#星铁光锥记录"
+      ],
+      "preconditions": [
+        "本地已有抽卡数据（先粘贴链接或导入 JSON）"
+      ],
+      "pitfalls": [
+        "**`#抽卡记录` 这个裸词和 miao 的同名指令冲突** —— miao 开了「抽卡」配置项后走 miao 版",
+        "「全部」是靠消息里有没有「全部」二字判断的，不是参数位置",
+        "本地没数据时不会给教程，需要先自己导入"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "本地没数据，或被 miao 接手"
+        },
+        {
+          "symptom": "记录不全",
+          "cause": "authkey 过期后新抽的没导进来"
+        }
+      ],
+      "edgeCases": [
+        "星铁用「光锥」而不是「武器」"
+      ],
+      "scenarios": [
+        "看自己抽卡流水"
+      ],
+      "vs": [
+        {
+          "command": "#抽卡统计",
+          "diff": "那个是统计数据不是明细"
+        }
+      ],
+      "related": [
+        "#抽卡统计",
+        "#记录帮助",
+        "（粘贴含 authkey 的链接）",
+        "#导出记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/export-log",
+      "command": "#导出记录",
+      "aliases": [
+        "#强制导出记录",
+        "#导出记录json",
+        "#导出记录v2",
+        "#导出记录v4"
+      ],
+      "title": "导出抽卡记录",
+      "summary": "群里要加「强制」，可选 uigf 版本",
+      "what": "把本地抽卡记录导出成 JSON 文件。",
+      "returns": "一个 JSON 文件（或文件路径）。",
+      "returnsDetail": "按 UIGF v4（默认）或 v2 格式导出。",
+      "timing": "2~10 秒。",
+      "cost": "纯本地写文件。",
+      "keywords": [
+        "导出记录",
+        "导出抽卡",
+        "uigf",
+        "备份抽卡"
+      ],
+      "params": [
+        {
+          "name": "版本",
+          "required": false,
+          "desc": "`v2` 或 `v4`；不写默认 v4"
+        }
+      ],
+      "example": "#导出记录",
+      "moreExamples": [
+        "#强制导出记录",
+        "#导出记录v2"
+      ],
+      "preconditions": [
+        "本地有抽卡数据",
+        "**群里必须加「强制」**"
+      ],
+      "pitfalls": [
+        "**群里不带「强制」会被拦**，只给建议私聊的提示",
+        "v2 和 v4 是不同 UIGF 标准，导给别的工具前确认对方支持哪个",
+        "导出的是本地已有数据，不是从接口现拉"
+      ],
+      "failures": [
+        {
+          "symptom": "回「建议私聊导出…」",
+          "cause": "群里没加「强制」"
+        }
+      ],
+      "edgeCases": [
+        "本地无数据时导出空文件或失败"
+      ],
+      "scenarios": [
+        "备份或迁移到别的工具"
+      ],
+      "vs": [
+        {
+          "command": "#导入记录",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#导入记录",
+        "#抽卡记录",
+        "#记录帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/log-help",
+      "command": "#记录帮助",
+      "aliases": [
+        "#抽卡帮助"
+      ],
+      "title": "抽卡记录获取教程",
+      "summary": "一张图 + 三个平台按钮",
+      "what": "发一张记录帮助图，附「电脑/安卓/苹果」三个按钮。",
+      "returns": "一张教程图片 + 按钮。",
+      "returnsDetail": "图里讲怎么抓抽卡链接；按钮点开后对应平台的详细教程。",
+      "timing": "2~5 秒。",
+      "cost": "纯本地读图。",
+      "keywords": [
+        "记录帮助",
+        "抽卡帮助",
+        "抽卡教程",
+        "怎么抓抽卡链接"
+      ],
+      "params": [],
+      "example": "#记录帮助",
+      "moreExamples": [
+        "#抽卡帮助"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "`#抽卡帮助` 这个裸词和 miao 的同名指令冲突",
+        "按钮需要协议端支持 button 段，不支持的客户端看不到",
+        "只是教程，不做任何导入"
+      ],
+      "failures": [
+        {
+          "symptom": "看不到按钮",
+          "cause": "协议端不支持按钮"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "不知道怎么抓抽卡链接"
+      ],
+      "vs": [
+        {
+          "command": "#安卓帮助",
+          "diff": "那个是安卓专项（回文本链接）"
+        }
+      ],
+      "related": [
+        "#安卓帮助",
+        "#电脑帮助",
+        "#苹果帮助",
+        "（粘贴含 authkey 的链接）"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/device-help",
+      "command": "#安卓帮助",
+      "aliases": [
+        "#苹果帮助",
+        "#电脑帮助",
+        "#pc帮助",
+        "#ios帮助"
+      ],
+      "title": "各平台抓取教程",
+      "summary": "安卓给链接，电脑/苹果给图",
+      "what": "按平台给对应的抓取教程：安卓回文本链接，电脑和苹果各发一张图。",
+      "returns": "文本链接（安卓）或图片（电脑/苹果）。",
+      "returnsDetail": "安卓：「安卓抽卡记录获取教程：<url>」；电脑/苹果：对应的教程图片。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地。",
+      "keywords": [
+        "安卓帮助",
+        "苹果帮助",
+        "电脑帮助",
+        "ios帮助",
+        "抓抽卡教程"
+      ],
+      "params": [],
+      "example": "#安卓帮助",
+      "moreExamples": [
+        "#苹果帮助",
+        "#电脑帮助",
+        "#pc帮助"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**四个词必须是精确的**：`安卓` / `苹果` / `ios` / `电脑` / `pc`，写「安卓端」不匹配",
+        "安卓是文本链接，电脑和苹果是图片，形态不一样",
+        "只在 `#记录帮助` 之后用比较顺，单独发也行"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写了「安卓端」「手机」这类不在列表里的词"
+        }
+      ],
+      "edgeCases": [
+        "`ios` 和 `苹果` 等价，`pc` 和 `电脑` 等价"
+      ],
+      "scenarios": [
+        "按自己设备看教程"
+      ],
+      "vs": [
+        {
+          "command": "#记录帮助",
+          "diff": "那个是总入口"
+        }
+      ],
+      "related": [
+        "#记录帮助",
+        "（粘贴含 authkey 的链接）"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/gacha-count",
+      "command": "#抽卡统计",
+      "aliases": [
+        "#抽奖统计",
+        "#角色统计",
+        "#武器统计",
+        "#集录统计",
+        "#常驻统计",
+        "#up统计",
+        "#新手统计",
+        "#光锥统计"
+      ],
+      "title": "抽卡统计数据",
+      "summary": "按池子汇总，不出明细",
+      "what": "读本地抽卡数据，按池子汇总统计并渲染。",
+      "returns": "一张统计图片（带按钮）。",
+      "returnsDetail": "按池子列出抽数、出金数、平均等。",
+      "timing": "4~12 秒。",
+      "cost": "纯本地 + 渲染。",
+      "keywords": [
+        "抽卡统计",
+        "抽奖统计",
+        "出金率",
+        "角色统计",
+        "武器统计"
+      ],
+      "params": [
+        {
+          "name": "池子",
+          "required": false,
+          "desc": "角色/武器/集录/常驻/up/新手/光锥"
+        }
+      ],
+      "example": "#抽卡统计",
+      "moreExamples": [
+        "#角色统计",
+        "#武器统计",
+        "#星铁光锥统计"
+      ],
+      "preconditions": [
+        "本地有抽卡数据"
+      ],
+      "pitfalls": [
+        "和 `#抽卡记录` 的区别是**只给汇总不给明细**",
+        "裸词 `#抽卡统计` 可能被 miao 的同名指令抢",
+        "只统计本地已有数据"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "本地没数据"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看自己整体出金率"
+      ],
+      "vs": [
+        {
+          "command": "#抽卡记录",
+          "diff": "那个是明细"
+        }
+      ],
+      "related": [
+        "#抽卡记录",
+        "#记录帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/set-full-log",
+      "command": "#设置全量更新抽卡记录 开",
+      "aliases": [
+        "#设置全量获取抽卡记录 关",
+        "#设置全量更新祈愿记录on",
+        "#设置全量获取抽卡记录off"
+      ],
+      "title": "开关全量拉取抽卡记录",
+      "summary": "静默生效，没有回复",
+      "what": "设置拉取抽卡记录时是否走全量模式。",
+      "returns": "**没有任何回复**（静默生效）。",
+      "returnsDetail": "设置成功后不回复。",
+      "timing": "即时。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "设置全量更新抽卡记录",
+        "全量拉取",
+        "全量抽卡"
+      ],
+      "params": [
+        {
+          "name": "开关",
+          "required": false,
+          "desc": "`开`/`on` 或 `关`/`off`；不写默认视为开"
+        }
+      ],
+      "example": "#设置全量更新抽卡记录 开",
+      "moreExamples": [
+        "#设置全量获取抽卡记录 关",
+        "#设置全量更新祈愿记录on"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**完全静默，没有任何回复** —— 不是失败",
+        "「更新」和「获取」两种动词都认，「抽卡」和「祈愿」也都认",
+        "开全量后每次拉取都很慢，请求量大",
+        "不写开关参数时按「开」处理（`isOff` 判断的是消息里有没有「关」/`off`）"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "正常现象，本来就不回复"
+        }
+      ],
+      "edgeCases": [
+        "写「关掉」也含「关」字，会被当关闭"
+      ],
+      "scenarios": [
+        "记录缺漏严重时开全量补一次"
+      ],
+      "vs": [
+        {
+          "command": "#导入记录",
+          "diff": "那个是导文件"
+        }
+      ],
+      "related": [
+        "#抽卡记录",
+        "#记录帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/ten-pull",
+      "command": "#十连",
+      "aliases": [
+        "#单抽",
+        "#10连",
+        "#抽卡",
+        "#十连武器池",
+        "#十连常驻"
+      ],
+      "title": "模拟十连抽卡",
+      "summary": "本地模拟，不消耗真实资源",
+      "what": "本地模拟抽卡（十连或单抽），可选池子。",
+      "returns": "一张模拟结果图片。",
+      "returnsDetail": "展示抽到的角色/武器与星级。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地概率模拟。",
+      "keywords": [
+        "十连",
+        "抽卡",
+        "单抽",
+        "模拟抽卡",
+        "抽奖"
+      ],
+      "params": [
+        {
+          "name": "次数",
+          "required": false,
+          "desc": "`十` / `单` / `10` / `1`"
+        },
+        {
+          "name": "池子",
+          "required": false,
+          "desc": "`武器池` / `常驻`"
+        }
+      ],
+      "example": "#十连",
+      "moreExamples": [
+        "#单抽",
+        "#十连武器池",
+        "#抽"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**`#抽` 一个字不成立** —— 正则是 `^#*(10|[武器池常驻]*[十]+|抽|单)[连抽卡奖][123武器池常驻]*$`，`抽` 后面还必须跟「连/抽/卡/奖」之一",
+        "合法写法：`#十连`、`#单抽`、`#抽卡`、`#10连`、`#十连武器池`、`#十连常驻`",
+        "这条是**本地模拟**，不消耗真实抽卡次数，也不写入抽卡记录"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#抽` 没反应",
+          "cause": "末尾缺「连/抽/卡/奖」，改成 `#抽卡` 或 `#十连`"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "写法不在正则覆盖范围内"
+        }
+      ],
+      "edgeCases": [
+        "`#抽卡` 和 `#抽` 都在覆盖范围内，容易和 `#抽卡记录` 类指令混"
+      ],
+      "scenarios": [
+        "想抽卡但没资源时过过瘾"
+      ],
+      "vs": [
+        {
+          "command": "#抽卡记录",
+          "diff": "那个是真实记录，不是模拟"
+        }
+      ],
+      "related": [
+        "#定轨",
+        "#抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/dinggui",
+      "command": "#定轨",
+      "aliases": [
+        "#定轨雾切"
+      ],
+      "title": "模拟武器定轨",
+      "summary": "配合十连用的模拟功能",
+      "what": "模拟武器池定轨抽卡。",
+      "returns": "一张模拟结果图片。",
+      "returnsDetail": "展示定轨过程与结果。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地模拟。",
+      "keywords": [
+        "定轨",
+        "武器定轨",
+        "定轨模拟"
+      ],
+      "params": [
+        {
+          "name": "武器名",
+          "required": false,
+          "desc": "如 `雾切`"
+        }
+      ],
+      "example": "#定轨",
+      "moreExamples": [
+        "#定轨雾切"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**同样是纯模拟**，不影响游戏内定轨",
+        "规则是 `(^#*定轨|^#定轨(.*))$`，`#定轨` 后面可以跟武器名"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写法不匹配"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "模拟定轨到底要多少抽"
+      ],
+      "vs": [
+        {
+          "command": "#十连",
+          "diff": "那个是普通抽卡模拟"
+        }
+      ],
+      "related": [
+        "#十连"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/exchange-code",
+      "command": "#兑换码",
+      "aliases": [
+        "#前瞻兑换码",
+        "#原神兑换码",
+        "#星铁兑换码",
+        "#绝区零兑换码",
+        "#崩三兑换码",
+        "#直播兑换码"
+      ],
+      "title": "查看前瞻直播兑换码",
+      "summary": "多游戏都支持",
+      "what": "拉取对应游戏的前瞻/直播兑换码。",
+      "returns": "一条文本或多条消息。",
+      "returnsDetail": "列出兑换码。",
+      "timing": "2~10 秒。",
+      "cost": "走第三方接口。",
+      "keywords": [
+        "兑换码",
+        "前瞻兑换码",
+        "直播兑换码",
+        "礼包码"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": false,
+          "desc": "原神/星铁/崩铁/崩三/崩坏三/崩坏3/绝区零"
+        },
+        {
+          "name": "场次",
+          "required": false,
+          "desc": "`直播` 或 `前瞻`"
+        }
+      ],
+      "example": "#兑换码",
+      "moreExamples": [
+        "#前瞻兑换码",
+        "#星铁兑换码",
+        "#绝区零兑换码"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**正则允许 `#` 或 `*` 前缀，甚至不带前缀**（`(#|\\*)?`），所以 `兑换码` 三个字也可能触发",
+        "只有前瞻直播期间才有码",
+        "不支持的游戏前缀会落到默认逻辑"
+      ],
+      "failures": [
+        {
+          "symptom": "没有码",
+          "cause": "当前没有前瞻直播"
+        }
+      ],
+      "edgeCases": [
+        "`崩坏三`/`崩三`/`崩坏3` 三种写法等价"
+      ],
+      "scenarios": [
+        "前瞻直播后领码"
+      ],
+      "vs": [
+        {
+          "command": "#兑换码使用",
+          "diff": "那个是自动去兑换"
+        }
+      ],
+      "related": [
+        "#兑换码使用"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/use-exchange-code",
+      "command": "#兑换码使用 xxxxx",
+      "aliases": [
+        "#原神兑换码使用 xxxxx",
+        "#星铁兑换码使用 xxxxx",
+        "#cdk-u xxxxx"
+      ],
+      "title": "自动兑换兑换码",
+      "summary": "用绑定的 CK 去兑换",
+      "what": "用已绑 CK 把指定兑换码提交到米游社兑换接口。",
+      "returns": "兑换结果。",
+      "returnsDetail": "逐账号返回兑换成功/失败原因。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口（需 CK）。",
+      "keywords": [
+        "兑换码使用",
+        "自动兑换",
+        "cdk",
+        "兑换礼包"
+      ],
+      "params": [
+        {
+          "name": "兑换码",
+          "required": true,
+          "desc": "兑换码本身，写在指令后"
+        }
+      ],
+      "example": "#兑换码使用 ABCD1234",
+      "moreExamples": [
+        "#原神兑换码使用 ABCD1234",
+        "#cdk-u ABCD1234"
+      ],
+      "preconditions": [
+        "已绑定 CK"
+      ],
+      "pitfalls": [
+        "**正则是 `^#(原神|星铁|绝区零)?(兑换码使用|cdk-u).+ `，末尾有空格要求** —— 兑换码后面最好留个空格，否则可能不匹配",
+        "必须绑 CK，没 CK 兑不了",
+        "兑换有服务器限制（官服/B服不同），错服会失败",
+        "同一码重复兑换会提示已使用"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "末尾没有空格，或前缀不对"
+        },
+        {
+          "symptom": "兑换失败",
+          "cause": "码过期、已用、或与账号服务器不匹配"
+        }
+      ],
+      "edgeCases": [
+        "多账号时会逐个尝试兑换"
+      ],
+      "scenarios": [
+        "批量兑换前瞻码"
+      ],
+      "vs": [
+        {
+          "command": "#兑换码",
+          "diff": "那个只是查看码，不兑换"
+        }
+      ],
+      "related": [
+        "#兑换码",
+        "#绑定ck"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/ledger",
+      "command": "#原石",
+      "aliases": [
+        "#札记",
+        "#原石9月",
+        "#原石十一月",
+        "#星琼",
+        "#星铁星琼"
+      ],
+      "title": "查看当月原石收入",
+      "summary": "米游社札记，需要 CK",
+      "what": "读米游社札记数据，渲染当月（或指定月份）的原石/星琼收支明细。",
+      "returns": "一张札记图片（带按钮）。",
+      "returnsDetail": "含收入构成、支出、结余等。",
+      "timing": "4~15 秒。",
+      "cost": "走米游社札记接口（需 CK）。",
+      "keywords": [
+        "原石",
+        "札记",
+        "星琼",
+        "原石收入",
+        "这个月赚了多少"
+      ],
+      "params": [
+        {
+          "name": "月份",
+          "required": false,
+          "desc": "数字或中文数字 + 可选「月」，如 `9` `9月` `十一月`"
+        }
+      ],
+      "example": "#原石",
+      "moreExamples": [
+        "#札记",
+        "#原石9月",
+        "#原石十一月",
+        "#星琼"
+      ],
+      "preconditions": [
+        "已绑定 UID + **CK**（札记必须 CK）"
+      ],
+      "pitfalls": [
+        "**必须绑 CK**，只有 UID 查不到札记",
+        "月份写法支持阿拉伯数字与中文数字（一/二/两/三…），但**只能到十几**，超过的月份写法靠猜",
+        "`#原石` 这个裸词可能被其他插件的原石统计抢",
+        "数据是米游社札记，有延迟（当天数据可能未结算）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "没绑 CK"
+        },
+        {
+          "symptom": "数据是 0",
+          "cause": "该月没玩或数据未结算"
+        }
+      ],
+      "edgeCases": [
+        "不带月份默认当月",
+        "星铁用「星琼」这个词"
+      ],
+      "scenarios": [
+        "看这个月攒了多少原石"
+      ],
+      "vs": [
+        {
+          "command": "#原石统计",
+          "diff": "那个是全年/历年汇总"
+        }
+      ],
+      "related": [
+        "#原石统计",
+        "#原石任务",
+        "#体力",
+        "#检查ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/ledger-task",
+      "command": "#原石任务",
+      "aliases": [
+        "#星琼任务",
+        "#星铁星琼任务"
+      ],
+      "title": "手动触发札记抓取任务",
+      "summary": "主人专用",
+      "what": "手动跑一次札记数据抓取任务。",
+      "returns": "执行结果。",
+      "returnsDetail": "提示任务执行情况。",
+      "timing": "5~30 秒。",
+      "cost": "会给所有绑定用户抓札记，请求量随用户数增长。",
+      "keywords": [
+        "原石任务",
+        "札记任务",
+        "抓取任务",
+        "星琼任务"
+      ],
+      "params": [],
+      "example": "#原石任务",
+      "moreExamples": [
+        "#星琼任务"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**会遍历所有用户抓数据**，用户多时很慢且请求密集",
+        "非主人调用无响应",
+        "通常由定时任务自动跑，手动跑是补数据"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "失败的账号不影响其他人"
+      ],
+      "scenarios": [
+        "定时任务漏跑了手动补一次"
+      ],
+      "vs": [
+        {
+          "command": "#原石",
+          "diff": "那个只查自己"
+        }
+      ],
+      "related": [
+        "#原石",
+        "#原石统计",
+        "#用户统计"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "genshin/ledger-count",
+      "command": "#原石统计",
+      "aliases": [
+        "#札记统计",
+        "#星琼统计",
+        "#星铁星琼统计"
+      ],
+      "title": "全年原石收入统计",
+      "summary": "按年汇总",
+      "what": "统计当年（或全部）原石/星琼收入，渲染成统计图。",
+      "returns": "一张统计图片（带按钮）。",
+      "returnsDetail": "按月/来源汇总收入。",
+      "timing": "5~20 秒。",
+      "cost": "走米游社札记接口 + 本地数据。",
+      "keywords": [
+        "原石统计",
+        "札记统计",
+        "星琼统计",
+        "全年收入",
+        "一年攒了多少"
+      ],
+      "params": [],
+      "example": "#原石统计",
+      "moreExamples": [
+        "#札记统计",
+        "#星铁星琼统计"
+      ],
+      "preconditions": [
+        "已绑定 UID + CK",
+        "有历史札记数据"
+      ],
+      "pitfalls": [
+        "需要历史数据积累，新绑的账号统计不全",
+        "数据来自本地库 + 米游社，缺哪个月就少哪个月"
+      ],
+      "failures": [
+        {
+          "symptom": "统计不全",
+          "cause": "历史数据缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看一年总共产出多少原石"
+      ],
+      "vs": [
+        {
+          "command": "#原石",
+          "diff": "那个只看单月"
+        },
+        {
+          "command": "#去年原石统计",
+          "diff": "那个指定年份"
+        }
+      ],
+      "related": [
+        "#原石",
+        "#去年原石统计"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/ledger-history",
+      "command": "#去年原石统计",
+      "aliases": [
+        "#今年原石统计",
+        "#2025年原石统计",
+        "#2024年札记统计",
+        "#去年星琼统计"
+      ],
+      "title": "指定年份的原石统计",
+      "summary": "去年/今年/具体年份",
+      "what": "按指定年份统计原石/星琼收入。",
+      "returns": "一张统计图片（带按钮）。",
+      "returnsDetail": "该年按月/来源汇总。",
+      "timing": "5~20 秒。",
+      "cost": "走米游社接口 + 本地数据。",
+      "keywords": [
+        "去年原石统计",
+        "今年原石统计",
+        "年度统计",
+        "2024原石"
+      ],
+      "params": [
+        {
+          "name": "年份",
+          "required": true,
+          "desc": "`去年` / `今年` / `2024年` 这类"
+        }
+      ],
+      "example": "#去年原石统计",
+      "moreExamples": [
+        "#今年原石统计",
+        "#2025年原石统计",
+        "#去年星琼统计"
+      ],
+      "preconditions": [
+        "已绑定 UID + CK",
+        "该年有历史数据"
+      ],
+      "pitfalls": [
+        "**年份后面必须带「年」字** —— 正则 `^#*(去年|今年|\\d{4}年)(原石|札记|(星铁)?星琼)统计$`，所以 `#2025原石统计` 不匹配，要写 `#2025年原石统计`",
+        "`去年` / `今年` 两种相对写法不用带「年」",
+        "只统计**已同步过**的月份，没同步过的月份不会补算"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#2025原石统计` 没反应",
+          "cause": "缺「年」字"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "年份格式不对（漏了「年」）"
+        },
+        {
+          "symptom": "数据为空",
+          "cause": "该年没有历史数据"
+        }
+      ],
+      "edgeCases": [
+        "跨年时「去年」的边界按服务器时间算"
+      ],
+      "scenarios": [
+        "对比去年和今年的收入"
+      ],
+      "vs": [
+        {
+          "command": "#原石统计",
+          "diff": "那个默认当年"
+        }
+      ],
+      "related": [
+        "#原石统计",
+        "#原石"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/pay-log",
+      "command": "#充值记录",
+      "aliases": [
+        "#消费记录",
+        "#充值统计",
+        "#消费统计"
+      ],
+      "title": "查看充值/消费记录",
+      "summary": "米游社账单，需要 CK",
+      "what": "读米游社账单数据，渲染充值/消费记录。",
+      "returns": "一张账单图片。",
+      "returnsDetail": "列出充值/消费明细与汇总。",
+      "timing": "5~20 秒。",
+      "cost": "走米游社账单接口（需 CK）。",
+      "keywords": [
+        "充值记录",
+        "消费记录",
+        "充值统计",
+        "氪了多少",
+        "账单"
+      ],
+      "params": [],
+      "example": "#充值记录",
+      "moreExamples": [
+        "#消费记录",
+        "#充值统计"
+      ],
+      "preconditions": [
+        "已绑定 CK",
+        "**要有米游社账单权限**（部分账号需先在米游社开通）"
+      ],
+      "pitfalls": [
+        "**需要 CK，且账单数据要米游社侧有权限**",
+        "数据可能要先用 `#更新充值记录` 抓一次",
+        "账单涉及消费隐私，群里发注意场合"
+      ],
+      "failures": [
+        {
+          "symptom": "没数据",
+          "cause": "没绑 CK 或还没抓过账单"
+        }
+      ],
+      "edgeCases": [
+        "多账号时按账号分列"
+      ],
+      "scenarios": [
+        "算自己氪了多少"
+      ],
+      "vs": [
+        {
+          "command": "#更新充值记录",
+          "diff": "那个是去抓最新账单"
+        }
+      ],
+      "related": [
+        "#更新充值记录",
+        "#充值记录帮助",
+        "#原石"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/update-pay-log",
+      "command": "#更新充值记录",
+      "aliases": [
+        "#更新消费记录",
+        "#更新充值统计",
+        "#更新消费统计"
+      ],
+      "title": "抓取最新账单",
+      "summary": "手动拉一次账单数据",
+      "what": "从米游社拉取最新充值/消费账单并入库。",
+      "returns": "执行结果。",
+      "returnsDetail": "提示更新情况。",
+      "timing": "5~30 秒。",
+      "cost": "走米游社账单接口。",
+      "keywords": [
+        "更新充值记录",
+        "抓账单",
+        "更新消费记录"
+      ],
+      "params": [],
+      "example": "#更新充值记录",
+      "moreExamples": [
+        "#更新消费记录"
+      ],
+      "preconditions": [
+        "已绑定 CK"
+      ],
+      "pitfalls": [
+        "需要 CK 和账单权限",
+        "数据量大时较慢",
+        "不更新的话 `#充值记录` 看到的是旧数据"
+      ],
+      "failures": [
+        {
+          "symptom": "更新失败",
+          "cause": "CK 失效或账单接口异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "刚充完钱想看到账"
+      ],
+      "vs": [
+        {
+          "command": "#充值记录",
+          "diff": "那个是查看"
+        }
+      ],
+      "related": [
+        "#充值记录",
+        "#充值记录帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/pay-log-link",
+      "command": "（发送米游社账单页链接）",
+      "aliases": [
+        "（含 user.mihoyo.com / bill-record-user 的链接）"
+      ],
+      "title": "粘贴账单链接抓取",
+      "summary": "检测到账单域名就自动处理",
+      "what": "消息里出现 `user-game-search` / `bill-record-user` / `customer-claim` / `player-log` / `user.mihoyo.com` 时自动识别并处理。",
+      "returns": "处理结果。",
+      "returnsDetail": "可能返回账单数据图或确认信息。",
+      "timing": "3~20 秒。",
+      "cost": "走米游社接口。",
+      "keywords": [
+        "账单链接",
+        "粘贴链接",
+        "米游社账单"
+      ],
+      "params": [],
+      "example": "（粘贴 https://user.mihoyo.com/... 的账单页链接）",
+      "moreExamples": [],
+      "preconditions": [
+        "无需绑 CK（链接自带凭证）"
+      ],
+      "pitfalls": [
+        "**五个域名关键词任一出现就会触发**，包括 `player-log` 这类很宽的词",
+        "链接里的凭证有时效",
+        "群里粘贴会泄露消费信息"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "链接不含这几个关键词"
+        }
+      ],
+      "edgeCases": [
+        "链接失效时抓不到数据"
+      ],
+      "scenarios": [
+        "不想绑 CK 但想看账单"
+      ],
+      "vs": [
+        {
+          "command": "#充值记录",
+          "diff": "那个走 CK"
+        }
+      ],
+      "related": [
+        "#充值记录",
+        "#更新充值记录"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/pay-log-help",
+      "command": "#充值记录帮助",
+      "aliases": [
+        "#消费记录帮助",
+        "#充值统计帮助"
+      ],
+      "title": "账单功能说明",
+      "summary": "讲怎么抓账单",
+      "what": "回账单功能的用法说明。",
+      "returns": "一条文本或图片。",
+      "returnsDetail": "说明如何获取账单链接与绑定。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地。",
+      "keywords": [
+        "充值记录帮助",
+        "账单帮助",
+        "消费记录帮助"
+      ],
+      "params": [],
+      "example": "#充值记录帮助",
+      "moreExamples": [
+        "#消费记录帮助"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "只是说明，不做任何抓取"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "不知道怎么查账单"
+      ],
+      "vs": [
+        {
+          "command": "#充值记录",
+          "diff": "那个是实际查询"
+        }
+      ],
+      "related": [
+        "#充值记录",
+        "#更新充值记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/news",
+      "command": "#公告",
+      "aliases": [
+        "#资讯",
+        "#活动",
+        "#公告列表",
+        "#原神公告",
+        "#星铁公告",
+        "#绝区零公告",
+        "#公告1"
+      ],
+      "title": "查看米游社公告",
+      "summary": "多游戏，可带序号翻页",
+      "what": "拉米游社公告/资讯，按游戏筛，可带序号看更多。",
+      "returns": "图片或合并转发。",
+      "returnsDetail": "列出公告标题与时间。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社公告接口。",
+      "keywords": [
+        "公告",
+        "资讯",
+        "活动",
+        "米游社公告",
+        "更新公告"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": false,
+          "desc": "原神/星铁/崩坏三/崩三/绝区零/崩坏二/崩二/未定/官方"
+        },
+        {
+          "name": "序号",
+          "required": false,
+          "desc": "数字，用于看更多"
+        }
+      ],
+      "example": "#公告",
+      "moreExamples": [
+        "#原神公告",
+        "#星铁公告",
+        "#公告2"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**`#活动` 也是这条的别名** —— 但它也容易被别的插件抢",
+        "不带游戏前缀时按默认游戏或全部",
+        "支持的游戏名很多（含 `崩坏学园二` `未定事件簿` 这类全称）",
+        "序号是 `([0-9])*`，只能一位数"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "游戏前缀不在列表里"
+        }
+      ],
+      "edgeCases": [
+        "`崩坏二`/`崩二`/`崩坏学园二` 三种写法等价"
+      ],
+      "scenarios": [
+        "看最新公告"
+      ],
+      "vs": [
+        {
+          "command": "#米游社 关键词",
+          "diff": "那个是搜索公告"
+        },
+        {
+          "command": "#开公告推送",
+          "diff": "那个是订阅推送"
+        }
+      ],
+      "related": [
+        "#米游社 关键词",
+        "#开启公告推送",
+        "#推送公告"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/mys-search",
+      "command": "#米游社 关键词",
+      "aliases": [
+        "#mys 关键词",
+        "#米游社"
+      ],
+      "title": "搜索米游社内容",
+      "summary": "按关键词搜公告/帖子",
+      "what": "用后方内容作为关键词搜索米游社。",
+      "returns": "搜索结果（图片或转发）。",
+      "returnsDetail": "列出命中的公告/帖子。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社搜索接口。",
+      "keywords": [
+        "米游社",
+        "mys",
+        "搜索公告",
+        "搜帖子"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": false,
+          "desc": "写在 `#米游社` 后面，可带空格"
+        }
+      ],
+      "example": "#米游社 4.0",
+      "moreExamples": [
+        "#mys 卡池"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**正则 `^(#米游社|#mys)(.*)` 没有边界** —— 消息里只要有 `#米游社` 开头就会全部吞掉，后面写什么都被当关键词",
+        "不带关键词时可能返回空或默认列表"
+      ],
+      "failures": [
+        {
+          "symptom": "搜不到",
+          "cause": "关键词太泛或接口无结果"
+        }
+      ],
+      "edgeCases": [
+        "`#米游社` 后面直接跟内容时没有空格也能识别"
+      ],
+      "scenarios": [
+        "想搜特定主题的公告"
+      ],
+      "vs": [
+        {
+          "command": "#公告",
+          "diff": "那个是按游戏看列表"
+        }
+      ],
+      "related": [
+        "#公告",
+        "#开启公告推送"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/mys-url",
+      "command": "（发送米游社文章链接）",
+      "aliases": [
+        "（含 bbs.mihoyo.com / miyoushe.com/ys/.../article 的链接）"
+      ],
+      "title": "解析米游社文章链接",
+      "summary": "发链接就自动出内容",
+      "what": "识别米游社文章 URL 并解析出正文内容。",
+      "returns": "文章内容（图片或文本）。",
+      "returnsDetail": "渲染文章正文。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社文章接口。",
+      "keywords": [
+        "米游社链接",
+        "文章链接",
+        "解析链接",
+        "bbs链接"
+      ],
+      "params": [],
+      "example": "（粘贴 https://bbs.mihoyo.com/ys/article/123456 这类链接）",
+      "moreExamples": [],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**只认 `/ys/` 路径下的 article** —— 其他板块（如 `/bh3/`、`/sr/`）的链接不一定匹配",
+        "链接里必须是 `article`，帖子/视频类链接可能不认",
+        "群里发链接会自动解析，可能刷屏"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "链接不是 `/ys/.../article` 格式"
+        }
+      ],
+      "edgeCases": [
+        "短链接（如 miyoushe.com/xxx）如果不含 article 不匹配"
+      ],
+      "scenarios": [
+        "把米游社攻略贴转到群里"
+      ],
+      "vs": [
+        {
+          "command": "#米游社 关键词",
+          "diff": "那个是搜索，这个是解析已知链接"
+        }
+      ],
+      "related": [
+        "#米游社 关键词",
+        "#公告"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/estimate",
+      "command": "#原神预估",
+      "aliases": [
+        "#原石预估",
+        "#星琼预估",
+        "#原石盘点",
+        "#水晶预估",
+        "#菲林预估",
+        "#预估",
+        "#盘点"
+      ],
+      "title": "预估下版本可获取资源",
+      "summary": "按版本预告盘点资源",
+      "what": "根据版本信息预估/盘点可获取的原石、星琼等资源。",
+      "returns": "一张预估图片。",
+      "returnsDetail": "列出各项来源与合计。",
+      "timing": "3~12 秒。",
+      "cost": "走米游社数据。",
+      "keywords": [
+        "预估",
+        "盘点",
+        "原石预估",
+        "能攒多少",
+        "版本资源"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": false,
+          "desc": "原神/原石/星铁/星琼/崩坏三/水晶/绝区零/zzz/菲林"
+        }
+      ],
+      "example": "#原神预估",
+      "moreExamples": [
+        "#原石预估",
+        "#星琼预估",
+        "#菲林预估"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**是预估不是保证**，实际产出受活动和玩法影响",
+        "正则里**不带游戏前缀也能触发**（`(#...)?` 整段可选），所以单发 `#预估` 也行",
+        "`原石`/`原神`、`星琼`/`星铁` 这些写法都认"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "游戏名不在覆盖列表里"
+        }
+      ],
+      "edgeCases": [
+        "版本刚开时数据可能还没更新"
+      ],
+      "scenarios": [
+        "规划抽卡预算"
+      ],
+      "vs": [
+        {
+          "command": "#原石",
+          "diff": "那个是已获得的实际数据"
+        }
+      ],
+      "related": [
+        "#原石",
+        "#原石统计"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/news-push-switch",
+      "command": "#开启公告推送",
+      "aliases": [
+        "#关闭公告推送",
+        "#开启资讯推送",
+        "#原神开启公告推送",
+        "#星铁关闭公告推送"
+      ],
+      "title": "开关本群公告推送",
+      "summary": "群聊设置，需管理员",
+      "what": "开启或关闭本群的米游社公告推送。",
+      "returns": "一条文本确认。",
+      "returnsDetail": "成功提示已设置；私聊调用回「推送请在群聊中设置」；权限不足回「暂无权限，只有管理员才能操作」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "开启公告推送",
+        "关闭公告推送",
+        "公告推送",
+        "订阅公告"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": false,
+          "desc": "原神/星铁/崩坏三/崩三/绝区零/崩坏二/崩二/未定等"
+        }
+      ],
+      "example": "#开启公告推送",
+      "moreExamples": [
+        "#关闭公告推送",
+        "#原神开启公告推送",
+        "#星铁关闭资讯推送"
+      ],
+      "preconditions": [
+        "**必须群聊**",
+        "群管理员或主人"
+      ],
+      "pitfalls": [
+        "**私聊调用直接回「推送请在群聊中设置」**",
+        "非管理员回「暂无权限，只有管理员才能操作」",
+        "只开本群开关，实际推送还要看定时任务和 `#推送公告` 任务是否正常",
+        "可按游戏分开订阅"
+      ],
+      "failures": [
+        {
+          "symptom": "回「推送请在群聊中设置」",
+          "cause": "私聊发的"
+        },
+        {
+          "symptom": "回「暂无权限，只有管理员才能操作」",
+          "cause": "不是管理员"
+        }
+      ],
+      "edgeCases": [
+        "不同游戏的开关独立"
+      ],
+      "scenarios": [
+        "群里想自动收公告"
+      ],
+      "vs": [
+        {
+          "command": "#推送公告",
+          "diff": "那个是立即推一次"
+        },
+        {
+          "command": "#开启到期活动预警",
+          "diff": "那个推的是活动到期提醒"
+        }
+      ],
+      "related": [
+        "#推送公告",
+        "#公告",
+        "#开启到期活动预警"
+      ],
+      "risk": "w",
+      "permission": "群管理员或 master"
+    },
+    {
+      "id": "genshin/news-push-task",
+      "command": "#推送公告",
+      "aliases": [
+        "#推送资讯",
+        "#原神推送公告",
+        "#星铁推送资讯"
+      ],
+      "title": "立即推送一次公告",
+      "summary": "主人专用：手动触发",
+      "what": "立即执行一次公告推送任务。",
+      "returns": "推送结果。",
+      "returnsDetail": "提示推送情况。",
+      "timing": "3~20 秒。",
+      "cost": "走米游社接口 + 向所有订阅群发消息。",
+      "keywords": [
+        "推送公告",
+        "推送资讯",
+        "手动推送",
+        "立即推送"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": false,
+          "desc": ""
+        }
+      ],
+      "example": "#推送公告",
+      "moreExamples": [
+        "#推送资讯",
+        "#原神推送公告"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**会给所有订阅的群发消息**，误触发会刷屏",
+        "非主人无响应",
+        "有 `log: false` 的定时任务会自动跑，这条是手动补"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "没有订阅群时不会发任何消息"
+      ],
+      "scenarios": [
+        "定时任务漏跑时手动补"
+      ],
+      "vs": [
+        {
+          "command": "#开启公告推送",
+          "diff": "那个是开关订阅"
+        }
+      ],
+      "related": [
+        "#开启公告推送",
+        "#公告"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "genshin/activity-push",
+      "command": "#原神开启到期活动预警",
+      "aliases": [
+        "#星铁关闭到期活动预警推送",
+        "#原神开启到期活动推送",
+        "#星铁开启到期活动预警"
+      ],
+      "title": "开关活动到期预警",
+      "summary": "活动快结束前提醒",
+      "what": "开关本群的活动到期预警推送。",
+      "returns": "一条文本确认。",
+      "returnsDetail": "提示已开启/关闭。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "到期活动预警",
+        "活动到期提醒",
+        "活动快结束了"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": true,
+          "desc": "**只能写 `原神` 或 `星铁`**（正则写死这两个）"
+        }
+      ],
+      "example": "#原神开启到期活动预警",
+      "moreExamples": [
+        "#星铁关闭到期活动预警推送"
+      ],
+      "preconditions": [
+        "必须群聊（推送类）",
+        "群管理员或主人"
+      ],
+      "pitfalls": [
+        "**游戏前缀不能省，且只支持「原神」和「星铁」** —— 绝区零/崩坏三不在这条规则里",
+        "「预警」「推送」两个词都可以省略，写 `#原神开启到期活动` 也能匹配",
+        "和公告推送是两个独立开关"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写了绝区零或其他游戏前缀，或不带前缀"
+        }
+      ],
+      "edgeCases": [
+        "`#原神关闭到期活动` 这种最短写法也有效"
+      ],
+      "scenarios": [
+        "怕错过活动截止时间"
+      ],
+      "vs": [
+        {
+          "command": "#开启公告推送",
+          "diff": "那个推所有公告，这个只推到期的"
+        }
+      ],
+      "related": [
+        "#开启公告推送",
+        "#公告"
+      ],
+      "risk": "w",
+      "permission": "群管理员或 master"
+    },
+    {
+      "id": "genshin/alias-set",
+      "command": "#设置雷神别名",
+      "aliases": [
+        "#配置雷神昵称",
+        "#星铁设置希儿别名"
+      ],
+      "title": "设置角色别名（两步指令）",
+      "summary": "先发指令，bot 反问后再发别名列表",
+      "what": "第一步只识别角色并反问；你在下一条消息发别名（空格分隔），写入 config/role.name.yaml。",
+      "returns": "两条消息：一条反问 + 一条成功提示。",
+      "returnsDetail": "反问「请发送{角色}别名，多个用空格隔开」；成功回设置结果；角色不认识则函数直接返回、不回复。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写配置。",
+      "keywords": [
+        "设置别名",
+        "配置昵称",
+        "角色别名",
+        "加外号"
+      ],
+      "params": [
+        {
+          "name": "动词",
+          "required": true,
+          "desc": "`设置` / `配置` 二选一"
+        },
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在动词和「别名」之间"
+        }
+      ],
+      "example": "#设置雷神别名",
+      "moreExamples": [
+        "#配置雷神昵称",
+        "#星铁设置希儿别名"
+      ],
+      "preconditions": [
+        "**前缀只能是一个 `#`**（可选 `星铁`），没有 `*`、也没有 `崩铁` 等其他写法",
+        "**必须群聊**：私聊里 `checkAuth` 直接回「禁止私聊设置角色别名」，主人也一样"
+      ],
+      "pitfalls": [
+        "**两步指令**：别名不在同一条消息里，第二步才发",
+        "**末尾不能直接跟别名值** —— 正则 `^#(星铁)?(设置|配置)(.*)(别名|昵称)$` 要求以「别名/昵称」结尾，`#设置雷神别名影` 不匹配，会掉进兜底的「查看别名」规则",
+        "**私聊直接禁止**，即使你是主人",
+        "**和 StarRail-plugin 的别名是两套系统**：这条写的是 `plugins/genshin/config/role.name.yaml`，带 `星铁` 二字只影响查表用的池子，文件还是同一个"
+      ],
+      "failures": [
+        {
+          "symptom": "回了列表或没反应",
+          "cause": "末尾多写了别名值，改成分两步发"
+        },
+        {
+          "symptom": "回「禁止私聊设置角色别名」",
+          "cause": "在私聊里发的，换群聊"
+        },
+        {
+          "symptom": "角色名不认识时完全没反应",
+          "cause": "`gsCfg.getRole` 返回空时函数直接 `return false`，不报错也不提示"
+        }
+      ],
+      "edgeCases": [
+        "第二步可以一次发多个别名，空格分隔",
+        "「设置」与「配置」等价，「别名」与「昵称」等价"
+      ],
+      "scenarios": [
+        "让 bot 认群里的习惯叫法"
+      ],
+      "vs": [
+        {
+          "command": "#雷神别名",
+          "diff": "查看当前别名列表"
+        },
+        {
+          "command": "#星铁设置希儿别名",
+          "diff": "StarRail-plugin 的同名功能，写另一份配置"
+        }
+      ],
+      "related": [
+        "#雷神别名",
+        "#删除别名影"
+      ],
+      "risk": "w",
+      "permission": "群管理员或 master"
+    },
+    {
+      "id": "genshin/alias-delete",
+      "command": "#删除别名影",
+      "aliases": [
+        "#删除昵称影",
+        "#星铁删除别名希"
+      ],
+      "title": "删除角色别名",
+      "summary": "同样要群管理员",
+      "what": "移除已设置的角色别名。",
+      "returns": "一条纯文本结果。",
+      "returnsDetail": "提示删除结果；权限问题同设置。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写配置。",
+      "keywords": [
+        "删除别名",
+        "删除昵称",
+        "移除别名"
+      ],
+      "params": [
+        {
+          "name": "别名",
+          "required": true,
+          "desc": "写在「删除别名」后面"
+        }
+      ],
+      "example": "#删除别名影",
+      "moreExamples": [
+        "#星铁删除别名希"
+      ],
+      "preconditions": [
+        "必须在群聊里用",
+        "群管理员或 Bot 主人"
+      ],
+      "pitfalls": [
+        "私聊拒绝、非管理员拒绝",
+        "只按别名删，不能指定角色",
+        "删的是本插件这套别名，不影响 miao 的别名"
+      ],
+      "failures": [
+        {
+          "symptom": "回「禁止私聊设置角色别名」",
+          "cause": "私聊发的"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "清理加错的别名"
+      ],
+      "vs": [
+        {
+          "command": "#设置雷神别名影",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#设置雷神别名影",
+        "#雷神别名"
+      ],
+      "risk": "w",
+      "permission": "群管理员或 master"
+    },
+    {
+      "id": "genshin/alias-list",
+      "command": "#雷神别名",
+      "aliases": [
+        "#雷神昵称",
+        "#星铁希儿别名"
+      ],
+      "title": "查看角色别名",
+      "summary": "兜底规则，任何「X别名」都进这条",
+      "what": "列出该角色已设置的别名。",
+      "returns": "一条纯文本消息。",
+      "returnsDetail": "回「请发送雷神别名，多个用空格隔开」这类提示或别名列表。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读配置。",
+      "keywords": [
+        "查看别名",
+        "角色别名",
+        "昵称列表"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「别名/昵称」前面"
+        }
+      ],
+      "example": "#雷神别名",
+      "moreExamples": [
+        "#雷神昵称",
+        "#星铁希儿别名"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**这条是兜底规则 `^#(星铁)?(.*)(别名|昵称)$`** —— 任何以「别名」「昵称」结尾的消息都会进这条，包括你本来想加别名的写法（写错格式时就被它吃掉）",
+        "所以 `#设置雷神别名影` 如果格式不对，可能落到这里然后回一句奇怪的提示",
+        "和 miao 的 `#喵喵别名列表` 是不同系统"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请发送XX别名，多个用空格隔开」",
+          "cause": "触发了兜底规则，说明前面的写法没命中设置/删除分支"
+        }
+      ],
+      "edgeCases": [
+        "`(.*)` 贪婪匹配，角色名里带「别名」二字时行为可能异常"
+      ],
+      "scenarios": [
+        "查某个角色有哪些别名"
+      ],
+      "vs": [
+        {
+          "command": "#设置雷神别名影",
+          "diff": "那个是设置"
+        }
+      ],
+      "related": [
+        "#设置雷神别名影",
+        "#删除别名影"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/calc-char",
+      "command": "#刻晴养成",
+      "aliases": [
+        "#刻晴计算",
+        "#刻晴养成10,10,10",
+        "#星铁希儿养成",
+        "#雷神计算"
+      ],
+      "title": "角色养成计算",
+      "summary": "算到满级所需材料",
+      "what": "按角色当前数据算到目标等级/天赋所需材料，末尾可跟数字、逗号指定天赋等级。",
+      "returns": "一张养成计算图片。",
+      "returnsDetail": "分阶段列出所需材料、经验、摩拉。",
+      "timing": "4~15 秒。",
+      "cost": "本地计算 + 可能走米游社。",
+      "keywords": [
+        "养成",
+        "计算",
+        "养成计算",
+        "升级材料",
+        "培养"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「养成/计算」前面"
+        },
+        {
+          "name": "天赋等级",
+          "required": false,
+          "desc": "数字，用逗号分隔，如 `10,10,10`"
+        }
+      ],
+      "example": "#刻晴养成",
+      "moreExamples": [
+        "#刻晴养成10,10,10",
+        "#雷神计算",
+        "#星铁希儿养成"
+      ],
+      "preconditions": [
+        "无需绑定账号（有数据更准）"
+      ],
+      "pitfalls": [
+        "**旅行者不支持**，回「暂不支持旅行者养成计算」",
+        "正则 `^#*(星铁)?(.*)(养成|计算)([0-9]|,|，| )*$` 很宽 —— 任何以「养成」「计算」结尾的消息都会进这条",
+        "末尾只能跟数字、逗号、空格，跟中文会不匹配",
+        "末位是「养成」还是「计算」都行，功能一样"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂不支持旅行者养成计算」",
+          "cause": "算的是主角"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "角色名没认出来"
+        }
+      ],
+      "edgeCases": [
+        "全角逗号「，」也支持"
+      ],
+      "scenarios": [
+        "算练满一个角色要多少材料"
+      ],
+      "vs": [
+        {
+          "command": "#角色养成计算",
+          "diff": "那条是显式入口，不带角色名"
+        },
+        {
+          "command": "#雷神材料",
+          "diff": "那个查突破材料清单，不算总量"
+        }
+      ],
+      "related": [
+        "#角色养成计算",
+        "#雷神材料",
+        "#尘歌壶养成计算"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/calc-role-entry",
+      "command": "#角色养成计算",
+      "aliases": [
+        "#角色养成",
+        "#星铁角色养成计算"
+      ],
+      "title": "养成计算的显式入口",
+      "summary": "不带角色名时用",
+      "what": "养成计算的固定入口，通常带你自己的角色列表或引导。",
+      "returns": "图片或引导文本。",
+      "returnsDetail": "取决于实现分支。",
+      "timing": "3~10 秒。",
+      "cost": "本地计算。",
+      "keywords": [
+        "角色养成计算",
+        "养成计算入口"
+      ],
+      "params": [],
+      "example": "#角色养成计算",
+      "moreExamples": [
+        "#角色养成"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**不带角色名**，所以出的是泛指内容或引导，不是具体某个角色的计算",
+        "想要具体角色请用 `#刻晴养成`"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "不知道养成计算怎么写"
+      ],
+      "vs": [
+        {
+          "command": "#刻晴养成",
+          "diff": "推荐用法，带角色名"
+        }
+      ],
+      "related": [
+        "#刻晴养成",
+        "#雷神材料"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/calc-pot",
+      "command": "#尘歌壶养成计算",
+      "aliases": [
+        "#尘歌壶模数养成计算",
+        "#尘歌壶计算",
+        "#尘歌壶模数计算"
+      ],
+      "title": "尘歌壶模数计算",
+      "summary": "算洞天宝钱/信任等阶等",
+      "what": "计算尘歌壶相关的模数/养成数据。",
+      "returns": "一张计算图片。",
+      "returnsDetail": "尘歌壶模数计算结果。",
+      "timing": "3~10 秒。",
+      "cost": "本地计算。",
+      "keywords": [
+        "尘歌壶",
+        "模数",
+        "洞天",
+        "家园计算"
+      ],
+      "params": [],
+      "example": "#尘歌壶养成计算",
+      "moreExamples": [
+        "#尘歌壶模数养成计算"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "「模数」「养成」「养成计算」三种写法都在规则里",
+        "不带 UID 时算的是通用数据，带 UID 才是你自己的"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写法不在规则覆盖范围"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "算洞天建设要多久"
+      ],
+      "vs": [
+        {
+          "command": "#尘歌壶养成计算123456789",
+          "diff": "那个带 UID"
+        }
+      ],
+      "related": [
+        "#尘歌壶养成计算123456789",
+        "#尘歌壶"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/calc-pot-uid",
+      "command": "#尘歌壶养成计算123456789",
+      "aliases": [
+        "#尘歌壶模数1234567890",
+        "#尘歌壶123456789"
+      ],
+      "title": "按 UID 算尘歌壶",
+      "summary": "UID 必须 10~15 位数字",
+      "what": "用指定 UID 的数据算尘歌壶养成。",
+      "returns": "一张计算图片。",
+      "returnsDetail": "该 UID 的尘歌壶数据计算结果。",
+      "timing": "3~12 秒。",
+      "cost": "本地/接口数据 + 计算。",
+      "keywords": [
+        "尘歌壶计算",
+        "带uid",
+        "洞天计算"
+      ],
+      "params": [
+        {
+          "name": "UID",
+          "required": true,
+          "desc": "**10~15 位数字**（注意不是 9 位）"
+        }
+      ],
+      "example": "#尘歌壶养成计算123456789",
+      "moreExamples": [
+        "#尘歌壶模数1234567890",
+        "#尘歌壶123456789"
+      ],
+      "preconditions": [
+        "该 UID 有尘歌壶数据"
+      ],
+      "pitfalls": [
+        "**UID 要求 10~15 位**（`\\d{10,15}`），写 9 位的游戏 UID 反而不匹配 —— 和 `#绑定` 的 UID 位数要求不一样",
+        "写错位数直接不匹配，没有任何提示",
+        "**`#尘歌壶模数` 后面必须是 10~15 位数字**（正则 `\\d{10,15}`），9 位 UID 会被判为不匹配"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "UID 位数不在 10~15 之间"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "查特定账号的洞天数据"
+      ],
+      "vs": [
+        {
+          "command": "#尘歌壶养成计算",
+          "diff": "那个不带 UID"
+        }
+      ],
+      "related": [
+        "#尘歌壶养成计算",
+        "#尘歌壶"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/strategy",
+      "command": "#刻晴攻略",
+      "aliases": [
+        "#刻晴攻略2",
+        "#雷神攻略7",
+        "#星铁希儿攻略"
+      ],
+      "title": "查看角色攻略图",
+      "summary": "七个来源，可指定序号",
+      "what": "按角色名取攻略图，可带来源序号 1~7；不带序号用默认来源。",
+      "returns": "一张攻略图片（带按钮）。",
+      "returnsDetail": "对应来源的配装攻略图；无数据回「暂无攻略数据，请稍后再试」。",
+      "timing": "5~20 秒。",
+      "cost": "走米游社合集接口 + 图片下载。",
+      "keywords": [
+        "攻略",
+        "配装",
+        "角色攻略",
+        "怎么配"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「攻略」前面"
+        },
+        {
+          "name": "来源序号",
+          "required": false,
+          "desc": "1~7"
+        }
+      ],
+      "example": "#刻晴攻略",
+      "moreExamples": [
+        "#刻晴攻略2",
+        "#雷神攻略7"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**正则 `^#?(更新)?\\S+攻略([1-7])?$` 要求角色名和非空白连着写** —— 角色名中间有空格就不匹配",
+        "序号只能 1~7，写 8 不匹配",
+        "和 miao 的 `#艾莲攻略`（ZZZ）不是一回事，也不同插件",
+        "首次查询要现下图，较慢"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无攻略数据，请稍后再试」",
+          "cause": "接口挂了或该角色没收录"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "角色名带空格，或序号超过 7"
+        }
+      ],
+      "edgeCases": [
+        "`#更新刻晴攻略` 也匹配（`(更新)?` 可选），用于强制刷新"
+      ],
+      "scenarios": [
+        "新角色不知道带什么"
+      ],
+      "vs": [
+        {
+          "command": "#攻略说明",
+          "diff": "那个讲用法"
+        },
+        {
+          "command": "#设置默认攻略1",
+          "diff": "那个改默认来源"
+        }
+      ],
+      "related": [
+        "#攻略说明",
+        "#设置默认攻略1",
+        "#刻晴养成"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/strategy-help",
+      "command": "#攻略说明",
+      "aliases": [
+        "#攻略帮助",
+        "#攻略"
+      ],
+      "title": "攻略功能用法",
+      "summary": "讲七个来源怎么选",
+      "what": "回攻略功能的用法说明。",
+      "returns": "一条纯文本消息。",
+      "returnsDetail": "说明来源序号与写法。",
+      "timing": "即时。",
+      "cost": "纯本地文本。",
+      "keywords": [
+        "攻略说明",
+        "攻略帮助",
+        "攻略怎么用"
+      ],
+      "params": [],
+      "example": "#攻略说明",
+      "moreExamples": [
+        "#攻略帮助",
+        "#攻略"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "单发 `#攻略` 也走这条（`(说明|帮助)?` 可选）",
+        "只是说明文本"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "不知道序号对应谁"
+      ],
+      "vs": [
+        {
+          "command": "#刻晴攻略",
+          "diff": "那个才出图"
+        }
+      ],
+      "related": [
+        "#刻晴攻略",
+        "#设置默认攻略1"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/strategy-default",
+      "command": "#设置默认攻略1",
+      "aliases": [
+        "#设置默认攻略7"
+      ],
+      "title": "设置默认攻略来源",
+      "summary": "不带序号时用哪个来源",
+      "what": "把某个来源序号设为默认攻略来源。",
+      "returns": "一条文本确认。",
+      "returnsDetail": "「默认攻略已设置为: N」；不带数字回「默认攻略设置方式为: \\n#设置默认攻略[1234567] \\n 请增加数字1-7其中一个」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "设置默认攻略",
+        "默认攻略来源",
+        "攻略序号"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": true,
+          "desc": "1~7"
+        }
+      ],
+      "example": "#设置默认攻略1",
+      "moreExamples": [
+        "#设置默认攻略7"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**不带数字会回一大段格式说明**，不是报错",
+        "序号只能是 1~7",
+        "是全局配置，改了影响所有人"
+      ],
+      "failures": [
+        {
+          "symptom": "回一大段「默认攻略设置方式为…」",
+          "cause": "没写序号"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里统一用某个作者的攻略"
+      ],
+      "vs": [
+        {
+          "command": "#刻晴攻略",
+          "diff": "那个是实际查攻略"
+        }
+      ],
+      "related": [
+        "#刻晴攻略",
+        "#攻略说明"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/material",
+      "command": "#刻晴突破",
+      "aliases": [
+        "#刻晴材料",
+        "#刻晴素材",
+        "#刻晴培养",
+        "#星铁希儿突破"
+      ],
+      "title": "查看角色突破材料",
+      "summary": "列材料清单，不算总量",
+      "what": "查该角色的突破/天赋材料清单。",
+      "returns": "一张材料图片。",
+      "returnsDetail": "列出等级突破与天赋升级所需材料。",
+      "timing": "3~12 秒。",
+      "cost": "本地数据 + 渲染。",
+      "keywords": [
+        "突破材料",
+        "角色材料",
+        "素材",
+        "培养材料",
+        "要刷什么"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「突破/材料/素材/培养」前面"
+        }
+      ],
+      "example": "#刻晴突破",
+      "moreExamples": [
+        "#刻晴材料",
+        "#刻晴素材",
+        "#星铁希儿突破"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**四个后缀（突破/材料/素材/培养）等价**，出的是同一类内容",
+        "正则 `^#?(星铁)?(.*)(突破|材料|素材|培养)$` 很宽，任何以此结尾的消息都会进这条",
+        "只列清单，不算你需要多少（那个用 `#刻晴养成`）",
+        "miao 的 `#雷神材料` 被调研标为「分支不可达」，指的就是这类写法在 miao 里不生效 —— 实际它是落到这条 genshin 规则"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "角色名没认出来"
+        }
+      ],
+      "edgeCases": [
+        "和 `#刻晴养成` 的区别：这条给清单，那条算总量"
+      ],
+      "scenarios": [
+        "想知道该刷哪些材料本"
+      ],
+      "vs": [
+        {
+          "command": "#刻晴养成",
+          "diff": "那个算总量"
+        },
+        {
+          "command": "#今日素材",
+          "diff": "那个看今天该刷谁"
+        }
+      ],
+      "related": [
+        "#刻晴养成",
+        "#角色养成计算"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "genshin/birthday-photo",
+      "command": "#留影",
+      "aliases": [
+        "#留影叙佳期",
+        "#角色生日",
+        "#领角色生日",
+        "#生日卡",
+        "#领生日卡"
+      ],
+      "title": "领取角色生日留影",
+      "summary": "领生日贺卡/留影",
+      "what": "领取角色生日相关的留影/贺卡。",
+      "returns": "图片或文本结果。",
+      "returnsDetail": "生日留影/贺卡内容。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口（可能需 CK）。",
+      "keywords": [
+        "留影",
+        "留影叙佳期",
+        "角色生日",
+        "生日卡",
+        "领生日"
+      ],
+      "params": [],
+      "example": "#留影",
+      "moreExamples": [
+        "#角色生日",
+        "#领生日卡",
+        "#留影叙佳期"
+      ],
+      "preconditions": [
+        "当期有角色生日活动"
+      ],
+      "pitfalls": [
+        "**只在角色生日期间有效**，平时可能无数据",
+        "规则覆盖 `留影`、`留影叙佳期`、`角色生日`、`领生日卡`、`生日卡` 等多种写法",
+        "「领」字可有可无"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应或无数据",
+          "cause": "当期没有生日活动"
+        }
+      ],
+      "edgeCases": [
+        "可能需 CK 才能领，取决于实现"
+      ],
+      "scenarios": [
+        "角色生日当天领贺卡"
+      ],
+      "vs": [],
+      "related": [
+        "#角色",
+        "#体力"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "genshin/set-pub-ck",
+      "command": "#配置ck",
+      "aliases": [
+        "#配置cookie",
+        "#配置公共查询ck",
+        "#配置公共查询cookie"
+      ],
+      "title": "配置公共查询 Cookie",
+      "summary": "主人专用：给未绑定用户兜底",
+      "what": "设置一份公共 Cookie，供没绑 CK 的用户查询时使用。",
+      "returns": "配置结果。",
+      "returnsDetail": "提示配置状态。",
+      "timing": "2~10 秒。",
+      "cost": "可能校验一次 Cookie。",
+      "keywords": [
+        "配置ck",
+        "公共ck",
+        "公共查询",
+        "配置cookie"
+      ],
+      "params": [],
+      "example": "#配置ck",
+      "moreExamples": [
+        "#配置公共查询ck",
+        "#配置cookie"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**公共 CK 意味着所有人共用一份凭证**，容易触发风控，且该账号数据可能被别人看到",
+        "非主人无响应",
+        "配置后是否真的启用还要看 `#使用全部ck`"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "公共 CK 失效时所有未绑定用户一起受影响"
+      ],
+      "scenarios": [
+        "不想让每个用户都自己绑 CK"
+      ],
+      "vs": [
+        {
+          "command": "#使用全部ck",
+          "diff": "那个决定用不用公共 CK"
+        }
+      ],
+      "related": [
+        "#使用全部ck",
+        "#绑定ck",
+        "#用户统计"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "genshin/use-all-ck",
+      "command": "#使用全部ck",
+      "aliases": [
+        "#使用用户ck"
+      ],
+      "title": "切换 CK 使用策略",
+      "summary": "主人专用：全用公共还是用用户的",
+      "what": "在「全部使用公共 CK」与「使用用户自己的 CK」之间切换。",
+      "returns": "配置结果。",
+      "returnsDetail": "提示当前策略。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "使用全部ck",
+        "使用用户ck",
+        "公共ck策略",
+        "ck优先级"
+      ],
+      "params": [],
+      "example": "#使用全部ck",
+      "moreExamples": [
+        "#使用用户ck"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**`#使用全部ck` 会让所有人共用公共凭证**，风控风险高",
+        "`#使用用户ck` 是切回按用户自己的 CK",
+        "非主人无响应"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "切到全部公共 CK 后，用户自己的 CK 会被忽略"
+      ],
+      "scenarios": [
+        "统一管理凭证时"
+      ],
+      "vs": [
+        {
+          "command": "#配置ck",
+          "diff": "那个是设置公共 CK 内容"
+        }
+      ],
+      "related": [
+        "#配置ck",
+        "#绑定ck"
+      ],
+      "risk": "a",
+      "permission": "master"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 20,
-  "updated": "2026-10-28T22:48:15.071Z",
+  "revision": 24,
+  "updated": "2026-10-28T23:02:14.402Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -31,6 +31,20 @@
       "bytes": 273785,
       "used": 0
     },
+    "genshin": {
+      "file": "maps/genshin.json",
+      "display": "原神",
+      "category": "游戏",
+      "version": "0.0.3",
+      "revision": 3,
+      "command_count": 67,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "dbb0d9e80cbd",
+      "sha256": "28f95040640dcbee5b038723e326fc035640bfe31daef36a976ef769b4a98ed2",
+      "bytes": 132555,
+      "used": 0
+    },
     "miao-plugin": {
       "file": "maps/miao-plugin.json",
       "display": "喵喵插件",
@@ -43,6 +57,20 @@
       "fingerprint": "7ba734b73a15",
       "sha256": "b2009454f1e5725a361eedb80b79d0649533df5554fc428349c4e0e0d96d45cb",
       "bytes": 177604,
+      "used": 0
+    },
+    "StarRail-plugin": {
+      "file": "maps/StarRail-plugin.json",
+      "display": "星穹铁道",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 53,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "4d3cc31a8b33",
+      "sha256": "297ffbd27bf8c0e0f73eec0278e1f6b493f76f2ee97864c226a498c942688488",
+      "bytes": 103465,
       "used": 0
     },
     "yenai-plugin": {
@@ -107,12 +135,30 @@
       ],
       "used": 0
     },
+    "genshin": {
+      "display": "原神",
+      "category": "游戏",
+      "command_count": 67,
+      "units": [
+        "genshin"
+      ],
+      "used": 0
+    },
     "miao-plugin": {
       "display": "喵喵插件",
       "category": "游戏",
       "command_count": 77,
       "units": [
         "miao-plugin"
+      ],
+      "used": 0
+    },
+    "StarRail-plugin": {
+      "display": "星穹铁道",
+      "category": "游戏",
+      "command_count": 53,
+      "units": [
+        "StarRail-plugin"
       ],
       "used": 0
     },
