@@ -3,7 +3,8 @@
   "plugin": {
     "key": "TRSS-Plugin",
     "fingerprint": "a917ac32b060",
-    "updated": "2026-10-27T19:33:21.750Z"
+    "updated": "2026-10-27T19:33:21.750Z",
+    "revision": 1
   },
   "commands": {
     "文件查看": {

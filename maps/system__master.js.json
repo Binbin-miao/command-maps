@@ -3,7 +3,8 @@
   "plugin": {
     "key": "system/master.js",
     "fingerprint": "629943821ae1",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#设置主人验证码": {

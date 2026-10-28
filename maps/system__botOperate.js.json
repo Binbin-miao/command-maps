@@ -3,7 +3,8 @@
   "plugin": {
     "key": "system/botOperate.js",
     "fingerprint": "49da334820bf",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#Bot验证": {

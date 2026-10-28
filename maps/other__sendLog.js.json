@@ -3,7 +3,8 @@
   "plugin": {
     "key": "other/sendLog.js",
     "fingerprint": "a966dcc83e43",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#运行日志": {

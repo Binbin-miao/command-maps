@@ -3,7 +3,8 @@
   "plugin": {
     "key": "FanSky_Qs",
     "fingerprint": "ae10e698503e",
-    "updated": "2026-10-27T19:33:21.782Z"
+    "updated": "2026-10-27T19:33:21.782Z",
+    "revision": 1
   },
   "commands": {
     "#检测仓库更新": {

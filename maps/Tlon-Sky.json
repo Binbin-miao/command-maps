@@ -3,7 +3,8 @@
   "plugin": {
     "key": "Tlon-Sky",
     "fingerprint": "faca9cf35db7",
-    "updated": "2026-10-27T19:33:21.779Z"
+    "updated": "2026-10-27T19:33:21.779Z",
+    "revision": 1
   },
   "commands": {
     "光遇状态": {

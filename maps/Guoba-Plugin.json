@@ -3,7 +3,8 @@
   "plugin": {
     "key": "Guoba-Plugin",
     "fingerprint": "01c2d91e31f2",
-    "updated": "2026-10-27T19:33:21.806Z"
+    "updated": "2026-10-27T19:33:21.806Z",
+    "revision": 1
   },
   "commands": {
     "#锅巴登录": {

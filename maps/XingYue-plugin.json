@@ -3,7 +3,8 @@
   "plugin": {
     "key": "XingYue-plugin",
     "fingerprint": "da672304fdf7",
-    "updated": "2026-10-27T19:33:21.814Z"
+    "updated": "2026-10-27T19:33:21.814Z",
+    "revision": 1
   },
   "commands": {
     "#xy帮助": {

@@ -3,7 +3,8 @@
   "plugin": {
     "key": "miao-plugin",
     "fingerprint": "f6ca92384fbb",
-    "updated": "2026-10-27T19:33:21.799Z"
+    "updated": "2026-10-27T19:33:21.799Z",
+    "revision": 1
   },
   "commands": {
     "#喵喵角色卡片": {

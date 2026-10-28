@@ -3,7 +3,8 @@
   "plugin": {
     "key": "cyxz-plugin",
     "fingerprint": "23852ef87369",
-    "updated": "2026-10-27T19:33:21.816Z"
+    "updated": "2026-10-27T19:33:21.816Z",
+    "revision": 1
   },
   "commands": {
     "#帮助": {

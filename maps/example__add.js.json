@@ -3,7 +3,8 @@
   "plugin": {
     "key": "example/add.js",
     "fingerprint": "1577abe88fdc",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#添加": {

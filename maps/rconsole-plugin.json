@@ -3,7 +3,8 @@
   "plugin": {
     "key": "rconsole-plugin",
     "fingerprint": "fdc3e6d2c00e",
-    "updated": "2026-10-27T19:33:21.808Z"
+    "updated": "2026-10-27T19:33:21.808Z",
+    "revision": 1
   },
   "commands": {
     "#点歌$": {

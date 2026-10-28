@@ -3,7 +3,8 @@
   "plugin": {
     "key": "mora-plugin",
     "fingerprint": "ddd947aa21d6",
-    "updated": "2026-10-27T19:33:21.787Z"
+    "updated": "2026-10-27T19:33:21.787Z",
+    "revision": 1
   },
   "commands": {
     "#虚空使用率": {

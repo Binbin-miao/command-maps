@@ -3,7 +3,8 @@
   "plugin": {
     "key": "TaJiDuo-plugin",
     "fingerprint": "3ef920eb1da4",
-    "updated": "2026-10-27T19:33:21.797Z"
+    "updated": "2026-10-27T19:33:21.797Z",
+    "revision": 1
   },
   "commands": {
     "塔吉多帮助": {

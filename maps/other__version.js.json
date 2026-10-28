@@ -3,7 +3,8 @@
   "plugin": {
     "key": "other/version.js",
     "fingerprint": "cfc7a95bcc0f",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "#版本": {

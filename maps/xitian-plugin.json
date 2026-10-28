@@ -3,7 +3,8 @@
   "plugin": {
     "key": "xitian-plugin",
     "fingerprint": "cfc3dddf329e",
-    "updated": "2026-10-27T19:33:21.789Z"
+    "updated": "2026-10-27T19:33:21.789Z",
+    "revision": 1
   },
   "commands": {
     "#分组列表": {

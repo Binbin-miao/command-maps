@@ -3,7 +3,8 @@
   "plugin": {
     "key": "bililivePush-plugin",
     "fingerprint": "ffed58922f08",
-    "updated": "2026-10-27T18:37:30.657Z"
+    "updated": "2026-10-27T18:37:30.657Z",
+    "revision": 1
   },
   "commands": {
     "订阅直播间": {

@@ -6,518 +6,565 @@
       "display": "botOperate",
       "file": "maps/system__botOperate.js.json",
       "fingerprint": "49da334820bf",
-      "sha256": "140bfcee4bfdcf851086f4290456a6c3b090e2cd1fdbe4b334d12dfcc1c87a78",
-      "bytes": 665,
+      "sha256": "6f24c14e57ef3bda05371c6d54455ee5fdd59e1d88e06cf7dda1c843cf0761f9",
+      "bytes": 684,
       "command_count": 2,
       "package": "system",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "system/recallReply.js": {
       "display": "回复撤回",
       "file": "maps/system__recallReply.js.json",
       "fingerprint": "cb85b6c1fc95",
-      "sha256": "92700c2c0514c05665be485c222323c0785c9d47dbd63601b21f5447bd1c67b3",
-      "bytes": 406,
+      "sha256": "08820ec7360ce442d7d76101539f7893b1de36f9e1786e3e46c1c45cbf6c52c6",
+      "bytes": 425,
       "command_count": 1,
       "package": "system",
       "category": "群管理",
-      "used": 5
+      "used": 5,
+      "revision": 1
     },
     "system/master.js": {
       "display": "设置主人",
       "file": "maps/system__master.js.json",
       "fingerprint": "629943821ae1",
-      "sha256": "0259a6b9463a4cb75ccb5cb2bca31ab3608fd69c74c03e180aacbe1c4e5bbe83",
-      "bytes": 726,
+      "sha256": "bf71c86e825d5f26213026449fcbd68a6b341eca8bed3d03390e18872e9890e6",
+      "bytes": 745,
       "command_count": 2,
       "package": "system",
       "category": "系统",
-      "used": 10
+      "used": 10,
+      "revision": 1
     },
     "other/sendLog.js": {
       "display": "发送日志",
       "file": "maps/other__sendLog.js.json",
       "fingerprint": "a966dcc83e43",
-      "sha256": "07b814cc295a37229549b4f16870b3b6b782f36f45c581df7c62493345fa4552",
-      "bytes": 422,
+      "sha256": "5de70a102637bf2c791f4e7209690523066ae90c5855a51a2093c2395ed02f34",
+      "bytes": 441,
       "command_count": 1,
       "package": "other",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "other/restart.js": {
       "display": "进程管理",
       "file": "maps/other__restart.js.json",
       "fingerprint": "3a1470012ab6",
-      "sha256": "e2c77886b7e39084263caa92b186f5e890bc3d02dee5eb1d8772993c241216df",
-      "bytes": 858,
+      "sha256": "fe63269e19297da5623b046f2351bb1ca620a11f44715f64af2eb114595e95a5",
+      "bytes": 877,
       "command_count": 3,
       "package": "other",
       "category": "系统",
-      "used": 1
+      "used": 1,
+      "revision": 1
     },
     "other/update.js": {
       "display": "更新",
       "file": "maps/other__update.js.json",
       "fingerprint": "42c59a0511c1",
-      "sha256": "2630938a24858feca6f6e0ee66ff610819b3a7f96838b02f89e084e980853e1a",
-      "bytes": 1014,
+      "sha256": "c057caa53887deceb0dda1e8773bb2f4e506d42bf39ea5a37fa4c2f8b7813716",
+      "bytes": 1033,
       "command_count": 3,
       "package": "other",
       "category": "系统",
-      "used": 1
+      "used": 1,
+      "revision": 1
     },
     "other/install.js": {
       "display": "安装插件",
       "file": "maps/other__install.js.json",
       "fingerprint": "e8b4aa83f804",
-      "sha256": "d9f442e3fca4fefe7d00a65842833c3514c0865991abb670a716d059afdcfcab",
-      "bytes": 649,
+      "sha256": "7795b197df8872909aa8131c46a2ab15a0927c22ce4d3d7463d9d01bba93b760",
+      "bytes": 668,
       "command_count": 2,
       "package": "other",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "TRSS-Plugin": {
       "display": "文件操作",
       "file": "maps/TRSS-Plugin.json",
       "fingerprint": "a917ac32b060",
-      "sha256": "04a049caa65d8609ac67d51664ce09dc89392e3b5546dd3bde3fb33e8d8fc272",
-      "bytes": 6784,
+      "sha256": "9852005ae4926426293e0ee3caec237083007f4ea39955dbb76d79dc3cb291fc",
+      "bytes": 6803,
       "command_count": 29,
       "package": "TRSS-Plugin",
       "category": "工具",
-      "used": 1
+      "used": 1,
+      "revision": 1
     },
     "meme-plugin": {
       "display": "清语表情:设置",
       "file": "maps/meme-plugin.json",
       "fingerprint": "587482dbb646",
-      "sha256": "124dcd9251d59e5c73382e18888210d4ce41cce2049b05aecd6cfb1ed7ffae45",
-      "bytes": 3439,
+      "sha256": "9ae42fdea199e66654727751b0cf57dbb9f430d4beed20478666a61aacfd3a0b",
+      "bytes": 3458,
       "command_count": 12,
       "package": "meme-plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "GT-Manual": {
       "display": "GT-Manual",
       "file": "maps/GT-Manual.json",
       "fingerprint": "f59ccf4f96be",
-      "sha256": "c78236e7bcb2f7422cecc4e010adbbb5c245e26f755faa40f0003a2fc456c9b2",
-      "bytes": 1084,
+      "sha256": "3bcf9029f5405288b37705b38cf461df2d8506eb3bce9bb1e145ba2d9c0b5b3f",
+      "bytes": 1103,
       "command_count": 3,
       "package": "GT-Manual",
       "category": "游戏",
-      "used": 4
+      "used": 4,
+      "revision": 1
     },
     "TianRu-plugin": {
       "display": "我是XXX",
       "file": "maps/TianRu-plugin.json",
       "fingerprint": "d07d58804d0d",
-      "sha256": "a3e8523b421fc6661358b58e4106033474c4e32f1d1ed9f2a33e69cb659ffc1c",
-      "bytes": 3046,
+      "sha256": "7be924c7c1f20c12ee21b6178160ec576eec8bf335afd7f49e55027b4f1bf1a1",
+      "bytes": 3065,
       "command_count": 12,
       "package": "TianRu-plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "bililivePush-plugin": {
       "display": "bilibili",
       "file": "maps/bililivePush-plugin.json",
       "fingerprint": "ffed58922f08",
-      "sha256": "b0c659b6b46152edba30a6b59b8ac672d53be92524867dbceab23a7d5815aa8e",
-      "bytes": 2191,
+      "sha256": "db1cacf2c33d345b5f691d120ae4f44ac8e775d36a862cfa50fb029eb36190b9",
+      "bytes": 2210,
       "command_count": 8,
       "package": "bililivePush-plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "StarRail-plugin": {
       "display": "星穹铁道",
       "file": "maps/StarRail-plugin.json",
       "fingerprint": "bd76e5b49bdc",
-      "sha256": "7953240bc561d95c2532687f21c79e0eb31c27ec175c1e2c760b11aaae9ddc9f",
-      "bytes": 14728,
+      "sha256": "3b1370ebb264aa7629d1cea09b1b127c4117062a80389b8a2eae7377758bfc2f",
+      "bytes": 14747,
       "command_count": 51,
       "package": "StarRail-plugin",
       "category": "游戏",
-      "used": 2
+      "used": 2,
+      "revision": 1
     },
     "yenai-plugin": {
       "display": "椰奶状态",
       "file": "maps/yenai-plugin.json",
       "fingerprint": "4e6b31525e8e",
-      "sha256": "13fe22b5de225b42b1fa4a348786e96997760bb5f706ca0c963f0af24b15e836",
-      "bytes": 37960,
+      "sha256": "bcd83b999a209e6942ea13ad60b985c0663326656732a26ca1e50bc20f9f304e",
+      "bytes": 37980,
       "command_count": 140,
       "package": "yenai-plugin",
       "category": "群管理",
-      "used": 19
+      "used": 19,
+      "revision": 1
     },
     "bujidao": {
       "display": "[寄]深渊查询",
       "file": "maps/bujidao.json",
       "fingerprint": "d2e60366ecf6",
-      "sha256": "b8d10aa1f49184690fc0cfbe70408949a1649094a5ca9c6020f8bf05271051ad",
-      "bytes": 6179,
+      "sha256": "1fd4141ff8769b0368eeae00a019761c6a958e69679fae739c62928f106268c6",
+      "bytes": 6198,
       "command_count": 19,
       "package": "bujidao",
       "category": "游戏",
-      "used": 280
+      "used": 280,
+      "revision": 1
     },
     "example/add.js": {
       "display": "添加消息",
       "file": "maps/example__add.js.json",
       "fingerprint": "1577abe88fdc",
-      "sha256": "90ee745c6a9b2f3a333d984c7ebd5b3dbe4190e338f10798b76677051a751837",
-      "bytes": 850,
+      "sha256": "d06b73f1fa337520caf69fd141e35275143b8836eaed3dbc093eea71a5a7708b",
+      "bytes": 869,
       "command_count": 3,
       "package": "example",
       "category": "其他",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "delta-force-plugin": {
       "display": "三角洲订阅管理",
       "file": "maps/delta-force-plugin.json",
       "fingerprint": "fea64c800791",
-      "sha256": "d65b6ad70c7db78379ff3ce21bbef8914c976a29d3fdec67347808c62112f710",
-      "bytes": 32587,
+      "sha256": "6472f9aeac7cc3d5fb137ac7bd91412a6a2e11e1a963dc8519d6194f17199009",
+      "bytes": 32606,
       "command_count": 110,
       "package": "delta-force-plugin",
       "category": "游戏",
-      "used": 19
+      "used": 19,
+      "revision": 1
     },
     "example/咕咕牛图库管理器.js": {
       "display": "『咕咕牛』原图管理器",
       "file": "maps/example__咕咕牛图库管理器.js.json",
       "fingerprint": "26885d0b0c8e",
-      "sha256": "1c7c5ac79ac5e71cf5738ce2248760c2d568a80c99b3544e88e02301cc392733",
-      "bytes": 4867,
+      "sha256": "f8ad0ecab086cc4f7f2d05ba1714dd16cd5aaa01fca08dc115ea9c1a447d2f38",
+      "bytes": 4886,
       "command_count": 18,
       "package": "example",
       "category": "系统",
-      "used": 2
+      "used": 2,
+      "revision": 1
     },
     "xiaofei-plugin": {
       "display": "小飞插件_通行证ck转米游社ck",
       "file": "maps/xiaofei-plugin.json",
       "fingerprint": "f28d04326da5",
-      "sha256": "70daedc826c6902772228947f3fbba7d6c97085f4c45b2003f0f341ef27e4249",
-      "bytes": 4158,
+      "sha256": "5401d3fc20cac582775ccb17147aed409d22dc3397a731cac5e3890dd3ab0957",
+      "bytes": 4177,
       "command_count": 15,
       "package": "xiaofei-plugin",
       "category": "系统",
-      "used": 1
+      "used": 1,
+      "revision": 1
     },
     "genshin": {
       "display": "七圣召唤卡组查询",
       "file": "maps/genshin.json",
       "fingerprint": "f05f9dbf2c9e",
-      "sha256": "35f89203528ff3e45a6a4a768aa1e7cd20ea02baa10e28f993a7936e3b1410e5",
-      "bytes": 15782,
+      "sha256": "9705e79a0da7a51c5fc11319d8e4efa05b86fcc905fe36d009609b36ff53df4f",
+      "bytes": 15801,
       "command_count": 56,
       "package": "genshin",
       "category": "游戏",
-      "used": 56
+      "used": 56,
+      "revision": 1
     },
     "Tlon-Sky": {
       "display": "[Ts]光遇信息查询",
       "file": "maps/Tlon-Sky.json",
       "fingerprint": "faca9cf35db7",
-      "sha256": "36cb61bada586aef123f48ba591c4fb983129670a7b20bdb4bdb92df8e9b7d98",
-      "bytes": 11489,
+      "sha256": "573991b8c0729752030c23b209ec632361246816978344e77b99f3015e1a47a7",
+      "bytes": 11508,
       "command_count": 42,
       "package": "Tlon-Sky",
       "category": "游戏",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "FanSky_Qs": {
       "display": "监控github仓库状态",
       "file": "maps/FanSky_Qs.json",
       "fingerprint": "ae10e698503e",
-      "sha256": "720bb575b507a04604f11ba862391942f72c5b5b12ab0e5525c7824489d76b10",
-      "bytes": 16267,
+      "sha256": "2716fc5efe0882a2a3840847172ddc3a07bf1390d6042c2967a0ec323af589af",
+      "bytes": 16286,
       "command_count": 59,
       "package": "FanSky_Qs",
       "category": "群管理",
-      "used": 56
+      "used": 56,
+      "revision": 1
     },
     "ws-plugin": {
       "display": "[ws-plugin] 设置",
       "file": "maps/ws-plugin.json",
       "fingerprint": "b2e1a202b975",
-      "sha256": "8f778c3967a10c9240e4d29c1e1bc3afc5b86895c812d7a440713d1dff2b71f4",
-      "bytes": 4034,
+      "sha256": "9c2f950925120792d2644a6338eedb25d34caed0dba4e130807199a392a08a8e",
+      "bytes": 4053,
       "command_count": 15,
       "package": "ws-plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "mora-plugin": {
       "display": "虚空深渊",
       "file": "maps/mora-plugin.json",
       "fingerprint": "ddd947aa21d6",
-      "sha256": "cfd633df3c4e25adf44094ae08add19cc6406ff96cd7c4692542f0add1bf54ca",
-      "bytes": 4177,
+      "sha256": "443851467837e5a85739edb31fb8e4c98ee89907bb0f135bab1f49f5f0ab0e12",
+      "bytes": 4196,
       "command_count": 14,
       "package": "mora-plugin",
       "category": "游戏",
-      "used": 2
+      "used": 2,
+      "revision": 1
     },
     "xitian-plugin": {
       "display": "分组",
       "file": "maps/xitian-plugin.json",
       "fingerprint": "cfc3dddf329e",
-      "sha256": "9f1c9482f0993b1f39a6da8dd2c6ce08277c8f3f5c3c5f646070fe8e19d2f80c",
-      "bytes": 5986,
+      "sha256": "f30cc222b3b855e8e63525359a77d0d8043ee33bed591a5f3122b0d8acc10867",
+      "bytes": 6005,
       "command_count": 23,
       "package": "xitian-plugin",
       "category": "系统",
-      "used": 1
+      "used": 1,
+      "revision": 1
     },
     "steam-plugin": {
       "display": "[steam-plugin]扫码登录",
       "file": "maps/steam-plugin.json",
       "fingerprint": "bcfbd1ab299b",
-      "sha256": "c4c4b957afb2784e8ac51aa4ca2ef3642768792e7bde8de9f4cb904ca2c49d9b",
-      "bytes": 14837,
+      "sha256": "0eb70056c9e03d02d8920ee037032746298317924075592bd2b290ff47d2a46b",
+      "bytes": 14856,
       "command_count": 54,
       "package": "steam-plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "Atlas": {
       "display": "Atlas图鉴帮助",
       "file": "maps/Atlas.json",
       "fingerprint": "fa8020462da8",
-      "sha256": "8295fba982943e1cf54733ca2b4ba579760d2dfc454fa06645b43cc9d1547b8d",
-      "bytes": 1544,
+      "sha256": "8b6ab943cb26ac4a3b7308f82e6bb2a46a44f8babf734b072b90042e19204e3d",
+      "bytes": 1563,
       "command_count": 5,
       "package": "Atlas",
       "category": "游戏",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "TaJiDuo-plugin": {
       "display": "[TaJiDuo-plugin]帮助",
       "file": "maps/TaJiDuo-plugin.json",
       "fingerprint": "3ef920eb1da4",
-      "sha256": "a9ab1d815c53d6c3217bd99b5c11451221460f277d7dce5a1af957d9a1df97b8",
-      "bytes": 13014,
+      "sha256": "d2c2b3625e1b3a28ce7a6a8dcd56c08e036016b57fc3cd48a6c7c0be79cf2858",
+      "bytes": 13033,
       "command_count": 43,
       "package": "TaJiDuo-plugin",
       "category": "游戏",
-      "used": 2
+      "used": 2,
+      "revision": 1
     },
     "other/version.js": {
       "display": "喵喵:版本",
       "file": "maps/other__version.js.json",
       "fingerprint": "cfc7a95bcc0f",
-      "sha256": "8e3edd1d68a33eae6f789d27d07c1e80448f65ca2dbd1c2e38f93827b286b61f",
-      "bytes": 392,
+      "sha256": "d6d173dcf24adcfc384e465cd182b43e407f7b22e6d95912cd376508dc4c7de4",
+      "bytes": 411,
       "command_count": 1,
       "package": "other",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "xiaoyao-cvs-plugin": {
       "display": "xiaoyao-cvs-plugin",
       "file": "maps/xiaoyao-cvs-plugin.json",
       "fingerprint": "da39a3ee5e6b",
-      "sha256": "0f937ceaba2bc68f7ae7d81ded85511c57212420d5781cc5bea04898bcd0dc18",
-      "bytes": 165,
+      "sha256": "0de9348dc854c0658cfc230461c124e23f889c25e8ab70dade17abe678838702",
+      "bytes": 184,
       "command_count": 0,
       "package": "xiaoyao-cvs-plugin",
       "category": "其他",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "windoge-plugin": {
       "display": "windoge-plugin",
       "file": "maps/windoge-plugin.json",
       "fingerprint": "da39a3ee5e6b",
-      "sha256": "247a785dc275b2295418874ad67598408f0fea90a0331750c2957741aed21258",
-      "bytes": 161,
+      "sha256": "cf84294a3cbeb074af7b35b398bd0900163a00cb0ae23e2351040ce42abc343b",
+      "bytes": 180,
       "command_count": 0,
       "package": "windoge-plugin",
       "category": "其他",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "miao-plugin": {
       "display": "喵喵:角色查询",
       "file": "maps/miao-plugin.json",
       "fingerprint": "f6ca92384fbb",
-      "sha256": "5b818bee471f1001e84b904a7f3c0a727e5a7bd7d65f95fb97f99a87f9d71b18",
-      "bytes": 15901,
+      "sha256": "1ef243b8851f608a25c922c530f6d07bb3a92004a4180950ff546fc76b2761e1",
+      "bytes": 15920,
       "command_count": 57,
       "package": "miao-plugin",
       "category": "游戏",
-      "used": 46
+      "used": 46,
+      "revision": 1
     },
     "zmd-plugin": {
       "display": "zmd-plugin-update",
       "file": "maps/zmd-plugin.json",
       "fingerprint": "3fca59ea7828",
-      "sha256": "6c6678fa99847abb1b6abbf532b4f4774a01b05cba78d5f51a1829991b1c157e",
-      "bytes": 25204,
+      "sha256": "afd2d7db91b4e62fd9ddc550e576e1e1f912024a5103ebd1246d248a7ab804fb",
+      "bytes": 25223,
       "command_count": 77,
       "package": "zmd-plugin",
       "category": "游戏",
-      "used": 2
+      "used": 2,
+      "revision": 1
     },
     "ZZZ-Plugin": {
       "display": "[ZZZ-Plugin]abyss",
       "file": "maps/ZZZ-Plugin.json",
       "fingerprint": "3b7915609dd9",
-      "sha256": "01bbf50c8db1e5ce7e817cffd653a5518f7b7644006cc032946fadac7e3310ab",
-      "bytes": 18990,
+      "sha256": "68fff8dde1315352b4ef59e7fd619b79b05079324597f357fd5e53cb13d8e491",
+      "bytes": 19009,
       "command_count": 66,
       "package": "ZZZ-Plugin",
       "category": "游戏",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "Guoba-Plugin": {
       "display": "锅巴登录",
       "file": "maps/Guoba-Plugin.json",
       "fingerprint": "01c2d91e31f2",
-      "sha256": "25e11785dd71394cc874447e543182e154be9570121e16e975379992d2288c34",
-      "bytes": 1544,
+      "sha256": "b5f69de22fa2e542f712889cc9a613fbf357ebd7c58a96c0babe284b37a4c52d",
+      "bytes": 1563,
       "command_count": 5,
       "package": "Guoba-Plugin",
       "category": "系统",
-      "used": 63
+      "used": 63,
+      "revision": 1
     },
     "rconsole-plugin": {
       "display": "R插件点歌",
       "file": "maps/rconsole-plugin.json",
       "fingerprint": "fdc3e6d2c00e",
-      "sha256": "dc5e1bab90fd01df9a0844a1f7057f98a9aa1b538e15b993b19d7513cf784702",
-      "bytes": 7275,
+      "sha256": "f8d161b4a7b798b3cbbd0763b26945c8ffb4d4ce8906aed1298e67e56b96d74f",
+      "bytes": 7294,
       "command_count": 30,
       "package": "rconsole-plugin",
       "category": "系统",
-      "used": 1
+      "used": 1,
+      "revision": 1
     },
     "DF-Plugin": {
       "display": "DF:联系主人",
       "file": "maps/DF-Plugin.json",
       "fingerprint": "0f6d1c2e8b1a",
-      "sha256": "1f4396e021422e09ba5c1bba980ea97046028674c0cda775bceb96ae4fc06b3c",
-      "bytes": 3472,
+      "sha256": "60a8586dd6ced0a2cdc4285602431e6e75189d11435bb8d638407f5c4acdc2b7",
+      "bytes": 3491,
       "command_count": 13,
       "package": "DF-Plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "token-plugin": {
       "display": "new-api用量分析",
       "file": "maps/token-plugin.json",
       "fingerprint": "e0cdc27c8778",
-      "sha256": "57c7b20cf8709e14ab700ddf40b31c25077d06abf5f2535fe3bbdb68de01f541",
-      "bytes": 416,
+      "sha256": "8605ddd4d423a3742cafe397ec0059251b36d404b5f758be0a40c34bec9ea30c",
+      "bytes": 435,
       "command_count": 1,
       "package": "token-plugin",
       "category": "其他",
-      "used": 57
+      "used": 57,
+      "revision": 1
     },
     "Daily-Attendance-plugin": {
       "display": "每日运势",
       "file": "maps/Daily-Attendance-plugin.json",
       "fingerprint": "f3a42a69b54f",
-      "sha256": "ca44970e18bf8b2eda7dfcd43c10ceb187206f40430a6f7fe1883334a9b46ecc",
-      "bytes": 2144,
+      "sha256": "8853e08f05f888310284fc3fc1ce60836314df85ce212477a78a84403b234ac1",
+      "bytes": 2163,
       "command_count": 7,
       "package": "Daily-Attendance-plugin",
       "category": "娱乐",
-      "used": 197
+      "used": 197,
+      "revision": 1
     },
     "TRSS-WeChat-OC-Plugin": {
       "display": "微信个人号更新插件",
       "file": "maps/TRSS-WeChat-OC-Plugin.json",
       "fingerprint": "b4a1c5109f31",
-      "sha256": "c282177bb831816e0383324662fefc74d82bf77afd4db682765e58b370781cee",
-      "bytes": 1697,
+      "sha256": "30e8ff7ebc714c45e91abf3e9f447f23aec13a32b09ebe93266d25a09c6b19e7",
+      "bytes": 1716,
       "command_count": 6,
       "package": "TRSS-WeChat-OC-Plugin",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "example/主动复读.js": {
       "display": "复读",
       "file": "maps/example__主动复读.js.json",
       "fingerprint": "750ca2560663",
-      "sha256": "07dcc1f0beacc72e43f969a301a79ab3c806f961dddc1fe9d16144e1905acd91",
-      "bytes": 402,
+      "sha256": "3e832fce05c157dc70c70ca8ba13725de5b488a0034543e73fb36199d992e59c",
+      "bytes": 421,
       "command_count": 1,
       "package": "example",
       "category": "娱乐",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "system/status.js": {
       "display": "状态统计",
       "file": "maps/system__status.js.json",
       "fingerprint": "e585bfd980ad",
-      "sha256": "a90238f4703dbceede56ed0465f849bd0cd6e5d0fdf0ca3de27088aed3bc7183",
-      "bytes": 401,
+      "sha256": "0315e245122b8973e7eb4bb3a7c8816cb6c49f52f161edb68b9482661dfa4448",
+      "bytes": 420,
       "command_count": 1,
       "package": "system",
       "category": "系统",
-      "used": 3
+      "used": 3,
+      "revision": 1
     },
     "other/speakRank.js": {
       "display": "发言榜",
       "file": "maps/other__speakRank.js.json",
       "fingerprint": "88bf5c5f8742",
-      "sha256": "dadf445fdb20b98cdf43c28cf9fd0a3ac3d04e6be3abe2f493daf4f542609f73",
-      "bytes": 409,
+      "sha256": "f9c517971ca5e1ed7699f2b2c89e7da9102b59807585c5a619d39e6a3bc7d41c",
+      "bytes": 428,
       "command_count": 1,
       "package": "other",
       "category": "群管理",
-      "used": 2
+      "used": 2,
+      "revision": 1
     },
     "XingYue-plugin": {
       "display": "XY帮助",
       "file": "maps/XingYue-plugin.json",
       "fingerprint": "da672304fdf7",
-      "sha256": "1e9290a7ae67d63bef1a2e1ec39a756895e880fe656e74abc76a721957589297",
-      "bytes": 1009,
+      "sha256": "a534776d9333abeec42dceec21bbc1a1149cbbc05962d00a8db4218550470776",
+      "bytes": 1028,
       "command_count": 3,
       "package": "XingYue-plugin",
       "category": "系统",
-      "used": 5
+      "used": 5,
+      "revision": 1
     },
     "cyxz-plugin": {
       "display": "次元小镇",
       "file": "maps/cyxz-plugin.json",
       "fingerprint": "23852ef87369",
-      "sha256": "1131d854b4d0a373fda8055df006d9e29c0a50fe997b14575073ad156176d9bb",
-      "bytes": 3060,
+      "sha256": "faf3272642579a99e0c5ac7f09a64b700d683638b7de6319066b1a4fecc3433c",
+      "bytes": 3079,
       "command_count": 12,
       "package": "cyxz-plugin",
       "category": "其他",
-      "used": 47
+      "used": 47,
+      "revision": 1
     },
     "example/视频生成.js": {
       "display": "GeminiVideo",
       "file": "maps/example__视频生成.js.json",
       "fingerprint": "561b3ff503a6",
-      "sha256": "1d78a1a6d0105134b2c54785a39792d46cf5524d200e5a8fdabe4fc497b82856",
-      "bytes": 417,
+      "sha256": "ec342bb6b67a6db41403eff380c6db1bd379371f2d5842e4a34efd66f4887c53",
+      "bytes": 436,
       "command_count": 1,
       "package": "example",
       "category": "工具",
-      "used": 0
+      "used": 0,
+      "revision": 1
     },
     "system/add.js": {
       "display": "添加消息",
       "file": "maps/system__add.js.json",
       "fingerprint": "8b4cea2fc848",
-      "sha256": "128b8f0e8a1ce773dc852f9280f91fc7ca984cce6900f39cdc4694c90f0268d2",
-      "bytes": 825,
+      "sha256": "eae72b97df99d93b57d8aa38af1d5ebd6bbe52bdc8944a0b8820fc51ca78f15c",
+      "bytes": 844,
       "command_count": 3,
       "package": "system",
       "category": "系统",
-      "used": 0
+      "used": 0,
+      "revision": 1
     }
   },
   "packages": {
@@ -848,5 +895,6 @@
       "command_count": 12,
       "used": 47
     }
-  }
+  },
+  "revision": 1
 }
