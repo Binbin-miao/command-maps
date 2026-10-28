@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 12,
-  "updated": "2026-10-28T22:14:51.830Z",
+  "revision": 20,
+  "updated": "2026-10-28T22:48:15.071Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -10,6 +10,8 @@
       "version": "0.0.1",
       "revision": 1,
       "command_count": 7,
+      "default_off_count": 0,
+      "delegated_count": 0,
       "fingerprint": "0f6484ccb281",
       "sha256": "ee0d701673c6c88bbb18105c7f633ca76355d1f4b899cf3bebbbe26812840773",
       "bytes": 25602,
@@ -22,9 +24,25 @@
       "version": "0.0.6",
       "revision": 6,
       "command_count": 113,
+      "default_off_count": 0,
+      "delegated_count": 0,
       "fingerprint": "e7410e3fad59",
       "sha256": "efcf7d512bf0b1afd0d91c774744fbbc556da354c59523ee6e327839602418b8",
       "bytes": 273785,
+      "used": 0
+    },
+    "miao-plugin": {
+      "file": "maps/miao-plugin.json",
+      "display": "喵喵插件",
+      "category": "游戏",
+      "version": "0.0.4",
+      "revision": 4,
+      "command_count": 77,
+      "default_off_count": 13,
+      "delegated_count": 0,
+      "fingerprint": "7ba734b73a15",
+      "sha256": "b2009454f1e5725a361eedb80b79d0649533df5554fc428349c4e0e0d96d45cb",
+      "bytes": 177604,
       "used": 0
     },
     "yenai-plugin": {
@@ -34,9 +52,25 @@
       "version": "0.0.2",
       "revision": 2,
       "command_count": 143,
+      "default_off_count": 0,
+      "delegated_count": 0,
       "fingerprint": "1e796db12333",
       "sha256": "1f69902c3b24fc5ef200b3c36a48b86106c13e3e4aa742235446b8e7c3597876",
       "bytes": 319205,
+      "used": 0
+    },
+    "zmd-plugin": {
+      "file": "maps/zmd-plugin.json",
+      "display": "终末地",
+      "category": "游戏",
+      "version": "0.0.4",
+      "revision": 4,
+      "command_count": 73,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "78ff64f98816",
+      "sha256": "4c15c34270bb51e9cc41ce0869e4877f7749a97a84d42c51eaa0fe41b275b349",
+      "bytes": 166519,
       "used": 0
     },
     "ZZZ-Plugin": {
@@ -46,6 +80,8 @@
       "version": "0.0.4",
       "revision": 4,
       "command_count": 83,
+      "default_off_count": 0,
+      "delegated_count": 0,
       "fingerprint": "d84f0ac63e89",
       "sha256": "e2d2d20ba13f1c44d144d9b4be9b8b91070d12268f3805cb6c2521758c13a5aa",
       "bytes": 176387,
@@ -71,12 +107,30 @@
       ],
       "used": 0
     },
+    "miao-plugin": {
+      "display": "喵喵插件",
+      "category": "游戏",
+      "command_count": 77,
+      "units": [
+        "miao-plugin"
+      ],
+      "used": 0
+    },
     "yenai-plugin": {
       "display": "椰奶",
       "category": "群管理",
       "command_count": 143,
       "units": [
         "yenai-plugin"
+      ],
+      "used": 0
+    },
+    "zmd-plugin": {
+      "display": "终末地",
+      "category": "游戏",
+      "command_count": 73,
+      "units": [
+        "zmd-plugin"
       ],
       "used": 0
     },
