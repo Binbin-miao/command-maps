@@ -1,0 +1,5121 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "zmd-plugin",
+    "display": "终末地",
+    "category": "游戏",
+    "summary": "明日方舟：终末地的数据查询：账号绑定与签到、卡片/面板/基建、抽卡记录、公告与活动提醒、图鉴查询；同时复用一套绑定做明日方舟（#fz）签到与抽卡",
+    "homepage": "https://github.com/yuyu-bot/zmd-plugin",
+    "notes": "指令前缀是 #zmd 或 #终末地，# 可省略；回复都是带 [终末地] 前缀的纯文本引用回复；单发 #zmd 就出菜单；大量配置类指令仅主人可用",
+    "interactsWith": [
+      "genshin（占用同名 CK 绑定，可能抢 #绑定）",
+      "miao-plugin（角色面板类指令可能抢）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助",
+        "别名",
+        "公告",
+        "基建",
+        "卡片与面板",
+        "账号与绑定",
+        "签到",
+        "数据源与后端",
+        "环境诊断",
+        "抽卡记录",
+        "图鉴",
+        "明日方舟（fz）"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "zmd/help",
+      "command": "#zmd帮助",
+      "aliases": [
+        "#zmd菜单",
+        "#zmd指令",
+        "#zmd命令",
+        "#zmd功能",
+        "#zmd",
+        "#终末地",
+        "%zmd帮助"
+      ],
+      "title": "查看终末地指令菜单",
+      "summary": "一张图列出全部指令，主人会多看到管理项",
+      "what": "按当前用户身份过滤出可见分组，渲染成一张指令菜单图，含分组、指令写法、一句话说明、MASTER 徽标。",
+      "returns": "一张菜单图片（渲染失败时退回纯文本）。",
+      "returnsDetail": "分组为：账号 / 查询 / 别名 / 推送 / 图鉴 / 签到 / 明日方舟 / 其他。每项含名称、写法、说明；标了 MASTER 的项只有主人能看到。图里还会带上你的 QQ 头像（或游戏头像）和时间戳。",
+      "timing": "3~10 秒（要取头像 + 渲染）。",
+      "cost": "纯本地渲染；会尝试读一次卡片数据取游戏头像（失败不影响）。",
+      "keywords": [
+        "帮助",
+        "菜单",
+        "指令",
+        "zmd帮助",
+        "终末地怎么用",
+        "指令大全"
+      ],
+      "params": [],
+      "example": "#zmd帮助",
+      "moreExamples": [
+        "#zmd",
+        "#终末地",
+        "#zmd菜单",
+        "#zmd指令"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**单独发 `#zmd` 或 `#终末地` 就会出菜单** —— 这条规则的后缀全是可选的，容易误触发",
+        "非主人看不到 MASTER 标记的十几项（后端配置、更新、全部签到、上传背景图等），主人和普通用户看到的菜单不一样",
+        "菜单里的写法用配置项 `cmd.prefix` 渲染，默认 `#zmd`；如果你改过配置，图里显示的也会跟着变",
+        "`#终末地帮助` 和 `#zmd帮助` 等价，`#` 也可以省略（写 `zmd帮助` 同样生效）"
+      ],
+      "failures": [
+        {
+          "symptom": "出的是纯文本而不是图",
+          "cause": "渲染器异常，退化成文本菜单"
+        },
+        {
+          "symptom": "看不到想用的指令",
+          "cause": "该项标了 MASTER，非主人不可见"
+        }
+      ],
+      "edgeCases": [
+        "卡片数据取不到时用 QQ 头像，不影响出图",
+        "empty 分组（过滤后无可见项）整组不显示"
+      ],
+      "scenarios": [
+        "新装插件看有什么功能",
+        "确认主人特有的指令"
+      ],
+      "vs": [
+        {
+          "command": "#zmd状态",
+          "diff": "那个看运行状态与签到统计"
+        },
+        {
+          "command": "#数据源",
+          "diff": "那个看角色数据接口来源"
+        }
+      ],
+      "related": [
+        "#zmd状态",
+        "#数据源",
+        "#zmd环境"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/alias-list",
+      "command": "#zmd别名 莱万汀",
+      "aliases": [
+        "#终末地别名 莱万汀",
+        "%zmd别名"
+      ],
+      "title": "查看角色已有别名",
+      "summary": "这个角色 bot 认哪些叫法",
+      "what": "在别名表里解析角色，输出该角色及其全部别名（用「 / 」分隔）。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "格式「[终末地] 「莱万汀」别名：\\n莱万汀 / 火神 / lwt …」。不带参数时回用法提示。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读 Redis。",
+      "keywords": [
+        "别名",
+        "查看别名",
+        "角色别名",
+        "有哪些别名"
+      ],
+      "params": [
+        {
+          "name": "角色",
+          "required": true,
+          "desc": "角色名或已有别名"
+        }
+      ],
+      "example": "#zmd别名 莱万汀",
+      "moreExamples": [
+        "#终末地别名 火神",
+        "zmd别名 莱万汀"
+      ],
+      "preconditions": [
+        "无需绑定账号",
+        "别名数据要先刷新过角色（#zmd刷新）"
+      ],
+      "pitfalls": [
+        "「别名」和角色名之间要有空格，写 `#zmd别名莱万汀` 会被当成不带参数",
+        "角色名解析不出来时提示「未找到角色「XX」，可先 #zmd刷新」",
+        "别名表存在 Redis 里，清库或换机后会清空"
+      ],
+      "failures": [
+        {
+          "symptom": "回「用法：#zmd别名 <角色>」",
+          "cause": "没给角色名或没加空格"
+        },
+        {
+          "symptom": "回「未找到角色「XX」」",
+          "cause": "角色名没命中，需先刷新角色数据"
+        }
+      ],
+      "edgeCases": [
+        "输出里第一项是角色主名，后面才是别名"
+      ],
+      "scenarios": [
+        "想知道能不能用简称查角色"
+      ],
+      "vs": [
+        {
+          "command": "#zmd添加别名 莱万汀 火神",
+          "diff": "那个是新增"
+        },
+        {
+          "command": "#zmd删除别名 莱万汀 火神",
+          "diff": "那个是删除"
+        }
+      ],
+      "related": [
+        "#zmd添加别名 莱万汀 火神",
+        "#zmd删除别名 莱万汀 火神",
+        "#zmd刷新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/alias-add",
+      "command": "#zmd添加别名 莱万汀 火神",
+      "aliases": [
+        "#终末地添加别名 莱万汀 火神",
+        "%zmd添加别名"
+      ],
+      "title": "给角色加别名",
+      "summary": "让 bot 认你习惯的叫法",
+      "what": "把别名绑定到指定角色上，之后用该别名查面板、图鉴都能命中。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] ✅ <结果说明>」；失败：「[终末地] ❌ <原因>」。缺参数时回用法提示。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写 Redis。",
+      "keywords": [
+        "添加别名",
+        "加外号",
+        "别名设置",
+        "自定义叫法"
+      ],
+      "params": [
+        {
+          "name": "角色",
+          "required": true,
+          "desc": "角色主名或已有别名"
+        },
+        {
+          "name": "别名",
+          "required": true,
+          "desc": "要绑定的叫法，可以带空格（剩余部分全算别名）"
+        }
+      ],
+      "example": "#zmd添加别名 莱万汀 火神",
+      "moreExamples": [
+        "#终末地添加别名 莱万汀 火神",
+        "zmd添加别名 陈 大刀"
+      ],
+      "preconditions": [
+        "角色必须能解析出来（先 #zmd刷新）"
+      ],
+      "pitfalls": [
+        "**「添加别名」四个字后面必须有空格**，正文是 `添加别名 <角色> <别名>`",
+        "别名部分取「角色名之后的全部内容」，所以别名里可以有空格，但角色名只能一个词",
+        "这个别名是**全局共享**的（存 Redis，不分用户），不是个人偏好"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "角色或别名缺一个"
+        },
+        {
+          "symptom": "回「❌ ...」",
+          "cause": "角色解析不到，或别名已存在"
+        }
+      ],
+      "edgeCases": [
+        "别名与已有角色主名冲突时的行为由 model/alias.js 决定，可能覆盖"
+      ],
+      "scenarios": [
+        "习惯叫外号，不想每次打全名"
+      ],
+      "vs": [
+        {
+          "command": "#zmd别名 莱万汀",
+          "diff": "那个查看现有别名"
+        },
+        {
+          "command": "#zmd删除别名 莱万汀 火神",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#zmd别名 莱万汀",
+        "#zmd删除别名 莱万汀 火神",
+        "#zmd刷新"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/alias-delete",
+      "command": "#zmd删除别名 莱万汀 火神",
+      "aliases": [
+        "#终末地删除别名 莱万汀 火神",
+        "%zmd删除别名"
+      ],
+      "title": "删除角色别名",
+      "summary": "去掉不再需要的外号",
+      "what": "从别名表里解绑指定别名。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] ✅ <结果说明>」；失败：「[终末地] ❌ <原因>」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写 Redis。",
+      "keywords": [
+        "删除别名",
+        "移除别名",
+        "取消外号"
+      ],
+      "params": [
+        {
+          "name": "角色",
+          "required": true,
+          "desc": "角色主名或别名"
+        },
+        {
+          "name": "别名",
+          "required": true,
+          "desc": "要解绑的叫法"
+        }
+      ],
+      "example": "#zmd删除别名 莱万汀 火神",
+      "moreExamples": [
+        "#终末地删除别名 莱万汀 火神"
+      ],
+      "preconditions": [
+        "该别名存在"
+      ],
+      "pitfalls": [
+        "同样要求「删除别名」后面有空格",
+        "删的是别名不是角色，角色本体不受影响"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "参数不全"
+        },
+        {
+          "symptom": "回「❌ ...」",
+          "cause": "别名不存在"
+        }
+      ],
+      "edgeCases": [
+        "角色主名本身通常删不掉"
+      ],
+      "scenarios": [
+        "清理加错的外号"
+      ],
+      "vs": [
+        {
+          "command": "#zmd添加别名 莱万汀 火神",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#zmd添加别名 莱万汀 火神",
+        "#zmd别名 莱万汀"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/ann-list",
+      "command": "#zmd公告",
+      "aliases": [
+        "#zmd公告列表",
+        "#终末地公告",
+        "%zmd公告"
+      ],
+      "title": "查看公告列表",
+      "summary": "最新公告带 ID，用于查详情",
+      "what": "拉森空岛公告列表，逐条列出序号、ID、日期、标题，末尾给出查详情的写法。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "格式「[终末地] 公告列表（N）」，之后每行「1. (ID) [YYYY-MM-DD] 标题」，末行「[终末地] 查看：#zmd公告 <id>」。条数由 `ann.pageSize` 控制（默认 18）。",
+      "timing": "3~15 秒（依赖 puppeteer 抓页面）。",
+      "cost": "走森空岛公告接口，可能有内存缓存。",
+      "keywords": [
+        "公告",
+        "公告列表",
+        "官方公告",
+        "更新公告"
+      ],
+      "params": [],
+      "example": "#zmd公告",
+      "moreExamples": [
+        "#zmd公告列表",
+        "#终末地公告"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**依赖 puppeteer/网络抓页面**，环境不全时回「获取公告列表失败（可能需要 puppeteer/网络）」",
+        "列表带内存缓存，新公告不会立刻出现，可用 `#zmd清理公告缓存` 强制刷新",
+        "「公告」后面接内容会走详情查询，不是列表"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取公告列表失败（可能需要 puppeteer/网络）」",
+          "cause": "puppeteer 未装、Chromium 缺失或网络不通"
+        },
+        {
+          "symptom": "列表里没有刚发的公告",
+          "cause": "命中内存缓存"
+        }
+      ],
+      "edgeCases": [
+        "公告没有时间戳时该条的日期段省略",
+        "抓取条数受 pageSize 限制（默认 18）"
+      ],
+      "scenarios": [
+        "看版本更新公告",
+        "拿公告 ID 去查详情"
+      ],
+      "vs": [
+        {
+          "command": "#zmd公告 12345",
+          "diff": "那个是看某一篇的全文"
+        },
+        {
+          "command": "#zmd订阅公告",
+          "diff": "那个是订阅自动推送"
+        }
+      ],
+      "related": [
+        "#zmd公告 12345",
+        "#zmd订阅公告",
+        "#zmd清理公告缓存",
+        "#zmd日历"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/ann-detail",
+      "command": "#zmd公告 12345",
+      "aliases": [
+        "#终末地公告 12345",
+        "%zmd公告"
+      ],
+      "title": "查看公告详情",
+      "summary": "公告全文 + 配图 + 视频链接",
+      "what": "按公告 ID 拉详情，输出标题、日期、作者、链接、正文（超 1200 字截断），再补最多 5 张图和最多 3 个视频链接。",
+      "returns": "一条或多条消息（正文 + 图片 + 视频链接分段发）。",
+      "returnsDetail": "首条是文本：标题 / 日期 / 作者（含 IP 属地）/ 森空岛原文链接 / 正文。之后逐张发图，最后如果有视频则发一条链接列表。正文为空时显示「（无文本内容）」，过长时末尾加「...（内容较长，已截断）」。",
+      "timing": "3~20 秒（图多时更久）。",
+      "cost": "走森空岛接口 + 图片流量。",
+      "keywords": [
+        "公告详情",
+        "看公告",
+        "公告全文",
+        "公告内容"
+      ],
+      "params": [
+        {
+          "name": "公告ID",
+          "required": true,
+          "desc": "从 #zmd公告 列表里抄，纯数字或字母串"
+        }
+      ],
+      "example": "#zmd公告 12345",
+      "moreExamples": [
+        "#终末地公告 67890"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**正文超过 1200 字会被截断**，长公告看不到后半段，要完整内容只能点链接",
+        "图片最多 5 张、视频最多 3 个，超出的不显示",
+        "ID 写错回「获取公告详情失败：<id>」，不会提示格式问题",
+        "图片单独发送，群消息会被拆成好几条，容易被当成刷屏"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取公告详情失败：<id>」",
+          "cause": "ID 不存在或抓取失败"
+        },
+        {
+          "symptom": "只看到文字没图",
+          "cause": "公告本身没图，或图片加载异常被静默跳过"
+        }
+      ],
+      "edgeCases": [
+        "没有作者信息时不显示作者行",
+        "图片加载失败只跳过不报错"
+      ],
+      "scenarios": [
+        "看版本更新公告的详细改动"
+      ],
+      "vs": [
+        {
+          "command": "#zmd公告",
+          "diff": "那个只列标题"
+        }
+      ],
+      "related": [
+        "#zmd公告",
+        "#zmd订阅公告",
+        "#zmd清理公告缓存"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/ann-subscribe",
+      "command": "#zmd订阅公告",
+      "aliases": [
+        "#终末地订阅公告",
+        "%zmd订阅公告"
+      ],
+      "title": "订阅本群公告推送",
+      "summary": "新公告自动推到本群",
+      "what": "把当前群加入公告订阅名单，之后由定时任务（默认每 15 分钟）检查新公告并推送。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 已订阅公告推送」。私聊调用：「[终末地] 请在群聊中订阅公告」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写订阅名单。",
+      "keywords": [
+        "订阅公告",
+        "公告推送",
+        "自动推公告"
+      ],
+      "params": [],
+      "example": "#zmd订阅公告",
+      "moreExamples": [
+        "#终末地订阅公告"
+      ],
+      "preconditions": [
+        "**必须在群聊里用**，私聊会直接拒绝",
+        "主人的配置里 `ann.enableTask` 要开着，否则定时任务不推"
+      ],
+      "pitfalls": [
+        "私聊调用无效，订阅是群维度的",
+        "订阅成功不等于立刻能收到 —— 要等定时任务跑（默认 cron `0 */15 * * * *`，每 15 分钟）",
+        "订阅状态存在本地，重装插件后可能丢失"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请在群聊中订阅公告」",
+          "cause": "私聊发的"
+        },
+        {
+          "symptom": "订阅了但没推送",
+          "cause": "`ann.enableTask` 未开，或还没到定时任务时间"
+        }
+      ],
+      "edgeCases": [
+        "重复订阅不会报错，幂等"
+      ],
+      "scenarios": [
+        "群里想第一时间看到官方公告"
+      ],
+      "vs": [
+        {
+          "command": "#zmd取消订阅公告",
+          "diff": "反向操作"
+        },
+        {
+          "command": "#zmd订阅活动提醒",
+          "diff": "那个推的是活动开始/结束，不是公告"
+        }
+      ],
+      "related": [
+        "#zmd取消订阅公告",
+        "#zmd公告",
+        "#zmd订阅活动提醒",
+        "#zmd状态"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/ann-unsubscribe",
+      "command": "#zmd取消订阅公告",
+      "aliases": [
+        "#终末地取消订阅公告",
+        "%zmd取消订阅公告"
+      ],
+      "title": "退订本群公告推送",
+      "summary": "不再往本群推公告",
+      "what": "把当前群从公告订阅名单里移除。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 已取消订阅公告推送」。私聊调用：「[终末地] 请在群聊中取消订阅公告」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写订阅名单。",
+      "keywords": [
+        "取消订阅公告",
+        "退订公告",
+        "关闭公告推送"
+      ],
+      "params": [],
+      "example": "#zmd取消订阅公告",
+      "moreExamples": [
+        "#终末地取消订阅公告"
+      ],
+      "preconditions": [
+        "必须在群聊里用"
+      ],
+      "pitfalls": [
+        "私聊调用无效",
+        "重复退订不报错"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请在群聊中取消订阅公告」",
+          "cause": "私聊发的"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "公告太吵不想看了"
+      ],
+      "vs": [
+        {
+          "command": "#zmd订阅公告",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#zmd订阅公告",
+        "#zmd公告"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/ann-clear-cache",
+      "command": "#zmd清理公告缓存",
+      "aliases": [
+        "#zmd公告清理缓存",
+        "#终末地清理公告缓存",
+        "%zmd清理公告缓存"
+      ],
+      "title": "清理公告内存缓存",
+      "summary": "主人专用：强制下次重新抓公告",
+      "what": "清空公告列表与详情的**内存**缓存，返回清掉的数量。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "「[终末地] 已清理公告内存缓存（列表 N 条，详情 M 条；不影响订阅与已读记录）」。",
+      "timing": "1~2 秒。",
+      "cost": "纯本地操作。",
+      "keywords": [
+        "清理公告缓存",
+        "公告缓存",
+        "刷新公告",
+        "公告不更新"
+      ],
+      "params": [],
+      "example": "#zmd清理公告缓存",
+      "moreExamples": [
+        "#zmd公告清理缓存"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "只清内存缓存，**不动订阅名单和已读记录** —— 所以清完不会导致重复推送",
+        "新公告没出现时先跑这条，再查列表",
+        "「清理公告缓存」和「公告清理缓存」两种顺序都支持"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "本来就没缓存时返回 0 条"
+      ],
+      "scenarios": [
+        "刚发的公告在列表里看不到"
+      ],
+      "vs": [
+        {
+          "command": "#zmd公告",
+          "diff": "那个直接用缓存，可能看到旧的"
+        }
+      ],
+      "related": [
+        "#zmd公告",
+        "#zmd状态"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/build",
+      "command": "#zmd基建",
+      "aliases": [
+        "#zmd建设",
+        "#zmd地区建设",
+        "#zmdjj",
+        "#zmd基建 详细",
+        "%zmd基建"
+      ],
+      "title": "查询基建与飞船",
+      "summary": "地区建设进度 + 飞船房间与驻员",
+      "what": "取卡片详情里的 domain（地区建设）与 spaceShip.rooms（飞船房间）数据，渲染成一张基建图。",
+      "returns": "一张基建图片；无数据时退回一条文本。",
+      "returnsDetail": "图里含昵称、UID、各地区建设的收集项统计、飞船各房间的类型/等级/驻员头像。无基建数据时回文本「暂无基建数据，请先 #zmd刷新」。",
+      "timing": "4~15 秒。",
+      "cost": "走森空岛卡片接口 + 渲染。",
+      "keywords": [
+        "基建",
+        "建设",
+        "地区建设",
+        "飞船",
+        "jj",
+        "驻员"
+      ],
+      "params": [
+        {
+          "name": "详细",
+          "required": false,
+          "desc": "写 `详细`/`详情`/`all` 会展示更多条目（地区 12、房间 12、每房间 6 人）"
+        }
+      ],
+      "example": "#zmd基建",
+      "moreExamples": [
+        "#zmd基建 详细",
+        "#zmd建设",
+        "#zmdjj",
+        "#终末地基建"
+      ],
+      "preconditions": [
+        "已绑定账号（`#zmd绑定`）",
+        "至少跑过一次 #zmd刷新 拿到卡片数据"
+      ],
+      "pitfalls": [
+        "不带「详细」时**只显示部分条目**（地区 9、房间 8、每房间 4 人），看全要点详细",
+        "没有卡片数据时不会自动去拉，提示你手动刷新",
+        "支持 @ 别人查（群聊里 @ 一下即可）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无基建数据，请先 #zmd刷新」",
+          "cause": "本地没有卡片缓存"
+        },
+        {
+          "symptom": "回「未绑定账号」类提示",
+          "cause": "没绑或绑定失效"
+        }
+      ],
+      "edgeCases": [
+        "地区建设和飞船都为空时才提示无数据，只有一个也能出图",
+        "驻员名字查不到时显示 charId 前 8 位"
+      ],
+      "scenarios": [
+        "看飞船各房间安排",
+        "统计各地区建设进度"
+      ],
+      "vs": [
+        {
+          "command": "#zmd卡片",
+          "diff": "那个是账号总览名片"
+        },
+        {
+          "command": "#zmd每日",
+          "diff": "那个看体力/通行证等日常"
+        }
+      ],
+      "related": [
+        "#zmd卡片",
+        "#zmd每日",
+        "#zmd刷新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/refresh",
+      "command": "#zmd刷新",
+      "aliases": [
+        "#zmd更新",
+        "#zmd刷新数据",
+        "#zmd刷新面板",
+        "#zmdupd",
+        "%zmd刷新"
+      ],
+      "title": "刷新卡片与面板数据",
+      "summary": "拉最新账号数据入库，其他查询都靠它",
+      "what": "用绑定账号的凭证去森空岛拉卡片详情，写进本地缓存，返回刷新的角色名与 UID。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] <结果文案>：<角色名> UID:<uid>」外加可选提示。失败时直接回错误文案。",
+      "timing": "5~20 秒。",
+      "cost": "走森空岛卡片接口。",
+      "keywords": [
+        "刷新",
+        "更新数据",
+        "刷新面板",
+        "同步数据",
+        "upd"
+      ],
+      "params": [],
+      "example": "#zmd刷新",
+      "moreExamples": [
+        "#zmd更新",
+        "#zmd刷新数据",
+        "#zmdupd"
+      ],
+      "preconditions": [
+        "已绑定账号（`#zmd绑定` 或 `#zmd登录`）"
+      ],
+      "pitfalls": [
+        "**这是所有查询的前提** —— `#zmd卡片`/`#zmd基建`/`#zmd面板` 没数据时都会让你先跑这个",
+        "有缓存时间限制（`card.cacheSec`），太频繁刷新不会真的重新拉",
+        "「刷新」后面不能加参数，加 @ 无效（@ 只对其他查询指令生效）"
+      ],
+      "failures": [
+        {
+          "symptom": "回未绑定/请先登录",
+          "cause": "没绑账号或凭证过期"
+        },
+        {
+          "symptom": "回拉取失败",
+          "cause": "森空岛接口异常或凭证失效"
+        }
+      ],
+      "edgeCases": [
+        "缓存未过期时可能直接返回旧数据",
+        "绑定的是纯 UID（无 cred）时，刷新只能拿到有限数据"
+      ],
+      "scenarios": [
+        "刚绑好账号先刷一次",
+        "游戏数据变了想同步"
+      ],
+      "vs": [
+        {
+          "command": "#zmd卡片",
+          "diff": "那个只读缓存，不刷新"
+        },
+        {
+          "command": "#zmd更新抽卡记录",
+          "diff": "那个刷的是抽卡记录，不是卡片"
+        }
+      ],
+      "related": [
+        "#zmd卡片",
+        "#zmd基建",
+        "#zmd每日",
+        "#zmd绑定"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/card",
+      "command": "#zmd卡片",
+      "aliases": [
+        "#zmdkp",
+        "#zmdcard",
+        "#终末地卡片",
+        "%zmd卡片"
+      ],
+      "title": "生成账号卡片",
+      "summary": "账号总览名片图",
+      "what": "用本地卡片缓存渲染成一张总览图，可 @ 别人。",
+      "returns": "一张卡片图片。",
+      "returnsDetail": "含角色基础信息、等级、进度概览等。数据为空时回「卡片数据为空，请先 #zmd刷新」。",
+      "timing": "4~15 秒。",
+      "cost": "纯本地缓存 + 渲染。",
+      "keywords": [
+        "卡片",
+        "名片",
+        "账号总览",
+        "kp",
+        "查卡片"
+      ],
+      "params": [],
+      "example": "#zmd卡片",
+      "moreExamples": [
+        "#zmdkp",
+        "#zmdcard",
+        "#zmd卡片 @某人"
+      ],
+      "preconditions": [
+        "已绑定账号",
+        "跑过 #zmd刷新"
+      ],
+      "pitfalls": [
+        "只读缓存，不刷新；数据旧要先 `#zmd刷新`",
+        "规则允许后面跟任意参数（`(?:\\s*.*)?`），所以后面写什么都不影响"
+      ],
+      "failures": [
+        {
+          "symptom": "回「卡片数据为空，请先 #zmd刷新」",
+          "cause": "没有缓存"
+        },
+        {
+          "symptom": "回未绑定提示",
+          "cause": "没绑账号"
+        }
+      ],
+      "edgeCases": [
+        "@ 别人时查的是对方绑定的账号"
+      ],
+      "scenarios": [
+        "看账号整体情况",
+        "群里晒卡片"
+      ],
+      "vs": [
+        {
+          "command": "#zmd基建",
+          "diff": "那个专看地区建设与飞船"
+        },
+        {
+          "command": "#zmd每日",
+          "diff": "那个专看体力/通行证/活跃"
+        }
+      ],
+      "related": [
+        "#zmd刷新",
+        "#zmd基建",
+        "#zmd每日"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/panel-by-name",
+      "command": "#艾莲面板",
+      "aliases": [
+        "#莱万汀面板",
+        "#角色名面板"
+      ],
+      "title": "按角色名查面板（推荐写法）",
+      "summary": "不带 zmd 前缀，直接 #角色名面板",
+      "what": "解析 `#<角色名>面板` 里的角色，从本地角色列表或 Friend API 取面板数据，渲染成角色面板图。",
+      "returns": "一张角色面板图片。",
+      "returnsDetail": "含角色属性、武器、装备（装甲/手套/配件/战术道具）、潜能等。角色匹配到多个时会回「匹配到多个角色：A / B，请使用模板ID」。",
+      "timing": "5~20 秒。",
+      "cost": "本地缓存优先，必要时走 Friend API + 渲染。",
+      "keywords": [
+        "角色面板",
+        "看面板",
+        "角色详情",
+        "配装",
+        "面板"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「面板」前面，可选模板ID代替"
+        }
+      ],
+      "example": "#艾莲面板",
+      "moreExamples": [
+        "#莱万汀面板",
+        "#艾莲面板 @某人"
+      ],
+      "preconditions": [
+        "已绑定账号",
+        "跑过 #zmd刷新"
+      ],
+      "pitfalls": [
+        "**这条必须有 `#`**，写 `艾莲面板`（无 #）不触发",
+        "`#` 后面不能直接跟 `zmd`/`终末地`/`ZMD`/`更新`/`刷新`/`查询`/`卡片` —— 这些词被负向前瞻排除了，所以 `#zmd艾莲面板` 不匹配",
+        "角色名限 20 个字符以内，且不能含空格",
+        "匹配到多个同名/相似角色时要用模板ID指定",
+        "「面板」后面可以跟 @ 或模板参数"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未找到角色「XX」，可先 #zmd刷新」",
+          "cause": "角色名没命中"
+        },
+        {
+          "symptom": "回「匹配到多个角色：A / B」",
+          "cause": "名字有歧义，需改用模板ID"
+        },
+        {
+          "symptom": "回「未绑定 UID」",
+          "cause": "没绑账号"
+        },
+        {
+          "symptom": "回「未配置角色数据接口，无法使用 UID 绑定面板功能」",
+          "cause": "配置里 Friend API 未设"
+        }
+      ],
+      "edgeCases": [
+        "角色名可以用别名",
+        "Friend API 只返回名片展示位的角色时，回「未找到可展示角色」"
+      ],
+      "scenarios": [
+        "看某个角色的配装与属性"
+      ],
+      "vs": [
+        {
+          "command": "#zmd面板 艾莲",
+          "diff": "旧写法，效果一样"
+        },
+        {
+          "command": "#zmd卡片",
+          "diff": "那个是账号总览"
+        }
+      ],
+      "related": [
+        "#zmd面板 艾莲",
+        "#zmd刷新",
+        "#zmd别名 艾莲"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/panel-prefixed",
+      "command": "#zmd面板 艾莲",
+      "aliases": [
+        "#zmd查询 艾莲",
+        "#zmdmb 艾莲",
+        "#终末地面板 艾莲",
+        "%zmd面板"
+      ],
+      "title": "带前缀查角色面板（旧写法）",
+      "summary": "兼容写法，效果同 #角色名面板",
+      "what": "解析前缀后的角色名或模板ID，走与 `#角色名面板` 完全相同的渲染流程。",
+      "returns": "一张角色面板图片。",
+      "returnsDetail": "与 `#角色名面板` 一致。缺参数时回用法提示「#角色名面板（推荐） 或 #zmd面板 <角色>」。",
+      "timing": "5~20 秒。",
+      "cost": "同 `#角色名面板`。",
+      "keywords": [
+        "面板",
+        "zmd面板",
+        "查询角色",
+        "mb"
+      ],
+      "params": [
+        {
+          "name": "角色",
+          "required": true,
+          "desc": "角色名、别名或模板ID"
+        }
+      ],
+      "example": "#zmd面板 艾莲",
+      "moreExamples": [
+        "#zmd查询 艾莲",
+        "#zmdmb 艾莲",
+        "#终末地面板 莱万汀"
+      ],
+      "preconditions": [
+        "已绑定账号",
+        "跑过 #zmd刷新"
+      ],
+      "pitfalls": [
+        "**「面板」后面必须有空格**再写角色，否则匹配不上",
+        "这是旧写法，帮助里推荐用 `#角色名面板`",
+        "`zmd查询` 和 `zmdmb` 是同一功能的别名，但容易被误认为通用查询指令"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "没给角色名"
+        },
+        {
+          "symptom": "回「未找到角色「XX」」",
+          "cause": "角色名没命中"
+        }
+      ],
+      "edgeCases": [
+        "参数是纯数字时会被当模板ID处理"
+      ],
+      "scenarios": [
+        "习惯带前缀写指令"
+      ],
+      "vs": [
+        {
+          "command": "#艾莲面板",
+          "diff": "推荐写法，不用前缀"
+        }
+      ],
+      "related": [
+        "#艾莲面板",
+        "#zmd刷新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/status",
+      "command": "#zmd状态",
+      "aliases": [
+        "#zmd统计",
+        "#zmdstatus",
+        "#终末地状态",
+        "%zmd状态"
+      ],
+      "title": "查看插件运行状态",
+      "summary": "绑定人数、今日/昨日签到、缓存与推送配置",
+      "what": "统计已绑定用户数、今日与昨日的签到成功/失败数，并回显关键配置（卡片缓存秒数、公告推送开关与 cron）。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "格式：\\n[终末地] 状态\\n已绑定用户: N\\n今日签到: 成功 X | 失败 Y\\n昨日签到: 成功 X | 失败 Y\\n缓存: card.cacheSec=Ns\\n公告推送: 开启/关闭 cron=<表达式>",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读 Redis 与配置。",
+      "keywords": [
+        "状态",
+        "统计",
+        "运行状态",
+        "签到统计",
+        "缓存"
+      ],
+      "params": [],
+      "example": "#zmd状态",
+      "moreExamples": [
+        "#zmd统计",
+        "#zmdstatus"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "暴露了绑定用户总数与签到情况，属于运营数据，介意的话别在群里刷",
+        "「今日/昨日」按服务器本地时间算",
+        "这里的「公告推送: 开启」只看配置开关，不代表定时任务真的在跑"
+      ],
+      "failures": [],
+      "edgeCases": [
+        "Redis 中无签到记录时计数为 0"
+      ],
+      "scenarios": [
+        "排查公告为什么没推",
+        "看有多少人绑了账号"
+      ],
+      "vs": [
+        {
+          "command": "#zmd环境",
+          "diff": "那个诊断依赖是否齐全（smsdk/qrcode）"
+        },
+        {
+          "command": "#数据源",
+          "diff": "那个看角色数据接口从哪来"
+        }
+      ],
+      "related": [
+        "#zmd环境",
+        "#数据源",
+        "#zmd更新日志"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/update-log",
+      "command": "#zmd更新日志",
+      "aliases": [
+        "#zmd更新记录",
+        "#zmdlog",
+        "#终末地更新日志",
+        "%zmd更新日志"
+      ],
+      "title": "查看插件更新日志",
+      "summary": "从 git 提交信息生成的最近变更",
+      "what": "读插件目录的 git 提交记录，取最近最多 18 条，格式化成带 emoji 的列表。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "「[终末地] 更新日志（最近）」+ 逐条「1. <emoji> <变更说明>」。取不到时回「获取更新日志失败（可能未在 git 仓库内）」。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地 git 命令。",
+      "keywords": [
+        "更新日志",
+        "更新记录",
+        "改了什么",
+        "log",
+        "版本变更"
+      ],
+      "params": [],
+      "example": "#zmd更新日志",
+      "moreExamples": [
+        "#zmdlog",
+        "#终末地更新日志"
+      ],
+      "preconditions": [
+        "插件目录必须是 git 仓库"
+      ],
+      "pitfalls": [
+        "**插件目录不是 git 仓库时直接失败**（比如解压安装的）",
+        "只取最近 18 条，更早的看不到",
+        "输出的是 commit 信息，不是整理过的版本说明，可能很零碎"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取更新日志失败（可能未在 git 仓库内）」",
+          "cause": "非 git 安装，或没装 git"
+        }
+      ],
+      "edgeCases": [
+        "提交信息为空时该条可能只显示序号和 emoji"
+      ],
+      "scenarios": [
+        "确认版本更新了没有"
+      ],
+      "vs": [
+        {
+          "command": "#zmd更新插件",
+          "diff": "那个才真的去拉代码"
+        }
+      ],
+      "related": [
+        "#zmd更新插件",
+        "#zmd强制更新插件",
+        "#zmd状态"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/update-plugin",
+      "command": "#zmd更新插件",
+      "aliases": [
+        "#zmd插件更新插件",
+        "#终末地更新插件",
+        "%zmd更新插件"
+      ],
+      "title": "更新插件本体",
+      "summary": "主人专用：走框架更新模块拉代码",
+      "what": "加载框架的 `plugins/other/update.js`，把消息改写成 `#更新<插件目录名>` 并交给它执行。",
+      "returns": "框架更新模块输出的文本。",
+      "returnsDetail": "含拉取结果、是否有新提交。找不到更新模块时回「未找到系统更新模块（plugins/other/update.js），请手动更新插件」。",
+      "timing": "10~60 秒。",
+      "cost": "走 GitHub 网络。",
+      "keywords": [
+        "更新插件",
+        "升级插件",
+        "拉取代码",
+        "update"
+      ],
+      "params": [],
+      "example": "#zmd更新插件",
+      "moreExamples": [
+        "#zmd插件更新插件",
+        "#终末地更新插件"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master + 函数内 `if (!this.e?.isMaster) return false`）",
+        "框架里必须存在 `plugins/other/update.js`（TRSS/云崽系一般都有）"
+      ],
+      "pitfalls": [
+        "**用插件目录名更新，不是插件 ID** —— 所以你把目录改名了也能正常工作",
+        "非主人调用**静默返回 false**，不回复也不报错",
+        "找不到 other/update.js 时不会失败，但会提示你手动更新",
+        "更新后一般要重启 Bot 才生效"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        },
+        {
+          "symptom": "回「未找到系统更新模块...请手动更新插件」",
+          "cause": "框架没有 other/update.js"
+        }
+      ],
+      "edgeCases": [
+        "重复更新无新内容时提示已是最新"
+      ],
+      "scenarios": [
+        "拉了新版本想立即升级"
+      ],
+      "vs": [
+        {
+          "command": "#zmd强制更新插件",
+          "diff": "那个会丢弃本地改动"
+        },
+        {
+          "command": "#zmd更新日志",
+          "diff": "那个只看改了什么"
+        }
+      ],
+      "related": [
+        "#zmd强制更新插件",
+        "#zmd更新日志"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/force-update-plugin",
+      "command": "#zmd强制更新插件",
+      "aliases": [
+        "#zmd插件强制更新插件",
+        "#终末地强制更新插件",
+        "%zmd强制更新插件"
+      ],
+      "title": "强制更新插件",
+      "summary": "主人专用：本地有改动时用",
+      "what": "同「更新插件」，但把消息改写成 `#强制更新<目录名>`，让框架丢弃本地改动直接同步远端。",
+      "returns": "框架更新模块输出的文本。",
+      "returnsDetail": "同更新插件。",
+      "timing": "10~60 秒。",
+      "cost": "走 GitHub 网络。",
+      "keywords": [
+        "强制更新",
+        "强更",
+        "覆盖更新",
+        "冲突修复"
+      ],
+      "params": [],
+      "example": "#zmd强制更新插件",
+      "moreExamples": [
+        "#zmd插件强制更新插件"
+      ],
+      "preconditions": [
+        "必须是机器人主人",
+        "框架存在 other/update.js"
+      ],
+      "pitfalls": [
+        "**会丢弃本地所有改动**，自己改过插件源码的慎用",
+        "非主人静默不处理",
+        "遇到 git 冲突或版本偏离时才需要强更"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        },
+        {
+          "symptom": "提示没有更新模块",
+          "cause": "缺 other/update.js"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "本地改动导致更新失败",
+        "版本严重落后"
+      ],
+      "vs": [
+        {
+          "command": "#zmd更新插件",
+          "diff": "那个保留本地改动，冲突时会失败"
+        }
+      ],
+      "related": [
+        "#zmd更新插件",
+        "#zmd更新日志"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/friend-search",
+      "command": "#zmd好友搜索 关键词",
+      "aliases": [
+        "#zmd查好友 关键词",
+        "#zmd好友查找 关键词",
+        "%zmd好友搜索"
+      ],
+      "title": "搜索玩家",
+      "summary": "主人专用：按关键词或 UID 搜人",
+      "what": "调 Friend API 搜索玩家，列出匹配结果。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "列出匹配到的玩家（昵称、role_id 等）。无结果回「未搜索到结果」；接口失败回「Friend API 请求失败：<原因>」。",
+      "timing": "2~8 秒。",
+      "cost": "走 Friend API。",
+      "keywords": [
+        "好友搜索",
+        "查好友",
+        "搜玩家",
+        "找人",
+        "好友查找"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "昵称片段或 UID"
+        }
+      ],
+      "example": "#zmd好友搜索 莱万汀",
+      "moreExamples": [
+        "#zmd查好友 123456",
+        "#zmd好友查找 阿米娅"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）",
+        "配置了 Friend API 数据源"
+      ],
+      "pitfalls": [
+        "**只对主人开放**，普通用户调用无响应",
+        "依赖 Friend API 可用性，未配置时请求直接失败",
+        "搜索结果里的 role_id 是后续查详情/报告的入参"
+      ],
+      "failures": [
+        {
+          "symptom": "回「用法：#zmd好友搜索 <关键词|uid>」",
+          "cause": "没给关键词"
+        },
+        {
+          "symptom": "回「未搜索到结果」",
+          "cause": "关键词没命中"
+        },
+        {
+          "symptom": "回「Friend API 请求失败：...」",
+          "cause": "数据源未配或接口异常"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "关键词是纯数字时按 UID 理解"
+      ],
+      "scenarios": [
+        "想查别人的公开面板"
+      ],
+      "vs": [
+        {
+          "command": "#zmd好友详情 123456",
+          "diff": "那个用 role_id 查详情"
+        }
+      ],
+      "related": [
+        "#zmd好友详情 123456",
+        "#zmd角色报告 123456 2001",
+        "#数据源"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/friend-detail",
+      "command": "#zmd好友详情 123456",
+      "aliases": [
+        "#zmd好友信息 123456",
+        "%zmd好友详情"
+      ],
+      "title": "查看玩家详情",
+      "summary": "主人专用：按 role_id 查公开资料",
+      "what": "调 Friend API 按 role_id 查该玩家详情。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "列出该玩家的公开信息。参数不是纯数字时回用法提示；接口失败回「Friend API 请求失败：<原因>」。",
+      "timing": "2~8 秒。",
+      "cost": "走 Friend API。",
+      "keywords": [
+        "好友详情",
+        "好友信息",
+        "玩家资料",
+        "查role_id"
+      ],
+      "params": [
+        {
+          "name": "role_id",
+          "required": true,
+          "desc": "**只能是纯数字**，从好友搜索里拿"
+        }
+      ],
+      "example": "#zmd好友详情 123456",
+      "moreExamples": [
+        "#zmd好友信息 123456"
+      ],
+      "preconditions": [
+        "必须是机器人主人",
+        "配置了 Friend API"
+      ],
+      "pitfalls": [
+        "**role_id 必须是纯数字**，正则写死 `(\\d+)`，带字母直接不匹配",
+        "只对主人开放",
+        "role_id 不是 UID，别混用"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "role_id 不是纯数字或没给"
+        },
+        {
+          "symptom": "回「Friend API 请求失败」",
+          "cause": "接口异常"
+        }
+      ],
+      "edgeCases": [
+        "role_id 不存在时的报错来自接口，不是本地校验"
+      ],
+      "scenarios": [
+        "查某个玩家是否在玩终末地"
+      ],
+      "vs": [
+        {
+          "command": "#zmd好友搜索 关键词",
+          "diff": "那个先拿到 role_id"
+        },
+        {
+          "command": "#zmd角色报告 123456 2001",
+          "diff": "那个出面板报告"
+        }
+      ],
+      "related": [
+        "#zmd好友搜索 关键词",
+        "#zmd角色报告 123456 2001"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/char-report",
+      "command": "#zmd角色报告 123456 2001",
+      "aliases": [
+        "#zmd面板报告 123456 2001",
+        "#zmd查角色 123456 2001",
+        "#zmd角色报告 高级 123456 2001",
+        "%zmd角色报告"
+      ],
+      "title": "生成玩家角色面板报告",
+      "summary": "主人专用：按 role_id + 模板ID 出面板",
+      "what": "调 Friend API 拉指定玩家指定模板的面板数据，整理成报告文本。",
+      "returns": "一条多行纯文本报告（引用回复）。",
+      "returnsDetail": "列出该角色的面板统计（属性、装备、评分等）。缺 panel 时回「返回中缺少 panel，请检查 template_id 是否正确」。",
+      "timing": "3~12 秒。",
+      "cost": "走 Friend API。",
+      "keywords": [
+        "角色报告",
+        "面板报告",
+        "查角色",
+        "template_id",
+        "高级报告"
+      ],
+      "params": [
+        {
+          "name": "高级",
+          "required": false,
+          "desc": "写 `高级` 或 `adv` 取更详细版本"
+        },
+        {
+          "name": "role_id",
+          "required": true,
+          "desc": "纯数字"
+        },
+        {
+          "name": "template_id",
+          "required": true,
+          "desc": "角色模板 ID，如 2001；不是角色名"
+        }
+      ],
+      "example": "#zmd角色报告 123456 2001",
+      "moreExamples": [
+        "#zmd角色报告 高级 123456 2001",
+        "#zmd查角色 adv 123456 2002"
+      ],
+      "preconditions": [
+        "必须是机器人主人",
+        "配置了 Friend API",
+        "知道正确的 template_id"
+      ],
+      "pitfalls": [
+        "**template_id 必须写对**，写错会回「返回中缺少 panel」，不是角色不存在",
+        "「高级/adv」必须写在 role_id **前面**",
+        "role_id 和 template_id 都必须是纯数字，顺序不能反",
+        "只对主人开放"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "参数个数或顺序不对"
+        },
+        {
+          "symptom": "回「返回中缺少 panel，请检查 template_id 是否正确」",
+          "cause": "template_id 错了"
+        },
+        {
+          "symptom": "回「Friend API 请求失败」",
+          "cause": "接口异常"
+        }
+      ],
+      "edgeCases": [
+        "同一个 role_id 不同 template_id 对应不同角色"
+      ],
+      "scenarios": [
+        "帮群友看面板",
+        "批量检查队友配置"
+      ],
+      "vs": [
+        {
+          "command": "#艾莲面板",
+          "diff": "那个查自己绑定的账号，按角色名"
+        }
+      ],
+      "related": [
+        "#zmd好友搜索 关键词",
+        "#zmd好友详情 123456",
+        "#数据源"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/feedback",
+      "command": "#反馈",
+      "aliases": [
+        "#zmd反馈",
+        "#ZMD反馈",
+        "#终末地反馈",
+        "%zmd反馈"
+      ],
+      "title": "查看反馈与交流方式",
+      "summary": "作者联系方式与交流群号",
+      "what": "回一条固定文本，给出作者 QQ、交流群号以及提反馈时该带的信息。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "内容固定为：反馈联系作者 `1493218095`、交流群 `1084459856`，并提示建议带上「触发指令 + UID/角色 + 截图/日志 + 时间」。",
+      "timing": "即时。",
+      "cost": "纯本地文本。",
+      "keywords": [
+        "反馈",
+        "联系作者",
+        "交流群",
+        "报bug",
+        "提建议"
+      ],
+      "params": [],
+      "example": "#反馈",
+      "moreExamples": [
+        "#zmd反馈",
+        "#终末地反馈"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**`#反馈` 不带前缀也能触发**（规则是 `^#\\s*反馈\\s*$`），容易被其他插件的同名指令抢",
+        "只是文本，不会真的把内容发出去",
+        "群号和作者 QQ 写死在代码里，改不了"
+      ],
+      "failures": [],
+      "edgeCases": [
+        "`#反馈` 后面带空格可以，带其他字不匹配"
+      ],
+      "scenarios": [
+        "遇到 bug 想知道去哪反馈"
+      ],
+      "vs": [
+        {
+          "command": "#zmd状态",
+          "diff": "那个看运行状态，不含联系方式"
+        }
+      ],
+      "related": [
+        "#zmd状态",
+        "#zmd更新日志"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/data-source-status",
+      "command": "#数据源",
+      "aliases": [
+        "#数据源状态",
+        "#数据源查看",
+        "#zmd数据源",
+        "%数据源"
+      ],
+      "title": "查看角色数据接口来源",
+      "summary": "面板数据从哪来，各凭证配没配",
+      "what": "读运行时配置，输出本地后端与统一后端各自的地址、Bearer/APIKey/FrameworkToken 是否配置，以及当前生效的是哪一个。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "列出 local / unified 两套后端的地址与四类凭证的配置状态（已配/未配），以及当前实际生效的组合。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读配置。",
+      "keywords": [
+        "数据源",
+        "数据源状态",
+        "角色数据接口",
+        "friend api",
+        "后端配置"
+      ],
+      "params": [],
+      "example": "#数据源",
+      "moreExamples": [
+        "#数据源状态",
+        "#zmd数据源"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**这条不需要 zmd 前缀**，单发 `#数据源` 就行；带上 `#zmd数据源` 也认",
+        "只显示「配没配」，不校验凭证是否有效 —— 配了但过期照样显示已配置",
+        "要判断接口通不通得看 `#zmd环境` 里的 health 字段"
+      ],
+      "failures": [],
+      "edgeCases": [
+        "两套后端都配了时，显示当前生效的那一套"
+      ],
+      "scenarios": [
+        "面板查不出来时先看数据源配好没"
+      ],
+      "vs": [
+        {
+          "command": "#zmd环境",
+          "diff": "那个额外测接口连通性、查依赖是否齐"
+        },
+        {
+          "command": "#数据源切换",
+          "diff": "那个改生效的数据源"
+        }
+      ],
+      "related": [
+        "#数据源切换",
+        "#zmd环境",
+        "#zmd状态"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/data-source-switch",
+      "command": "#数据源切换",
+      "aliases": [
+        "#切换数据源",
+        "#zmd数据源切换",
+        "%数据源切换"
+      ],
+      "title": "切换生效的数据源",
+      "summary": "主人专用：在统一后端和本地后端之间切",
+      "what": "把角色数据接口的来源切到统一后端或本地后端，并写回配置。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已切换到哪个数据源。不带参数或参数非法时回用法说明。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "切换数据源",
+        "数据源切换",
+        "换后端",
+        "统一后端",
+        "本地后端"
+      ],
+      "params": [
+        {
+          "name": "目标",
+          "required": true,
+          "desc": "统一后端 或 本地（具体取值见回显的用法说明）"
+        }
+      ],
+      "example": "#数据源切换",
+      "moreExamples": [
+        "#切换数据源 统一后端",
+        "#zmd数据源切换 本地"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）",
+        "目标后端必须已经配好地址与凭证"
+      ],
+      "pitfalls": [
+        "**切换前先确保目标后端的地址和凭证都配了**，否则切完面板直接查不出来",
+        "只改来源，不验证新来源是否可用",
+        "非主人调用无响应"
+      ],
+      "failures": [
+        {
+          "symptom": "切完面板全查不出来",
+          "cause": "目标后端未配地址/凭证"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "已在目标数据源上再切一次不会报错"
+      ],
+      "scenarios": [
+        "从公共后端切到自建后端"
+      ],
+      "vs": [
+        {
+          "command": "#数据源",
+          "diff": "那个看当前用哪个"
+        }
+      ],
+      "related": [
+        "#数据源",
+        "#zmd环境",
+        "#统一后端地址"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/unified-backend-url",
+      "command": "#统一后端地址 https://api.example.com",
+      "aliases": [
+        "#后端地址 https://api.example.com",
+        "#zmd统一后端地址 https://api.example.com",
+        "%统一后端地址"
+      ],
+      "title": "设置统一后端地址",
+      "summary": "主人专用：角色数据接口的主机地址",
+      "what": "把统一后端（公共/自建）的 baseUrl 写进配置。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示地址已保存（或保存失败原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "统一后端地址",
+        "后端url",
+        "设置后端",
+        "接口地址"
+      ],
+      "params": [
+        {
+          "name": "地址",
+          "required": true,
+          "desc": "完整 URL，含 http(s)://"
+        }
+      ],
+      "example": "#统一后端地址 https://api.example.com",
+      "moreExamples": [
+        "#后端地址 https://api.example.com",
+        "#zmd统一后端地址 http://127.0.0.1:8080"
+      ],
+      "preconditions": [
+        "必须是机器人主人"
+      ],
+      "pitfalls": [
+        "只写地址**还不够**，还得配 token/apikey 才能真正查到面板",
+        "不要带结尾斜杠以外的路径，具体接口路径由插件拼",
+        "改完建议跑一次 `#数据源` 确认生效值"
+      ],
+      "failures": [
+        {
+          "symptom": "保存后仍查不到面板",
+          "cause": "凭证没配，或缺 apikey/frameworktoken"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "写 http:// 内网地址也可以（同机部署）"
+      ],
+      "scenarios": [
+        "接入自建的面板数据服务"
+      ],
+      "vs": [
+        {
+          "command": "#本地数据地址",
+          "diff": "那个配的是本地后端（另一套）"
+        }
+      ],
+      "related": [
+        "#统一后端token",
+        "#统一后端apikey",
+        "#数据源",
+        "#数据源切换"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/unified-backend-auth",
+      "command": "#统一后端token xxx",
+      "aliases": [
+        "#统一后端apikey xxx",
+        "#统一后端frameworktoken xxx",
+        "#统一后端匿名token xxx",
+        "%统一后端token"
+      ],
+      "title": "设置统一后端的各类凭证",
+      "summary": "主人专用：Bearer / APIKey / 框架Token / 匿名Token",
+      "what": "按关键字把对应类型的凭证写进统一后端配置，四种凭证互相独立、可分别设置。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示对应凭证已保存（或失败原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "统一后端token",
+        "apikey",
+        "frameworktoken",
+        "匿名token",
+        "bearer",
+        "鉴权"
+      ],
+      "params": [
+        {
+          "name": "类型",
+          "required": true,
+          "desc": "`token`/`令牌`/`bearer` → Bearer；`apikey`/`api密钥` → API Key；`frameworktoken`/`框架token` → 框架令牌；`匿名token`/`anon` → 匿名令牌"
+        },
+        {
+          "name": "值",
+          "required": true,
+          "desc": "凭证原文"
+        }
+      ],
+      "example": "#统一后端token abc123",
+      "moreExamples": [
+        "#统一后端apikey sk-xxxx",
+        "#统一后端frameworktoken ft-xxxx",
+        "#统一后端匿名token anon-xxxx",
+        "#后端绑定 Bearer xxx"
+      ],
+      "preconditions": [
+        "必须是机器人主人",
+        "已经设过 `#统一后端地址`"
+      ],
+      "pitfalls": [
+        "**四种凭证不是二选一**，不同接口要不同的那种；只配 Bearer 可能有些面板查不到",
+        "类型关键字有多个同义词（令牌/密钥/bearer/API秘钥…），但**必须是配置里列出的那几个**",
+        "凭证是明文存在配置文件里，注意文件权限",
+        "写错了不会校验有效性，只保存"
+      ],
+      "failures": [
+        {
+          "symptom": "保存了但面板报鉴权失败",
+          "cause": "该接口要的是另一种凭证（如 apikey 而非 bearer）"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "重复设置会覆盖旧值",
+        "匿名令牌用于不需要登录的公开查询"
+      ],
+      "scenarios": [
+        "接入需要 apikey 的公共后端"
+      ],
+      "vs": [
+        {
+          "command": "#本地数据token",
+          "diff": "那个配的是本地后端"
+        }
+      ],
+      "related": [
+        "#统一后端地址",
+        "#本地数据token",
+        "#数据源",
+        "#zmd环境"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/local-backend",
+      "command": "#本地数据地址 http://127.0.0.1:8080",
+      "aliases": [
+        "#本地后端地址 http://127.0.0.1:8080",
+        "#本地数据token xxx",
+        "%本地数据地址"
+      ],
+      "title": "设置本地后端地址与凭证",
+      "summary": "主人专用：自建本地 Friend API",
+      "what": "分别设置本地后端的 baseUrl 与 Bearer 令牌，两个配置项独立。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示对应项已保存（或失败原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置。",
+      "keywords": [
+        "本地数据地址",
+        "本地后端",
+        "本地token",
+        "自建后端"
+      ],
+      "params": [
+        {
+          "name": "项",
+          "required": true,
+          "desc": "`地址`/`url` 或 `token`/`令牌`/`bearer`"
+        },
+        {
+          "name": "值",
+          "required": true,
+          "desc": "URL 或凭证原文"
+        }
+      ],
+      "example": "#本地数据地址 http://127.0.0.1:8080",
+      "moreExamples": [
+        "#本地数据token abc123",
+        "#本地后端地址 http://192.168.1.10:8080"
+      ],
+      "preconditions": [
+        "必须是机器人主人",
+        "本地后端服务已跑起来"
+      ],
+      "pitfalls": [
+        "地址和 token 要**分两条命令**设置，不能一次设完",
+        "本地后端只在「数据源」切到本地时生效",
+        "配完记得确认 `#数据源` 里 current 指向的是本地"
+      ],
+      "failures": [
+        {
+          "symptom": "配了但面板没走本地",
+          "cause": "数据源还指着统一后端"
+        },
+        {
+          "symptom": "查不到面板",
+          "cause": "本地服务没启动或端口不对"
+        }
+      ],
+      "edgeCases": [
+        "地址留空可清空该配置（视实现而定）"
+      ],
+      "scenarios": [
+        "自己搭了一套面板数据服务"
+      ],
+      "vs": [
+        {
+          "command": "#统一后端地址",
+          "diff": "那个配的是公共/统一后端"
+        }
+      ],
+      "related": [
+        "#统一后端地址",
+        "#数据源",
+        "#数据源切换",
+        "#zmd环境"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/login",
+      "command": "#zmd登录",
+      "aliases": [
+        "#zmdlogin",
+        "#zmddl",
+        "#终末地登录",
+        "%zmd登录"
+      ],
+      "title": "扫码登录终末地",
+      "summary": "发二维码，用森空岛 App 扫",
+      "what": "向扫码接口要 scanId，生成二维码图片发给你，轮询到扫码成功后写入账号凭证。",
+      "returns": "一条带二维码图片的消息（后续可能有登录结果）。",
+      "returnsDetail": "提示「请使用森空岛 App 扫码登录（二维码有效期约 1 分钟）」并附图。失败时回「获取二维码失败：<原因>」或「生成二维码失败：<原因>」。",
+      "timing": "即时出码；扫码确认后 1~10 秒完成。",
+      "cost": "走森空岛扫码接口。",
+      "keywords": [
+        "登录",
+        "扫码登录",
+        "login",
+        "森空岛登录",
+        "绑定账号"
+      ],
+      "params": [],
+      "example": "#zmd登录",
+      "moreExamples": [
+        "#终末地登录",
+        "#zmddl"
+      ],
+      "preconditions": [
+        "**默认只能私聊用**；群聊里要主人先开 `#zmd群聊扫码登录 开启`",
+        "依赖 `qrcode` npm 包（缺了要用 `#zmd环境` 诊断）"
+      ],
+      "pitfalls": [
+        "**二维码只约 1 分钟有效**，超时要重新发",
+        "群聊里默认直接拒绝并提示「为了安全，请私聊使用」",
+        "扫码成功不等于此指令会再回一条 —— 结果可能落在私聊里（群聊扫码模式下除外）",
+        "打过短链补丁的部署，扫码提示里会多一条 `https://<你的域名>/s/<scanId>` 手机直点链接；原版没有这行"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取二维码失败：...」",
+          "cause": "扫码接口异常或网络不通"
+        },
+        {
+          "symptom": "回「生成二维码失败：...」并提示改用绑定",
+          "cause": "缺 qrcode 依赖，或图片生成失败"
+        },
+        {
+          "symptom": "回「为了安全，请私聊使用」",
+          "cause": "在群里发的且未开启群聊扫码"
+        }
+      ],
+      "edgeCases": [
+        "扫码接口返回的 scanId/scanUrl 异常（如返回了对象字符串）会被拦下并明确报错",
+        "同一用户重复发起会覆盖旧的扫码会话"
+      ],
+      "scenarios": [
+        "第一次绑定账号",
+        "凭证过期重新登录"
+      ],
+      "vs": [
+        {
+          "command": "#zmd绑定 cred",
+          "diff": "那个用抓到的 cred/token 直接绑，不用扫码"
+        },
+        {
+          "command": "#zmd绑定 123456789",
+          "diff": "那个只绑 UID，只能查面板不能签到"
+        }
+      ],
+      "related": [
+        "#zmd绑定",
+        "#zmd群聊扫码登录",
+        "#zmd查看",
+        "#zmd环境"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/group-qr-login",
+      "command": "#zmd群聊扫码登录 开启",
+      "aliases": [
+        "#zmd群聊扫码登录 关闭",
+        "#zmd开启群聊扫码登录",
+        "#zmd关闭群聊扫码登录",
+        "%zmd群聊扫码登录"
+      ],
+      "title": "开关群聊扫码登录",
+      "summary": "主人专用：允许/禁止在群里发登录二维码",
+      "what": "读写配置项 `security.allowQrLoginInGroup`，控制 `#zmd登录` 能否在群聊里出码。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "不带参数时回当前状态与用法；带参数时回「[终末地] 群聊扫码登录已开启/已关闭」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地改配置并落盘。",
+      "keywords": [
+        "群聊扫码登录",
+        "允许群扫码",
+        "群登录开关",
+        "扫码安全"
+      ],
+      "params": [
+        {
+          "name": "动作",
+          "required": false,
+          "desc": "`开启`/`on` 或 `关闭`/`off`；不写则只查看当前状态"
+        }
+      ],
+      "example": "#zmd群聊扫码登录 开启",
+      "moreExamples": [
+        "#zmd群聊扫码登录 关闭",
+        "#zmd开启群聊扫码登录",
+        "#zmd群聊扫码登录"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**开启后二维码会发在群里**，任何人都能扫 —— 二维码等同于登录凭证，人多的地方慎开",
+        "两种写法都支持：`群聊扫码登录 开启` 和 `开启群聊扫码登录`",
+        "不带参数只回状态，不改配置"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "参数不是 开启/关闭/on/off"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [
+        "改完会立刻生效，不用重启"
+      ],
+      "scenarios": [
+        "想在群里帮群友扫码登录"
+      ],
+      "vs": [
+        {
+          "command": "#zmd登录",
+          "diff": "那个才是真正发码"
+        }
+      ],
+      "related": [
+        "#zmd登录",
+        "#zmd状态"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/bind",
+      "command": "#zmd绑定 123456789",
+      "aliases": [
+        "#zmdbind 123456789",
+        "#zmd绑定 cred=xxx",
+        "#zmd绑定 token=xxx",
+        "%zmd绑定"
+      ],
+      "title": "绑定账号或 UID",
+      "summary": "UID 只能查面板；cred/token 才能签到",
+      "what": "按参数形态分流：纯数字（5~13 位）走 UID-only 绑定，群里也能用；含 cred/token 的凭证必须私聊。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "UID 形态：「[终末地] UID 绑定成功（仅面板）\\nUID: xxx」并按情况追加「提示：未配置角色数据接口，面板查询可能不可用」或「提示：统一后端未设置 Bearer…」。凭证形态在私聊里绑定成功后写库。群聊里发凭证会回「为了安全，请私聊发送」。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地写库（UID 形态）；凭证形态可能校验一次接口。",
+      "keywords": [
+        "绑定",
+        "bind",
+        "绑定uid",
+        "绑定账号",
+        "cred",
+        "token"
+      ],
+      "params": [
+        {
+          "name": "凭据",
+          "required": true,
+          "desc": "纯数字 UID（5~13 位，可带 `uid=` 前缀）；或私聊发 `cred=xxx` / `token=xxx`"
+        }
+      ],
+      "example": "#zmd绑定 123456789",
+      "moreExamples": [
+        "#zmd绑定 uid=123456789",
+        "#zmd绑定 cred=xxxxx",
+        "#zmd绑定 token=xxxxx"
+      ],
+      "preconditions": [
+        "UID 形态不需要登录，群聊私聊都行",
+        "**凭证形态必须私聊**"
+      ],
+      "pitfalls": [
+        "**UID 绑定只能查面板，不能签到、不能查体力** —— 想完整功能必须 cred/token",
+        "UID 限 5~13 位纯数字，位数不对会落到凭证分支然后被要求私聊",
+        "`+` 前缀会被自动去掉（兼容手机号式粘贴）",
+        "绑定不验证森空岛账号是否真的属于你，写错 UID 也能绑上，只是查出来是别人的"
+      ],
+      "failures": [
+        {
+          "symptom": "回「为了安全，请私聊发送：#zmd绑定<cred|token>」",
+          "cause": "在群里发凭证"
+        },
+        {
+          "symptom": "回「UID 绑定失败：...」",
+          "cause": "写库异常"
+        },
+        {
+          "symptom": "签到提示「当前账号仅绑定UID（仅面板），不支持签到」",
+          "cause": "绑的是 UID 形态"
+        }
+      ],
+      "edgeCases": [
+        "同一个用户可绑多个账号，用 `#zmd切换` 换当前账号",
+        "UID 绑定后 `#zmd刷新` 能拿到的数据比 cred 少"
+      ],
+      "scenarios": [
+        "只想看别人面板时绑 UID",
+        "完整使用前用凭证绑定"
+      ],
+      "vs": [
+        {
+          "command": "#zmd登录",
+          "diff": "那个扫码，不用手动准备凭证"
+        },
+        {
+          "command": "#zmd查看",
+          "diff": "那个列出已绑账号"
+        }
+      ],
+      "related": [
+        "#zmd登录",
+        "#zmd查看",
+        "#zmd切换",
+        "#zmd删除",
+        "#zmd刷新"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/list",
+      "command": "#zmd查看",
+      "aliases": [
+        "#zmd我的",
+        "#zmdlist",
+        "#终末地查看",
+        "%zmd查看"
+      ],
+      "title": "查看已绑定账号",
+      "summary": "列出所有绑定，标出当前账号",
+      "what": "读本地账号库，逐条列出序号、昵称、UID、服务器，并标注「（当前）」和「（仅面板）」。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "格式「[终末地] 已绑定账号：」+ 每行「1. 昵称 UID:xxx S:1 （仅面板）（当前）」。一个都没绑时回提示并给出绑定写法。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读库。",
+      "keywords": [
+        "查看账号",
+        "我的账号",
+        "已绑定",
+        "list",
+        "账号列表"
+      ],
+      "params": [],
+      "example": "#zmd查看",
+      "moreExamples": [
+        "#zmd我的",
+        "#zmdlist"
+      ],
+      "preconditions": [
+        "无需绑定账号（没绑也能看，会提示还没绑）"
+      ],
+      "pitfalls": [
+        "**`#zmd我的` 和 `#zmdlist` 都是这条**，容易和别的插件撞名",
+        "序列号从 1 开始，`#zmd切换` / `#zmd删除` 用的就是这个序号",
+        "不显示凭证本身，只显示脱敏后的账号信息"
+      ],
+      "failures": [
+        {
+          "symptom": "回「还没有绑定账号」并给绑定写法",
+          "cause": "没绑过"
+        }
+      ],
+      "edgeCases": [
+        "「（当前）」标在当前生效的那个账号上",
+        "UID-only 账号会标「（仅面板）」"
+      ],
+      "scenarios": [
+        "确认绑了几个号",
+        "删账号前先看序号"
+      ],
+      "vs": [
+        {
+          "command": "#zmd切换",
+          "diff": "那个是换当前账号"
+        },
+        {
+          "command": "#zmd删除",
+          "diff": "那个按序号删"
+        }
+      ],
+      "related": [
+        "#zmd绑定",
+        "#zmd切换",
+        "#zmd删除"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/switch",
+      "command": "#zmd切换 1",
+      "aliases": [
+        "#zmdswitch 1",
+        "#zmd切换 123456789",
+        "#终末地切换 1",
+        "%zmd切换"
+      ],
+      "title": "切换当前账号",
+      "summary": "多账号时换一个生效",
+      "what": "按序号或 UID 把当前生效账号切过去。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已切换到的账号。找不到时回提示。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写库。",
+      "keywords": [
+        "切换账号",
+        "换账号",
+        "switch",
+        "选账号"
+      ],
+      "params": [
+        {
+          "name": "序号或UID",
+          "required": true,
+          "desc": "`#zmd查看` 里显示的序号，或直接写 UID"
+        }
+      ],
+      "example": "#zmd切换 1",
+      "moreExamples": [
+        "#zmd切换 123456789",
+        "#zmdswitch 2"
+      ],
+      "preconditions": [
+        "至少绑定过两个账号（或想切到指定 UID）"
+      ],
+      "pitfalls": [
+        "序号从 1 起，写 0 或不存在的序号会失败",
+        "切换后所有查询（卡片/每日/签到）都作用在新账号上",
+        "规则允许空参数，但空参数不会切成功，只会提示"
+      ],
+      "failures": [
+        {
+          "symptom": "回找不到账号",
+          "cause": "序号/UID 不存在"
+        }
+      ],
+      "edgeCases": [
+        "同一 UID 绑了多次时按序号更可靠"
+      ],
+      "scenarios": [
+        "玩多个账号来回切"
+      ],
+      "vs": [
+        {
+          "command": "#zmd查看",
+          "diff": "那个看有哪些账号和序号"
+        }
+      ],
+      "related": [
+        "#zmd查看",
+        "#zmd绑定",
+        "#zmd删除"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/delete-account",
+      "command": "#zmd删除 1",
+      "aliases": [
+        "#zmd解绑 1",
+        "#zmddel 1",
+        "#终末地删除 1",
+        "%zmd删除"
+      ],
+      "title": "删除已绑定账号",
+      "summary": "按序号或 UID 解绑",
+      "what": "从本地账号库里移除指定账号。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已删除的账号；找不到时回提示。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写库。",
+      "keywords": [
+        "删除账号",
+        "解绑",
+        "del",
+        "移除绑定",
+        "取消绑定"
+      ],
+      "params": [
+        {
+          "name": "序号或UID",
+          "required": true,
+          "desc": "序号或 UID"
+        }
+      ],
+      "example": "#zmd删除 1",
+      "moreExamples": [
+        "#zmd解绑 123456789",
+        "#zmddel 2"
+      ],
+      "preconditions": [
+        "该账号已绑定"
+      ],
+      "pitfalls": [
+        "**删除不可恢复**，凭证要重新扫码/绑定才能回来",
+        "删的是当前账号时，可能会自动切到另一个账号（或无账号）",
+        "「删除」这个词很通用，容易和其他插件的同名指令抢"
+      ],
+      "failures": [
+        {
+          "symptom": "回找不到账号",
+          "cause": "序号/UID 不存在"
+        }
+      ],
+      "edgeCases": [
+        "删完最后一个账号后 `#zmd查看` 会提示还没绑定"
+      ],
+      "scenarios": [
+        "换号后清理旧绑定"
+      ],
+      "vs": [
+        {
+          "command": "#zmd查看",
+          "diff": "删之前先看序号"
+        }
+      ],
+      "related": [
+        "#zmd查看",
+        "#zmd切换",
+        "#zmd绑定"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "zmd/sign-in",
+      "command": "#zmd签到",
+      "aliases": [
+        "#zmdsign",
+        "#终末地签到",
+        "%zmd签到"
+      ],
+      "title": "执行每日签到",
+      "summary": "当前账号签一次，返回奖励明细",
+      "what": "用当前账号的凭证调签到接口，成功则回奖励列表，并记录签到统计（成功/失败数用于 `#zmd状态`）。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] ✅ [昵称] 签到完成」+ 奖励明细；已签过：「[终末地] ☑️ [昵称] 今日已签到」；失败：「[终末地] ❌ [昵称] 签到失败：<原因>」。",
+      "timing": "2~8 秒。",
+      "cost": "走森空岛签到接口。",
+      "keywords": [
+        "签到",
+        "每日签到",
+        "sign",
+        "领奖励"
+      ],
+      "params": [],
+      "example": "#zmd签到",
+      "moreExamples": [
+        "#终末地签到",
+        "#zmdsign"
+      ],
+      "preconditions": [
+        "已用**凭证**绑定账号（UID-only 不支持签到）"
+      ],
+      "pitfalls": [
+        "**UID-only 绑定会直接回「当前账号仅绑定UID（仅面板），不支持签到」**",
+        "只签当前生效的那个账号，多账号要逐个切过去签或用 `#zmd全部签到`",
+        "重复签到不会报错，回「今日已签到」",
+        "签到成功/失败会计入统计，影响 `#zmd状态` 的数字"
+      ],
+      "failures": [
+        {
+          "symptom": "回「当前账号仅绑定UID（仅面板），不支持签到」",
+          "cause": "绑的是 UID 形态"
+        },
+        {
+          "symptom": "回「未绑定账号，请先私聊：#zmd绑定<cred|token>」",
+          "cause": "没绑或只有 UID"
+        },
+        {
+          "symptom": "回「签到失败：<原因>」",
+          "cause": "凭证过期或被风控"
+        }
+      ],
+      "edgeCases": [
+        "已签到会返回接口给的提示文案，不一定是「今日已签到」四个字",
+        "跨天判定按服务器时区"
+      ],
+      "scenarios": [
+        "每天手动签一次"
+      ],
+      "vs": [
+        {
+          "command": "#zmd全部签到",
+          "diff": "那个签全服所有绑定用户（主人用）"
+        },
+        {
+          "command": "#zmd开启自动签到",
+          "diff": "那个是订阅每日自动签"
+        },
+        {
+          "command": "#fz签到",
+          "diff": "那个签的是明日方舟"
+        }
+      ],
+      "related": [
+        "#zmd全部签到",
+        "#zmd开启自动签到",
+        "#zmd每日",
+        "#zmd绑定"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/all-sign",
+      "command": "#zmd全部签到",
+      "aliases": [
+        "#zmd全体签到",
+        "#zmd一键签到",
+        "#终末地全部签到",
+        "%zmd全部签到"
+      ],
+      "title": "为所有绑定用户签到",
+      "summary": "主人专用：批量签，出一张结果图",
+      "what": "遍历全部已绑定用户逐个签到，统计成功/已签/失败/跳过，渲染成一张结果图并回汇总文本。",
+      "returns": "一张结果图 + 一条汇总文本。",
+      "returnsDetail": "文本：「[终末地] 全部签到完成：成功 X | 已签 Y | 失败 Z | 跳过 W」+ 明细。一个用户都没有时回「暂无已绑定用户」。",
+      "timing": "30 秒~数分钟（按用户数线性增长）。",
+      "cost": "走森空岛接口，**每个用户一次请求**，用户多时请求量很大。",
+      "keywords": [
+        "全部签到",
+        "全体签到",
+        "一键签到",
+        "批量签到"
+      ],
+      "params": [],
+      "example": "#zmd全部签到",
+      "moreExamples": [
+        "#zmd一键签到",
+        "#终末地全体签到"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "**有并发锁**：已经在跑的时候再发会回「正在执行自动签到，请稍后再试」",
+        "用户多时耗时很长，图片渲染可能失败（失败时只记日志，仍回文本汇总）",
+        "会把所有人的凭证都挨个打一次接口，容易触发风控",
+        "「跳过」通常是 UID-only 账号或凭证失效"
+      ],
+      "failures": [
+        {
+          "symptom": "回「正在执行自动签到，请稍后再试」",
+          "cause": "上一轮还在跑"
+        },
+        {
+          "symptom": "回「暂无已绑定用户」",
+          "cause": "一个都没绑"
+        },
+        {
+          "symptom": "只有文本没有图",
+          "cause": "图片渲染失败（不影响签到本身）"
+        }
+      ],
+      "edgeCases": [
+        "计时器会跳过刚签过的账号，所以「已签」数字会比较大",
+        "单个用户失败不影响其他用户继续签"
+      ],
+      "scenarios": [
+        "维护者每天统一补签"
+      ],
+      "vs": [
+        {
+          "command": "#zmd签到",
+          "diff": "那个只签自己当前账号"
+        },
+        {
+          "command": "#fz全部签到",
+          "diff": "那个签的是明日方舟"
+        }
+      ],
+      "related": [
+        "#zmd签到",
+        "#zmd状态",
+        "#zmd开启自动签到"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/daily",
+      "command": "#zmd每日",
+      "aliases": [
+        "#zmd体力",
+        "#zmdmr",
+        "#终末地每日",
+        "%zmd每日"
+      ],
+      "title": "查看体力与日常进度",
+      "summary": "体力、回满时间、通行证、每日活跃",
+      "what": "取卡片详情里的 dungeon（体力）、bpSystem（通行证）、dailyMission（每日任务），整理成文本输出。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "含当前体力/上限、回满所需时间、通行证等级与进度、每日任务完成情况。支持 @ 别人查。",
+      "timing": "3~10 秒。",
+      "cost": "走森空岛卡片接口。",
+      "keywords": [
+        "每日",
+        "体力",
+        "mr",
+        "回满",
+        "通行证",
+        "活跃"
+      ],
+      "params": [],
+      "example": "#zmd每日",
+      "moreExamples": [
+        "#zmd体力",
+        "#zmdmr",
+        "#zmd每日 @某人"
+      ],
+      "preconditions": [
+        "已绑定账号且**有 cred**（UID-only 拿不到体力）",
+        "能取到森空岛 userId（取不到时提示跑 `#zmd环境`）"
+      ],
+      "pitfalls": [
+        "**依赖 sklandUserId**，取不到会回「缺少 skland userId，且自动获取失败」并要你看 `#zmd环境`",
+        "走的是卡片接口，数据可能滞后于游戏内实时值",
+        "规则允许带任意参数，但 @ 才是有效的（查别人）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未绑定账号，请先私聊：#zmd绑定 <cred|token>」",
+          "cause": "没绑或只有 UID"
+        },
+        {
+          "symptom": "回「获取森空岛 userId 失败：...」",
+          "cause": "smsdk 不可用或凭证异常"
+        },
+        {
+          "symptom": "回「缺少 skland userId...」",
+          "cause": "自动获取失败，需查环境"
+        },
+        {
+          "symptom": "回「获取卡片详情失败：<code/message>」",
+          "cause": "接口返回非 0"
+        }
+      ],
+      "edgeCases": [
+        "体力已满时回满时间显示为空或 0",
+        "通行证未开时相关字段为 0"
+      ],
+      "scenarios": [
+        "看体力还差多久回满",
+        "确认每日任务做没做"
+      ],
+      "vs": [
+        {
+          "command": "#zmd卡片",
+          "diff": "那个是账号总览图"
+        },
+        {
+          "command": "#fz抽卡记录",
+          "diff": "那个是明日方舟的"
+        }
+      ],
+      "related": [
+        "#zmd卡片",
+        "#zmd刷新",
+        "#zmd环境",
+        "#zmd签到"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/auto-sign-on",
+      "command": "#zmd开启自动签到",
+      "aliases": [
+        "#zmd自动签到开启",
+        "#终末地开启自动签到",
+        "%zmd开启自动签到"
+      ],
+      "title": "开启每日自动签到",
+      "summary": "让插件每天自动帮你签",
+      "what": "把当前用户标记为自动签到，之后由定时任务每天执行。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已开启（失败时给出原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写标记。",
+      "keywords": [
+        "开启自动签到",
+        "自动签到",
+        "每天自动签"
+      ],
+      "params": [],
+      "example": "#zmd开启自动签到",
+      "moreExamples": [
+        "#zmd自动签到开启",
+        "#终末地开启自动签到"
+      ],
+      "preconditions": [
+        "已绑定账号"
+      ],
+      "pitfalls": [
+        "只是打标记，真正执行靠插件的定时任务；任务没注册就不会签",
+        "自动签到用的是**当前账号**，切换账号后自动签的可能是新号",
+        "UID-only 账号即使开了也签不了（会跳过）"
+      ],
+      "failures": [
+        {
+          "symptom": "开了但没自动签",
+          "cause": "定时任务未注册，或绑定的是 UID-only"
+        },
+        {
+          "symptom": "回「开启失败：...」",
+          "cause": "写库异常"
+        }
+      ],
+      "edgeCases": [
+        "重复开启不会报错"
+      ],
+      "scenarios": [
+        "懒得每天手动签"
+      ],
+      "vs": [
+        {
+          "command": "#zmd关闭自动签到",
+          "diff": "反向操作"
+        },
+        {
+          "command": "#zmd全部签到",
+          "diff": "那个是立刻批量签，不是订阅"
+        }
+      ],
+      "related": [
+        "#zmd关闭自动签到",
+        "#zmd签到",
+        "#zmd全部签到",
+        "#zmd状态"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/auto-sign-off",
+      "command": "#zmd关闭自动签到",
+      "aliases": [
+        "#zmd自动签到关闭",
+        "#终末地关闭自动签到",
+        "%zmd关闭自动签到"
+      ],
+      "title": "关闭每日自动签到",
+      "summary": "停止自动签",
+      "what": "取消当前用户的自动签到标记。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已关闭（失败时给出原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写标记。",
+      "keywords": [
+        "关闭自动签到",
+        "取消自动签到",
+        "停止自动签"
+      ],
+      "params": [],
+      "example": "#zmd关闭自动签到",
+      "moreExamples": [
+        "#zmd自动签到关闭"
+      ],
+      "preconditions": [
+        "之前开过"
+      ],
+      "pitfalls": [
+        "不会取消已签到的结果，只是不再自动签",
+        "重复关闭不报错"
+      ],
+      "failures": [
+        {
+          "symptom": "回「关闭失败：...」",
+          "cause": "写库异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "不想让 bot 代签了"
+      ],
+      "vs": [
+        {
+          "command": "#zmd开启自动签到",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#zmd开启自动签到",
+        "#zmd签到"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/env",
+      "command": "#zmd环境",
+      "aliases": [
+        "#zmdenv",
+        "#终末地环境",
+        "%zmd环境"
+      ],
+      "title": "诊断运行环境与依赖",
+      "summary": "查 qrcode/smsdk/数据接口连通性",
+      "what": "检查 node 版本与路径、`qrcode` 依赖是否可加载、smsdk 路径（配置值与自动探测）、Friend API 的启用/来源/地址/健康状态。",
+      "returns": "一条多行纯文本诊断消息（引用回复）。",
+      "returnsDetail": "逐项列出：`node.execPath`、`node.version`、`qrcode(dep)`（ok 或「缺少（…安装命令…）」）、`smsdk.smSdkPath`、`smsdk(自动探测)`、`friendApi.enable/source/localBaseUrl/unifiedBaseUrl/baseUrl(current)/health`。health 为 `ok` / `fail:<原因>` / `(disabled)`。",
+      "timing": "2~6 秒（会探一次接口，超时 1.5 秒）。",
+      "cost": "轻量探测。",
+      "keywords": [
+        "环境",
+        "诊断",
+        "依赖检查",
+        "env",
+        "qrcode",
+        "smsdk",
+        "健康检查"
+      ],
+      "params": [],
+      "example": "#zmd环境",
+      "moreExamples": [
+        "#zmdenv",
+        "#终末地环境"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**排障第一站**：登录出不了码查 `qrcode(dep)`，面板查不出来查 `friendApi.health`",
+        "`qrcode` 缺失时会直接在输出里给安装命令（corepack pnpm install）",
+        "`friendApi(source)` 显示的是配置里的设定值，`baseUrl(current)` 才是实际生效的",
+        "会暴露服务器 node 路径等内部信息，群里刷屏注意"
+      ],
+      "failures": [
+        {
+          "symptom": "qrcode(dep) 显示缺少",
+          "cause": "依赖没装，照输出里的命令装"
+        },
+        {
+          "symptom": "friendApi.health 显示 fail:...",
+          "cause": "数据接口不通或凭证错"
+        },
+        {
+          "symptom": "smsdk(自动探测) 显示 (未找到)",
+          "cause": "缺 sm.sdk.js，影响部分接口"
+        }
+      ],
+      "edgeCases": [
+        "`friendApi.enable` 为 false 时 health 显示 (disabled) 而不是 fail",
+        "探测超时按 1.5 秒算，慢速网络下可能误判 fail"
+      ],
+      "scenarios": [
+        "登录/面板报错时先跑这条"
+      ],
+      "vs": [
+        {
+          "command": "#数据源",
+          "diff": "那个只看数据源配置，不测连通性"
+        },
+        {
+          "command": "#zmd状态",
+          "diff": "那个看用户与签到统计"
+        }
+      ],
+      "related": [
+        "#数据源",
+        "#zmd状态",
+        "#zmd登录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/upload-background",
+      "command": "#zmd上传背景图",
+      "aliases": [
+        "#zmd新增背景图",
+        "#终末地上传背景图",
+        "%zmd上传背景图"
+      ],
+      "title": "上传渲染用背景图",
+      "summary": "主人专用：随命令带图，存进图库",
+      "what": "从消息里取出图片（附图或引用图），校验大小后存进 `resources/side/`，作为随机渲染背景。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 背景图上传成功」+ 文件名 + 「图库：resources/side/（当前 N 张）」+ 「提示：新增图片已被 .gitignore 忽略，不会误提交到 GitHub」。",
+      "timing": "1~5 秒。",
+      "cost": "存本地文件。",
+      "keywords": [
+        "上传背景图",
+        "新增背景图",
+        "换背景",
+        "图库"
+      ],
+      "params": [],
+      "example": "#zmd上传背景图",
+      "moreExamples": [
+        "#zmd新增背景图"
+      ],
+      "preconditions": [
+        "必须是机器人主人（函数内 `if (!e.isMaster)` 早退）",
+        "**消息里必须带图或引用一条含图消息**"
+      ],
+      "pitfalls": [
+        "只发文字不发图会回「请发送命令并附带一张图片」",
+        "**单图上限 20MB**，超了报 image_too_large",
+        "存的图会被 .gitignore 忽略，不会误提交 —— 但也意味着换机器不带走",
+        "背景图是全站共享的，不是个人设置"
+      ],
+      "failures": [
+        {
+          "symptom": "回「仅主人可用：上传背景图」",
+          "cause": "不是主人"
+        },
+        {
+          "symptom": "回「请发送命令并附带一张图片」",
+          "cause": "没带图"
+        },
+        {
+          "symptom": "上传失败 image_too_large",
+          "cause": "图超过 20MB"
+        }
+      ],
+      "edgeCases": [
+        "支持引用别人的图上传",
+        "非图片附件会被判 empty_image"
+      ],
+      "scenarios": [
+        "想让渲染图用自己准备的背景"
+      ],
+      "vs": [
+        {
+          "command": "#zmd删除全部资源",
+          "diff": "那个是清空插件下载的资源缓存，不动背景图库"
+        }
+      ],
+      "related": [
+        "#zmd环境",
+        "#zmd状态"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/wiki-char-list",
+      "command": "#zmd角色列表",
+      "aliases": [
+        "#终末地角色列表",
+        "%zmd角色列表"
+      ],
+      "title": "查看全部角色名单",
+      "summary": "按分类分组的合并转发",
+      "what": "读 biligame wiki 的角色清单，按分类分组，每组列出人数与全部名字，拼成合并转发。",
+      "returns": "一条合并转发消息。",
+      "returnsDetail": "首节「[终末地] 角色列表（更新：<时间>）」；之后每节「【分类】(N)」+ 名字列表。",
+      "timing": "2~10 秒。",
+      "cost": "走 biligame wiki，有本地缓存。",
+      "keywords": [
+        "角色列表",
+        "有哪些角色",
+        "角色名单",
+        "全角色"
+      ],
+      "params": [],
+      "example": "#zmd角色列表",
+      "moreExamples": [
+        "#终末地角色列表"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "结果是合并转发，手机上要点开才展开",
+        "数据有缓存，新角色要等缓存过期或用刷新类指令",
+        "只列名字，不含属性和技能 —— 那些用 `#zmd<角色>图鉴`"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无角色列表数据」",
+          "cause": "wiki 抓取失败或返回空"
+        }
+      ],
+      "edgeCases": [
+        "某个分类下 0 人时该节仍可能显示（人数为 0）"
+      ],
+      "scenarios": [
+        "查角色全名，方便拼图鉴指令"
+      ],
+      "vs": [
+        {
+          "command": "#zmd武器列表",
+          "diff": "那个是武器名单"
+        },
+        {
+          "command": "#zmd卡池",
+          "diff": "那个是当前 up 的卡池"
+        }
+      ],
+      "related": [
+        "#zmd武器列表",
+        "#zmd卡池",
+        "#zmd莱万汀图鉴"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/wiki-weapon-list",
+      "command": "#zmd武器列表",
+      "aliases": [
+        "#终末地武器列表",
+        "%zmd武器列表"
+      ],
+      "title": "查看全部武器名单",
+      "summary": "按类型分组的合并转发",
+      "what": "读 wiki 武器清单，按类型分组列出人数与名字。",
+      "returns": "一条合并转发消息。",
+      "returnsDetail": "首节「[终末地] 武器列表（更新：<时间>）」；之后每节「【类型】(N)」+ 武器名列表。",
+      "timing": "2~10 秒。",
+      "cost": "走 wiki，有缓存。",
+      "keywords": [
+        "武器列表",
+        "有哪些武器",
+        "武器名单"
+      ],
+      "params": [],
+      "example": "#zmd武器列表",
+      "moreExamples": [
+        "#终末地武器列表"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "合并转发要手动展开",
+        "只列名字，详情用 `#zmd<武器名>武器` 或对应角色专武"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无武器列表数据」",
+          "cause": "wiki 抓取失败"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "查武器全名"
+      ],
+      "vs": [
+        {
+          "command": "#zmd角色列表",
+          "diff": "那个是角色名单"
+        }
+      ],
+      "related": [
+        "#zmd角色列表",
+        "#zmd卡池"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/wiki-gacha-pool",
+      "command": "#zmd卡池",
+      "aliases": [
+        "#zmd卡池信息",
+        "#zmd up角色",
+        "#终末地卡池",
+        "%zmd卡池"
+      ],
+      "title": "查看当前卡池",
+      "summary": "当前 up 的角色与武器",
+      "what": "读 wiki 卡池数据，输出当前进行中的卡池信息。",
+      "returns": "一条纯文本或合并转发消息。",
+      "returnsDetail": "列出当前卡池的 up 角色/武器与时间信息。无数据时回「暂无卡池信息」。",
+      "timing": "2~8 秒。",
+      "cost": "走 wiki，有缓存。",
+      "keywords": [
+        "卡池",
+        "卡池信息",
+        "up角色",
+        "现在抽什么"
+      ],
+      "params": [],
+      "example": "#zmd卡池",
+      "moreExamples": [
+        "#zmd卡池信息",
+        "#终末地卡池"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "数据来自 wiki，**更新可能滞后于官方公告**，急的话看 `#zmd公告`",
+        "这是 wiki 数据，和你自己的抽卡记录无关"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无卡池信息」",
+          "cause": "wiki 无数据或抓取失败"
+        }
+      ],
+      "edgeCases": [
+        "卡池交替期可能同时显示新旧两批"
+      ],
+      "scenarios": [
+        "确认现在 up 谁"
+      ],
+      "vs": [
+        {
+          "command": "#zmd日历",
+          "diff": "那个是活动时间线，含起止时间与倒计时"
+        }
+      ],
+      "related": [
+        "#zmd日历",
+        "#zmd公告",
+        "#zmd抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/wiki-calendar",
+      "command": "#zmd日历",
+      "aliases": [
+        "#zmd活动日历",
+        "#zmd活动",
+        "#终末地日历",
+        "%zmd日历"
+      ],
+      "title": "查看活动日历",
+      "summary": "进行中与即将开始的活动时间线",
+      "what": "读活动数据，分成「进行中」与「即将开始」两组，每个活动一张卡片拼进合并转发。",
+      "returns": "一条合并转发消息。",
+      "returnsDetail": "首节是汇总头，之后「进行中」的活动各一节，再之后「即将开始」的各一节；每节含活动名、起止时间、剩余天数等。",
+      "timing": "3~10 秒。",
+      "cost": "走 wiki，有缓存。",
+      "keywords": [
+        "日历",
+        "活动日历",
+        "活动",
+        "有什么活动",
+        "活动时间"
+      ],
+      "params": [],
+      "example": "#zmd日历",
+      "moreExamples": [
+        "#zmd活动",
+        "#终末地活动日历"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**`#zmd活动` 也走这条**，不是 `#fz活动` 那种单条文本",
+        "结果按「进行中 / 即将开始」分组，过期的活动不显示",
+        "数据有缓存，新活动可能延迟出现"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无活动日历数据」",
+          "cause": "wiki 抓取失败或无活动"
+        }
+      ],
+      "edgeCases": [
+        "刚好开始或结束当天的活动归组可能不稳定"
+      ],
+      "scenarios": [
+        "看现在有什么活动在跑"
+      ],
+      "vs": [
+        {
+          "command": "#zmd卡池",
+          "diff": "那个只看卡池"
+        },
+        {
+          "command": "#zmd订阅活动提醒",
+          "diff": "那个是订阅推送"
+        }
+      ],
+      "related": [
+        "#zmd卡池",
+        "#zmd订阅活动提醒",
+        "#zmd活动提醒列表"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/subscribe-activity-reminder",
+      "command": "#zmd订阅活动提醒",
+      "aliases": [
+        "#zmd活动提醒订阅",
+        "#zmd订阅活动提醒 24",
+        "#终末地订阅活动提醒",
+        "%zmd订阅活动提醒"
+      ],
+      "title": "订阅活动开始/结束提醒",
+      "summary": "群聊或私聊订阅，可设提前几小时",
+      "what": "把当前会话（群或私聊）登记为活动提醒目标，并记录提前提醒的小时数；同时重置该订阅的已读列表。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "「[终末地] 已订阅活动提醒\\n推送位置：当前群聊/当前私聊\\n提醒窗口：提前 N 小时\\n查看日历：#zmd日历」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写订阅表。",
+      "keywords": [
+        "订阅活动提醒",
+        "活动提醒",
+        "活动开始提醒",
+        "提醒订阅"
+      ],
+      "params": [
+        {
+          "name": "提前小时",
+          "required": false,
+          "desc": "数字 1~168，默认 0（表示按配置默认值）；写 24 就是提前一天提醒"
+        }
+      ],
+      "example": "#zmd订阅活动提醒",
+      "moreExamples": [
+        "#zmd订阅活动提醒 24",
+        "#zmd活动提醒订阅 48"
+      ],
+      "preconditions": [
+        "无需绑定账号",
+        "群聊私聊都能订"
+      ],
+      "pitfalls": [
+        "**小时数会被夹到 1~168 之间**，写 999 会变成 168（7 天）",
+        "不写小时数时用 0，实际取配置里的默认值",
+        "同一个会话重复订阅会覆盖旧设置，不会重复推送",
+        "订阅是按「bot + 用户 + 群」三元组记录的，换群要重新订"
+      ],
+      "failures": [
+        {
+          "symptom": "订阅后没收到提醒",
+          "cause": "提醒任务未跑，或活动还没进入提醒窗口"
+        }
+      ],
+      "edgeCases": [
+        "私聊订阅时 group_id 为空，推送走私聊",
+        "订阅会清空该会话的已推记录，可能重推已提醒过的活动"
+      ],
+      "scenarios": [
+        "不想错过活动结束时间"
+      ],
+      "vs": [
+        {
+          "command": "#zmd订阅公告",
+          "diff": "那个推官方公告，这个推活动起止"
+        },
+        {
+          "command": "#zmd活动提醒列表",
+          "diff": "那个查看当前订阅状态"
+        }
+      ],
+      "related": [
+        "#zmd取消订阅活动提醒",
+        "#zmd活动提醒列表",
+        "#zmd日历"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/unsubscribe-activity-reminder",
+      "command": "#zmd取消订阅活动提醒",
+      "aliases": [
+        "#zmd取消活动提醒",
+        "#终末地取消订阅活动提醒",
+        "%zmd取消订阅活动提醒"
+      ],
+      "title": "取消活动提醒订阅",
+      "summary": "停止当前会话的活动推送",
+      "what": "把当前会话从活动提醒订阅表里移除。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 已取消活动提醒」。没订阅过：「[终末地] 当前会话还没有订阅活动提醒」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写订阅表。",
+      "keywords": [
+        "取消订阅活动提醒",
+        "取消活动提醒",
+        "退订活动"
+      ],
+      "params": [],
+      "example": "#zmd取消订阅活动提醒",
+      "moreExamples": [
+        "#zmd取消活动提醒"
+      ],
+      "preconditions": [
+        "当前会话订阅过"
+      ],
+      "pitfalls": [
+        "没订阅时明确回「还没有订阅」，不是静默成功",
+        "只影响当前会话，其他群/私聊的订阅不动"
+      ],
+      "failures": [
+        {
+          "symptom": "回「当前会话还没有订阅活动提醒」",
+          "cause": "本来就没订"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "嫌提醒吵"
+      ],
+      "vs": [
+        {
+          "command": "#zmd订阅活动提醒",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#zmd订阅活动提醒",
+        "#zmd活动提醒列表"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/activity-reminder-list",
+      "command": "#zmd活动提醒列表",
+      "aliases": [
+        "#终末地活动提醒列表",
+        "%zmd活动提醒列表"
+      ],
+      "title": "查看活动提醒订阅状态",
+      "summary": "当前会话订没订、提前几小时",
+      "what": "读订阅表，输出当前会话的订阅状态与提醒窗口。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "已订阅时列出推送位置与提前小时数；未订阅时回「当前会话未订阅活动提醒\\n可用：#zmd订阅活动提醒」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读订阅表。",
+      "keywords": [
+        "活动提醒列表",
+        "查看提醒订阅",
+        "订阅状态"
+      ],
+      "params": [],
+      "example": "#zmd活动提醒列表",
+      "moreExamples": [
+        "#终末地活动提醒列表"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "只查当前会话，看不到别的群订了什么",
+        "只读不改"
+      ],
+      "failures": [],
+      "edgeCases": [
+        "同一会话在不同 bot 下算不同订阅"
+      ],
+      "scenarios": [
+        "确认活动提醒还开着没"
+      ],
+      "vs": [
+        {
+          "command": "#zmd订阅活动提醒",
+          "diff": "那个是订阅"
+        }
+      ],
+      "related": [
+        "#zmd订阅活动提醒",
+        "#zmd取消订阅活动提醒",
+        "#zmd日历"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/wiki-query",
+      "command": "#zmd莱万汀图鉴",
+      "aliases": [
+        "#zmd莱万汀介绍",
+        "#zmd莱万汀技能",
+        "#zmd莱万汀天赋",
+        "#zmd莱万汀潜能",
+        "#zmd莱万汀专武",
+        "%zmd莱万汀图鉴"
+      ],
+      "title": "查询角色或武器图鉴",
+      "summary": "七种后缀，专武/武器走武器分支",
+      "what": "按「名称 + 后缀」查询：图鉴/介绍/技能/天赋/潜能走角色分支（先解析角色别名），专武/武器走武器分支（把「角色+专武」映射成武器名再查）。",
+      "returns": "一条纯文本图鉴信息（引用回复）。",
+      "returnsDetail": "角色分支输出属性、技能、天赋、潜能等文本；武器分支输出武器名与稀有度、类型、基础攻击（含满级）、描述、wiki 链接、更新时间。找不到时回「未找到相关图鉴信息」。",
+      "timing": "3~15 秒。",
+      "cost": "走 biligame wiki，有缓存。",
+      "keywords": [
+        "图鉴",
+        "角色介绍",
+        "技能",
+        "天赋",
+        "潜能",
+        "专武",
+        "武器"
+      ],
+      "params": [
+        {
+          "name": "名称",
+          "required": true,
+          "desc": "角色名或武器名，支持别名"
+        },
+        {
+          "name": "后缀",
+          "required": false,
+          "desc": "图鉴/介绍/技能/天赋/潜能/专武/武器；不写默认按图鉴查"
+        }
+      ],
+      "example": "#zmd莱万汀图鉴",
+      "moreExamples": [
+        "#zmd莱万汀介绍",
+        "#zmd莱万汀技能",
+        "#zmd莱万汀潜能",
+        "#zmd莱万汀专武",
+        "#zmd某武器武器"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**名称和后缀之间不能有空格**，`莱万汀 图鉴` 会匹配失败",
+        "**「专武」是先按角色名解析、再映射到武器名** —— 所以写角色名+专武能直接查到他/她的专武",
+        "写「武器」时如果名称本身就是武器名（如 `#zmd某武器武器`），会先去掉结尾的「武器」再按角色解析，可能反而查不到；这时改用 `图鉴` 后缀",
+        "后缀只能是这七个，写「属性」「评价」不匹配",
+        "数据来自 wiki，版本更新后可能滞后"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请提供查询名称，例如：#zmd莱万汀图鉴」",
+          "cause": "只给了后缀没给名称"
+        },
+        {
+          "symptom": "回「未找到相关图鉴信息」",
+          "cause": "名称没命中 wiki，或该角色/武器未收录"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "名称和后缀之间有空格"
+        }
+      ],
+      "edgeCases": [
+        "角色别名会先做一次解析，所以外号也能查",
+        "武器名带空格时整段会被当一个名称"
+      ],
+      "scenarios": [
+        "查角色技能倍率",
+        "查专武的基础攻击"
+      ],
+      "vs": [
+        {
+          "command": "#艾莲面板",
+          "diff": "那个看你自己角色的实际面板"
+        },
+        {
+          "command": "#zmd角色列表",
+          "diff": "那个只给名单"
+        }
+      ],
+      "related": [
+        "#zmd角色列表",
+        "#zmd武器列表",
+        "#zmd别名 莱万汀"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-help",
+      "command": "#fz抽卡帮助",
+      "aliases": [
+        "#FZ抽卡帮助"
+      ],
+      "title": "查看明日方舟抽卡用法",
+      "summary": "fz 抽卡功能的指令清单",
+      "what": "回固定文本，列出 `#fz` 系列抽卡指令。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "列出活动 / 更新 / 全量 / 查看 / 分析 / 卡池 / 导入 / 导出 / 删除各条写法。",
+      "timing": "即时。",
+      "cost": "纯本地文本。",
+      "keywords": [
+        "fz抽卡帮助",
+        "方舟抽卡",
+        "明日方舟抽卡怎么用"
+      ],
+      "params": [],
+      "example": "#fz抽卡帮助",
+      "moreExamples": [
+        "#FZ抽卡帮助"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "**`#fz` 是明日方舟的固定前缀**，和 `#zmd` 共用同一套账号绑定（`#zmd绑定`）",
+        "只是说明文本"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "第一次用方舟功能"
+      ],
+      "vs": [
+        {
+          "command": "#zmd抽卡帮助",
+          "diff": "那个是终末地的"
+        }
+      ],
+      "related": [
+        "#fz签到",
+        "#fz抽卡记录",
+        "#zmd绑定"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-activity",
+      "command": "#fz活动",
+      "aliases": [
+        "#fz活动列表",
+        "#fz活动查询"
+      ],
+      "title": "查看方舟活动",
+      "summary": "进行中与近期活动",
+      "what": "查森空岛的明日方舟活动数据，输出进行中/近期活动。",
+      "returns": "一条纯文本或多节消息（引用回复）。",
+      "returnsDetail": "列出活动名与起止时间。",
+      "timing": "2~10 秒。",
+      "cost": "走森空岛接口。",
+      "keywords": [
+        "fz活动",
+        "方舟活动",
+        "明日方舟活动"
+      ],
+      "params": [],
+      "example": "#fz活动",
+      "moreExamples": [
+        "#fz活动列表"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "只列活动，不含抽卡建议",
+        "数据来自森空岛，可能有缓存"
+      ],
+      "failures": [
+        {
+          "symptom": "回获取失败",
+          "cause": "接口异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看方舟现在有什么活动"
+      ],
+      "vs": [
+        {
+          "command": "#zmd日历",
+          "diff": "那个是终末地的活动日历"
+        },
+        {
+          "command": "#zmd活动",
+          "diff": "那个也走终末地日历，不是这条"
+        }
+      ],
+      "related": [
+        "#fz签到",
+        "#fz抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-sign",
+      "command": "#fz签到",
+      "aliases": [
+        "#FZ签到"
+      ],
+      "title": "明日方舟每日签到",
+      "summary": "签当前方舟账号",
+      "what": "取当前用户的方舟账号凭证调签到接口，返回奖励或已签提示。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[明日方舟] ✅ [昵称] 签到完成」+ 奖励；已签：「[明日方舟] ☑️ [昵称] 今日已签到」；失败：「[明日方舟] ❌ [昵称] 签到失败：<原因>」。",
+      "timing": "2~8 秒。",
+      "cost": "走森空岛签到接口。",
+      "keywords": [
+        "fz签到",
+        "方舟签到",
+        "明日方舟签到"
+      ],
+      "params": [],
+      "example": "#fz签到",
+      "moreExamples": [
+        "#FZ签到"
+      ],
+      "preconditions": [
+        "已用 `#zmd绑定` 绑定了含方舟权限的凭证"
+      ],
+      "pitfalls": [
+        "**共用 `#zmd` 的绑定**，不是单独绑方舟账号",
+        "凭证没有方舟权限时签到会失败（提示来自接口）",
+        "重复签到不报错"
+      ],
+      "failures": [
+        {
+          "symptom": "回「签到请求失败」",
+          "cause": "网络或接口异常"
+        },
+        {
+          "symptom": "回「签到失败：<code>」",
+          "cause": "凭证无方舟权限或已过期"
+        }
+      ],
+      "edgeCases": [
+        "跨天按服务器时区"
+      ],
+      "scenarios": [
+        "每天签方舟"
+      ],
+      "vs": [
+        {
+          "command": "#zmd签到",
+          "diff": "那个签的是终末地"
+        },
+        {
+          "command": "#fz全部签到",
+          "diff": "那个批量签所有用户"
+        }
+      ],
+      "related": [
+        "#fz全部签到",
+        "#fz开启自动签到",
+        "#zmd绑定"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-all-sign",
+      "command": "#fz全部签到",
+      "aliases": [
+        "#fz全体签到",
+        "#fz一键签到"
+      ],
+      "title": "为所有用户签方舟",
+      "summary": "主人专用：批量签，出结果图",
+      "what": "遍历全部绑定用户逐个签方舟，统计成功/已签/失败/跳过并渲染结果图。",
+      "returns": "一张结果图 + 一条汇总文本。",
+      "returnsDetail": "文本：「[明日方舟] 全部签到完成：成功 X | 已签 Y | 失败 Z | 跳过 W」+ 明细。无用户时回「暂无已绑定用户」。",
+      "timing": "30 秒~数分钟。",
+      "cost": "每用户一次接口请求。",
+      "keywords": [
+        "fz全部签到",
+        "方舟批量签到",
+        "一键签到"
+      ],
+      "params": [],
+      "example": "#fz全部签到",
+      "moreExamples": [
+        "#fz一键签到"
+      ],
+      "preconditions": [
+        "必须是机器人主人（rule permission: master）"
+      ],
+      "pitfalls": [
+        "有并发锁，跑着的时候再发会回「正在执行自动签到，请稍后再试」",
+        "用户多时耗时长，图片渲染可能失败（不影响签到本身）",
+        "会挨个打接口，容易触发风控"
+      ],
+      "failures": [
+        {
+          "symptom": "回「正在执行自动签到，请稍后再试」",
+          "cause": "上一轮未结束"
+        },
+        {
+          "symptom": "回「暂无已绑定用户」",
+          "cause": "没人绑"
+        }
+      ],
+      "edgeCases": [
+        "单个用户失败不影响其他人"
+      ],
+      "scenarios": [
+        "维护者统一补签"
+      ],
+      "vs": [
+        {
+          "command": "#fz签到",
+          "diff": "那个只签自己"
+        },
+        {
+          "command": "#zmd全部签到",
+          "diff": "那个签的是终末地"
+        }
+      ],
+      "related": [
+        "#fz签到",
+        "#zmd全部签到"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "zmd/fz-auto-sign-on",
+      "command": "#fz开启自动签到",
+      "aliases": [
+        "#fz自动签到开启"
+      ],
+      "title": "开启方舟自动签到",
+      "summary": "每天自动签方舟",
+      "what": "给当前用户打上方舟自动签到标记。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已开启（失败给原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写标记。",
+      "keywords": [
+        "fz自动签到",
+        "方舟自动签到",
+        "开启方舟自动签"
+      ],
+      "params": [],
+      "example": "#fz开启自动签到",
+      "moreExamples": [
+        "#fz自动签到开启"
+      ],
+      "preconditions": [
+        "已绑定账号"
+      ],
+      "pitfalls": [
+        "只是打标记，真正执行靠定时任务",
+        "与终末地的自动签到是两个独立开关"
+      ],
+      "failures": [
+        {
+          "symptom": "回「开启失败：...」",
+          "cause": "写库异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "懒得每天签方舟"
+      ],
+      "vs": [
+        {
+          "command": "#zmd开启自动签到",
+          "diff": "那个是终末地的开关"
+        },
+        {
+          "command": "#fz关闭自动签到",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#fz关闭自动签到",
+        "#fz签到"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-auto-sign-off",
+      "command": "#fz关闭自动签到",
+      "aliases": [
+        "#fz自动签到关闭"
+      ],
+      "title": "关闭方舟自动签到",
+      "summary": "停止方舟自动签",
+      "what": "取消当前用户的方舟自动签到标记。",
+      "returns": "一条纯文本确认（引用回复）。",
+      "returnsDetail": "提示已关闭（失败给原因）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地写标记。",
+      "keywords": [
+        "fz关闭自动签到",
+        "关闭方舟自动签"
+      ],
+      "params": [],
+      "example": "#fz关闭自动签到",
+      "moreExamples": [
+        "#fz自动签到关闭"
+      ],
+      "preconditions": [
+        "之前开过"
+      ],
+      "pitfalls": [
+        "不影响终末地的自动签到开关"
+      ],
+      "failures": [
+        {
+          "symptom": "回「关闭失败：...」",
+          "cause": "写库异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "不想自动签方舟了"
+      ],
+      "vs": [
+        {
+          "command": "#fz开启自动签到",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#fz开启自动签到",
+        "#fz签到"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-import",
+      "command": "#fz导入抽卡记录",
+      "aliases": [
+        "#FZ导入抽卡记录"
+      ],
+      "title": "导入方舟抽卡记录",
+      "summary": "随消息附 JSON 文件导入",
+      "what": "读取消息里的 JSON 文件附件（或链接/token），解析后写入该用户的方舟抽卡记录。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[明日方舟] 导入完成！」+ 统计；失败：「[明日方舟] 导入失败：<原因>」；无输入时回提示。",
+      "timing": "3~20 秒。",
+      "cost": "纯本地解析或走接口。",
+      "keywords": [
+        "fz导入抽卡记录",
+        "方舟抽卡导入",
+        "导入json"
+      ],
+      "params": [],
+      "example": "#fz导入抽卡记录",
+      "moreExamples": [
+        "#fz导入抽卡记录（附 JSON 文件）"
+      ],
+      "preconditions": [
+        "已绑定账号",
+        "消息里带 JSON 文件或含 token 的链接"
+      ],
+      "pitfalls": [
+        "**文件优先**，有附件时忽略文字",
+        "JSON 格式必须符合森空岛导出格式",
+        "重复导入会合并出重复条目"
+      ],
+      "failures": [
+        {
+          "symptom": "回提示要求提供文件或 token",
+          "cause": "没给输入"
+        },
+        {
+          "symptom": "回「导入失败：...」",
+          "cause": "格式不对或解析异常"
+        }
+      ],
+      "edgeCases": [
+        "文件大时解析可能超时"
+      ],
+      "scenarios": [
+        "把旧记录迁到新机器"
+      ],
+      "vs": [
+        {
+          "command": "#fz更新抽卡记录",
+          "diff": "那个直接从接口拉"
+        }
+      ],
+      "related": [
+        "#fz更新抽卡记录",
+        "#fz导出抽卡记录",
+        "#fz抽卡记录"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-export",
+      "command": "#fz导出抽卡记录",
+      "aliases": [
+        "#FZ导出抽卡记录"
+      ],
+      "title": "导出方舟抽卡记录",
+      "summary": "落成文件并回路径",
+      "what": "把该用户的方舟抽卡记录导出成文件，回文件路径。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "回导出文件路径。失败时回原因。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地写文件。",
+      "keywords": [
+        "fz导出抽卡记录",
+        "方舟抽卡导出",
+        "备份方舟抽卡"
+      ],
+      "params": [],
+      "example": "#fz导出抽卡记录",
+      "moreExamples": [
+        "#FZ导出抽卡记录"
+      ],
+      "preconditions": [
+        "本地有方舟抽卡记录"
+      ],
+      "pitfalls": [
+        "回的是服务器路径，不是文件本身",
+        "重复导出覆盖同名文件"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有记录"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "备份方舟抽卡数据"
+      ],
+      "vs": [
+        {
+          "command": "#fz导入抽卡记录",
+          "diff": "反向操作"
+        }
+      ],
+      "related": [
+        "#fz导入抽卡记录",
+        "#fz抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-delete",
+      "command": "#fz删除抽卡记录",
+      "aliases": [
+        "#FZ删除抽卡记录"
+      ],
+      "title": "删除方舟抽卡记录",
+      "summary": "删前自动备份",
+      "what": "把该用户的方舟抽卡记录移入备份后删除。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "回删除结果与备份路径。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地文件操作。",
+      "keywords": [
+        "fz删除抽卡记录",
+        "清空方舟抽卡",
+        "重置方舟抽卡"
+      ],
+      "params": [],
+      "example": "#fz删除抽卡记录",
+      "moreExamples": [
+        "#FZ删除抽卡记录"
+      ],
+      "preconditions": [
+        "本地有方舟抽卡记录"
+      ],
+      "pitfalls": [
+        "**会先备份**，路径在回复里，记下来才能恢复",
+        "删完统计归零",
+        "与「重置抽卡记录」（重拉）不是一回事"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有可删的记录"
+        }
+      ],
+      "edgeCases": [
+        "备份文件会占空间"
+      ],
+      "scenarios": [
+        "数据乱了重来"
+      ],
+      "vs": [
+        {
+          "command": "#fz重置抽卡记录",
+          "diff": "那个是重拉数据"
+        }
+      ],
+      "related": [
+        "#fz导出抽卡记录",
+        "#fz重置抽卡记录",
+        "#fz抽卡记录"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-analysis",
+      "command": "#fz抽卡分析",
+      "aliases": [
+        "#fz抽卡统计",
+        "#fz寻访分析",
+        "#fz寻访统计"
+      ],
+      "title": "方舟抽卡统计分析",
+      "summary": "总寻访数、6 星数、各池平均与垫抽",
+      "what": "读本地方舟抽卡记录，汇总总寻访/6 星数/综合平均，按卡池列出寻访数、6 星数、平均值与垫抽，并列出最近 8 个 6 星。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "头部：账号、UID、更新时间、总寻访 / 6星 / 综合平均；中间每个卡池一行「卡池名：寻访 N / 6星 N / 平均 X / 垫抽 N」；末尾「【最近 6 星】」逐条列出时间、干员、卡池与「第 N 抽」。",
+      "timing": "3~10 秒。",
+      "cost": "纯本地读记录。",
+      "keywords": [
+        "fz抽卡分析",
+        "方舟抽卡统计",
+        "寻访分析",
+        "6星平均"
+      ],
+      "params": [
+        {
+          "name": "@人",
+          "required": false,
+          "desc": "查别人的记录"
+        }
+      ],
+      "example": "#fz抽卡分析",
+      "moreExamples": [
+        "#fz抽卡统计",
+        "#fz寻访分析",
+        "#fz抽卡分析 @某人"
+      ],
+      "preconditions": [
+        "本地有该用户的方舟抽卡记录"
+      ],
+      "pitfalls": [
+        "**只读本地记录**，数据旧要先 `#fz更新抽卡记录`",
+        "「最近 6 星」最多 8 条",
+        "没有任何 6 星时综合平均显示 `-`",
+        "「第 N 抽」是按记录反推的消耗数，记录缺失时可能不准"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有记录"
+        }
+      ],
+      "edgeCases": [
+        "卡池的 avgText 为 `-` 时显示 `-` 而不是计算值"
+      ],
+      "scenarios": [
+        "看自己方舟歪不歪"
+      ],
+      "vs": [
+        {
+          "command": "#fz卡池分析 卡池名",
+          "diff": "那个聚焦单个卡池"
+        },
+        {
+          "command": "#fz抽卡记录",
+          "diff": "那个是明细图"
+        }
+      ],
+      "related": [
+        "#fz卡池分析 限定",
+        "#fz抽卡记录",
+        "#fz更新抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-pool-analysis",
+      "command": "#fz卡池分析 限定",
+      "aliases": [
+        "#fz卡池统计 限定"
+      ],
+      "title": "分析指定卡池",
+      "summary": "只看某个卡池的抽卡情况",
+      "what": "按卡池名关键词筛出该卡池的记录并统计。",
+      "returns": "一条多行纯文本消息（引用回复）。",
+      "returnsDetail": "列出该卡池的寻访数、6 星数、平均值与明细。缺卡池名时回「用法：#fz卡池分析 <卡池名>」。",
+      "timing": "3~10 秒。",
+      "cost": "纯本地读记录。",
+      "keywords": [
+        "fz卡池分析",
+        "方舟卡池统计",
+        "限定池",
+        "常驻池",
+        "中坚池"
+      ],
+      "params": [
+        {
+          "name": "卡池名",
+          "required": true,
+          "desc": "卡池名关键词，如 限定 / 常驻 / 中坚"
+        },
+        {
+          "name": "@人",
+          "required": false,
+          "desc": "查别人"
+        }
+      ],
+      "example": "#fz卡池分析 限定",
+      "moreExamples": [
+        "#fz卡池统计 常驻",
+        "#fz卡池分析 中坚"
+      ],
+      "preconditions": [
+        "本地有方舟抽卡记录"
+      ],
+      "pitfalls": [
+        "**必须给卡池名**，不给只回用法提示",
+        "卡池名是关键词匹配，写得太泛会命中多个池",
+        "只读本地记录"
+      ],
+      "failures": [
+        {
+          "symptom": "回「用法：#fz卡池分析 <卡池名>」",
+          "cause": "没给卡池名"
+        },
+        {
+          "symptom": "回无数据",
+          "cause": "该卡池没有记录"
+        }
+      ],
+      "edgeCases": [
+        "限定池按活动名区分，同名不同期可能混在一起"
+      ],
+      "scenarios": [
+        "单独看某个限定池的战绩"
+      ],
+      "vs": [
+        {
+          "command": "#fz抽卡分析",
+          "diff": "那个是全卡池汇总"
+        }
+      ],
+      "related": [
+        "#fz抽卡分析",
+        "#fz抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-refresh",
+      "command": "#fz更新抽卡记录",
+      "aliases": [
+        "#FZ更新抽卡记录"
+      ],
+      "title": "增量更新方舟抽卡记录",
+      "summary": "只补新增",
+      "what": "用已绑账号拉方舟抽卡记录，只补新增部分。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[明日方舟] 抽卡记录已更新！」+ 统计。",
+      "timing": "5~30 秒。",
+      "cost": "走森空岛抽卡接口。",
+      "keywords": [
+        "fz更新抽卡记录",
+        "方舟刷新抽卡",
+        "拉方舟抽卡"
+      ],
+      "params": [
+        {
+          "name": "@人",
+          "required": false,
+          "desc": "指定账号"
+        }
+      ],
+      "example": "#fz更新抽卡记录",
+      "moreExamples": [
+        "#fz更新抽卡记录 @某人"
+      ],
+      "preconditions": [
+        "已绑定含方舟权限的账号"
+      ],
+      "pitfalls": [
+        "只补新增，历史缺失补不上（用全量）",
+        "记录多时耗时长"
+      ],
+      "failures": [
+        {
+          "symptom": "更新失败",
+          "cause": "凭证无方舟权限或接口异常"
+        }
+      ],
+      "edgeCases": [
+        "@ 别人时用对方绑定"
+      ],
+      "scenarios": [
+        "抽完方舟同步一次"
+      ],
+      "vs": [
+        {
+          "command": "#fz全量更新抽卡记录",
+          "diff": "那个补齐历史"
+        }
+      ],
+      "related": [
+        "#fz全量更新抽卡记录",
+        "#fz抽卡记录",
+        "#fz导入抽卡记录"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-refresh-all",
+      "command": "#fz全量更新抽卡记录",
+      "aliases": [
+        "#fz重刷抽卡记录",
+        "#fz重置抽卡记录",
+        "#fz重拉抽卡记录"
+      ],
+      "title": "全量重拉方舟抽卡记录",
+      "summary": "补齐历史并修正",
+      "what": "从头拉取方舟全部抽卡记录，补齐缺失并修正。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[明日方舟] 抽卡记录全量重拉完成！」+ 统计。",
+      "timing": "30 秒~数分钟。",
+      "cost": "走接口，翻页次数最多。",
+      "keywords": [
+        "fz全量更新抽卡记录",
+        "方舟重刷抽卡",
+        "方舟重置抽卡记录"
+      ],
+      "params": [
+        {
+          "name": "@人",
+          "required": false,
+          "desc": "指定账号"
+        }
+      ],
+      "example": "#fz全量更新抽卡记录",
+      "moreExamples": [
+        "#fz重刷抽卡记录",
+        "#fz重拉抽卡记录"
+      ],
+      "preconditions": [
+        "已绑定含方舟权限的账号"
+      ],
+      "pitfalls": [
+        "**「重置抽卡记录」是这条，不是删除**",
+        "耗时最长，最容易触发限速",
+        "中途失败重跑即可"
+      ],
+      "failures": [
+        {
+          "symptom": "长时间无响应",
+          "cause": "还在翻页"
+        },
+        {
+          "symptom": "中途失败",
+          "cause": "限速或网络中断"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "方舟记录有明显缺漏"
+      ],
+      "vs": [
+        {
+          "command": "#fz更新抽卡记录",
+          "diff": "那个只补新增"
+        },
+        {
+          "command": "#fz删除抽卡记录",
+          "diff": "那个是真删"
+        }
+      ],
+      "related": [
+        "#fz更新抽卡记录",
+        "#fz删除抽卡记录",
+        "#fz抽卡记录"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/fz-gacha-show",
+      "command": "#fz抽卡记录",
+      "aliases": [
+        "#FZ抽卡记录"
+      ],
+      "title": "查看方舟抽卡记录",
+      "summary": "限定/常驻/中坚聚合展示",
+      "what": "读本地方舟抽卡记录，按卡池聚合渲染展示。",
+      "returns": "图片或文本（引用回复）。",
+      "returnsDetail": "按卡池分组列出抽卡条目与统计。",
+      "timing": "3~15 秒。",
+      "cost": "纯本地读记录。",
+      "keywords": [
+        "fz抽卡记录",
+        "方舟抽卡记录",
+        "看方舟抽卡"
+      ],
+      "params": [
+        {
+          "name": "@人",
+          "required": false,
+          "desc": "查别人"
+        }
+      ],
+      "example": "#fz抽卡记录",
+      "moreExamples": [
+        "#fz抽卡记录 @某人"
+      ],
+      "preconditions": [
+        "本地有方舟抽卡记录"
+      ],
+      "pitfalls": [
+        "只读本地，不拉数据",
+        "记录旧要先更新"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有记录"
+        }
+      ],
+      "edgeCases": [
+        "记录很多时消息很长"
+      ],
+      "scenarios": [
+        "看方舟抽卡流水"
+      ],
+      "vs": [
+        {
+          "command": "#fz抽卡分析",
+          "diff": "那个是统计口径"
+        },
+        {
+          "command": "#zmd抽卡记录",
+          "diff": "那个是终末地的"
+        }
+      ],
+      "related": [
+        "#fz抽卡分析",
+        "#fz更新抽卡记录",
+        "#fz导入抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-help",
+      "command": "#zmd抽卡帮助",
+      "aliases": [
+        "#终末地抽卡帮助",
+        "%zmd抽卡帮助"
+      ],
+      "title": "查看抽卡记录用法",
+      "summary": "抽卡功能的完整说明",
+      "what": "回一段固定文本，说明抽卡记录的获取方式、导入格式与各条指令的用途。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "含如何拿到 u8_token、导入链接/JSON 的写法，以及查看/更新/导出/删除各条指令的说明。",
+      "timing": "即时。",
+      "cost": "纯本地文本。",
+      "keywords": [
+        "抽卡帮助",
+        "抽卡记录怎么用",
+        "u8_token",
+        "抽卡导入"
+      ],
+      "params": [],
+      "example": "#zmd抽卡帮助",
+      "moreExamples": [
+        "#终末地抽卡帮助"
+      ],
+      "preconditions": [
+        "无需绑定账号"
+      ],
+      "pitfalls": [
+        "只是说明文本，不做任何操作",
+        "文案里的写法以 `cmd.prefix` 渲染，改了配置会跟着变"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "第一次用抽卡记录功能"
+      ],
+      "vs": [
+        {
+          "command": "#zmd导入抽卡记录",
+          "diff": "那个才是真正导入数据"
+        }
+      ],
+      "related": [
+        "#zmd导入抽卡记录",
+        "#zmd抽卡记录",
+        "#zmd更新抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-tool",
+      "command": "#zmd抽卡工具",
+      "aliases": [
+        "#终末地抽卡工具",
+        "%zmd抽卡工具"
+      ],
+      "title": "获取抽卡链接工具下载地址",
+      "summary": "回一个下载链接（需主人先配）",
+      "what": "读配置项 `gacha.toolUrl`，把下载链接回给用户。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "已配置：「[终末地] 抽卡工具下载：<url>」。未配置：「[终末地] 未配置抽卡工具下载链接（管理员可在 config/zmd-plugin.yaml 设置 gacha.toolUrl）」。",
+      "timing": "即时。",
+      "cost": "纯本地读配置。",
+      "keywords": [
+        "抽卡工具",
+        "下载工具",
+        "抓包工具",
+        "toolUrl"
+      ],
+      "params": [],
+      "example": "#zmd抽卡工具",
+      "moreExamples": [
+        "#终末地抽卡工具"
+      ],
+      "preconditions": [
+        "主人已在 config/zmd-plugin.yaml 里配好 `gacha.toolUrl`"
+      ],
+      "pitfalls": [
+        "**默认没配**，会回「未配置抽卡工具下载链接」—— 这是预期行为，不是 bug",
+        "只是转述配置里的 URL，不校验链接是否有效",
+        "配置项在 yaml 里，指令改不了"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置抽卡工具下载链接...」",
+          "cause": "主人没配 gacha.toolUrl"
+        }
+      ],
+      "edgeCases": [
+        "配了错误链接也照样返回"
+      ],
+      "scenarios": [
+        "不知道去哪抓抽卡链接"
+      ],
+      "vs": [
+        {
+          "command": "#zmd抽卡帮助",
+          "diff": "那个讲流程，不给工具"
+        }
+      ],
+      "related": [
+        "#zmd抽卡帮助",
+        "#zmd导入抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-update-icons",
+      "command": "#zmd更新武器图标",
+      "aliases": [
+        "#zmd补全武器图标",
+        "#zmd更新抽卡图标",
+        "#zmd补全抽卡图标",
+        "%zmd更新武器图标"
+      ],
+      "title": "补全抽卡记录里的武器图标",
+      "summary": "从 wiki 拉图标补进本地缓存",
+      "what": "扫描本地抽卡记录文件，把缺图标的武器从 wiki 拉下来补进缓存；可指定 UID 或加「强制」。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 武器图标缓存更新完成」+ 统计。失败时分别可能回「仅主人可用…」「本地未发现抽卡记录文件（data/gachalog/*.json）」「仅支持更新自己已绑定 UID 的武器图标（或由主人执行）」「未绑定账号…」。",
+      "timing": "10~60 秒（按记录条数）。",
+      "cost": "走 wiki 接口拉图标，可能大量下载。",
+      "keywords": [
+        "更新武器图标",
+        "补全图标",
+        "抽卡图标",
+        "武器图标缺失"
+      ],
+      "params": [
+        {
+          "name": "UID",
+          "required": false,
+          "desc": "指定更新哪个账号的缓存"
+        },
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "忽略已有缓存重新拉"
+        }
+      ],
+      "example": "#zmd更新武器图标",
+      "moreExamples": [
+        "#zmd更新武器图标 123456789",
+        "#zmd补全武器图标 123456789 强制"
+      ],
+      "preconditions": [
+        "rule 上**没有**标 master，但函数内有校验：改别人的要主人身份",
+        "本地要有抽卡记录文件（先导入过）"
+      ],
+      "pitfalls": [
+        "**权限是混合的**：rule 没标 master 但函数里判 —— 普通用户只能更新自己已绑 UID 的，别人的要主人",
+        "本地没有 `data/gachalog/*.json` 时直接回「未发现抽卡记录文件」",
+        "名字里有「武器」，但别名也管角色图标（`更新抽卡图标`）",
+        "耗时较长，图标多时容易超时"
+      ],
+      "failures": [
+        {
+          "symptom": "回「本地未发现抽卡记录文件」",
+          "cause": "还没导入过抽卡记录"
+        },
+        {
+          "symptom": "回「仅支持更新自己已绑定 UID 的武器图标（或由主人执行）」",
+          "cause": "非主人指定了别人的 UID"
+        },
+        {
+          "symptom": "回「仅主人可用：更新全部本地抽卡记录的武器图标」",
+          "cause": "不带 UID 批量更新需要主人"
+        },
+        {
+          "symptom": "回「未绑定账号，请先私聊 #zmd登录 / #zmd绑定」",
+          "cause": "没绑账号"
+        }
+      ],
+      "edgeCases": [
+        "「强制」会重下已有图标，流量翻倍"
+      ],
+      "scenarios": [
+        "抽卡记录图里武器显示成空白方块"
+      ],
+      "vs": [
+        {
+          "command": "#zmd更新抽卡记录",
+          "diff": "那个刷的是记录数据，不是图标"
+        }
+      ],
+      "related": [
+        "#zmd更新抽卡记录",
+        "#zmd抽卡记录",
+        "#zmd导入抽卡记录"
+      ],
+      "risk": "w",
+      "permission": "本人或 master"
+    },
+    {
+      "id": "zmd/gacha-import",
+      "command": "#zmd导入抽卡记录",
+      "aliases": [
+        "#终末地导入抽卡记录",
+        "%zmd导入抽卡记录"
+      ],
+      "title": "导入抽卡记录",
+      "summary": "三种方式：传 JSON 文件 / 发链接 / 给 u8_token",
+      "what": "按输入形态分流：优先读消息里的文件附件（本地路径或 URL），否则从文本里找含 `u8_token=` 的链接或裸 token，解析后入库。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 导入完成！」+ 统计。失败：回「导入失败：<原因>」；完全没给可用输入时回「请提供 u8_token 或包含 u8_token= 的链接，或直接发送 JSON 文件」。",
+      "timing": "3~20 秒。",
+      "cost": "走抽卡接口（token 形态）或纯本地解析（文件形态）。",
+      "keywords": [
+        "导入抽卡记录",
+        "抽卡记录导入",
+        "u8_token",
+        "json导入"
+      ],
+      "params": [
+        {
+          "name": "输入",
+          "required": true,
+          "desc": "含 `u8_token=` 的链接、裸 u8_token，或随消息附一个 JSON 文件"
+        }
+      ],
+      "example": "#zmd导入抽卡记录 https://...?u8_token=xxxx",
+      "moreExamples": [
+        "#zmd导入抽卡记录 u8_token=xxxx",
+        "#zmd导入抽卡记录（附 JSON 文件）"
+      ],
+      "preconditions": [
+        "已绑定账号（记录要落到某个账号下）"
+      ],
+      "pitfalls": [
+        "**文件优先**：消息里有文件附件时完全忽略文字内容",
+        "URL 形式的输入必须是 `u8_token=` 的形式，裸 token 也可以",
+        "文件是本地路径（`/` 或盘符开头）时直接读盘，否则当 URL fetch",
+        "导入是覆盖式还是合并式取决于实现，重复导入前建议先导出备份"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请提供 u8_token 或包含 u8_token= 的链接，或直接发送 JSON 文件」",
+          "cause": "没给任何可用输入"
+        },
+        {
+          "symptom": "回「导入失败：...」",
+          "cause": "JSON 格式不对 / token 失效 / 网络错误"
+        }
+      ],
+      "edgeCases": [
+        "文件读不到（路径错）时抛 missing_file_url 或 HTTP 错误",
+        "同一个 token 多次导入会产生重复记录"
+      ],
+      "scenarios": [
+        "换机器后迁移抽卡数据",
+        "从第三方工具导出再导入"
+      ],
+      "vs": [
+        {
+          "command": "#zmd更新抽卡记录",
+          "diff": "那个用已绑账号直接拉，不用手动给 token"
+        },
+        {
+          "command": "#zmd导出抽卡记录",
+          "diff": "那个是导出备份"
+        }
+      ],
+      "related": [
+        "#zmd更新抽卡记录",
+        "#zmd导出抽卡记录",
+        "#zmd抽卡记录",
+        "#zmd抽卡帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-export",
+      "command": "#zmd导出抽卡记录",
+      "aliases": [
+        "#终末地导出抽卡记录",
+        "%zmd导出抽卡记录"
+      ],
+      "title": "导出抽卡记录文件",
+      "summary": "把本地记录落成文件并回路径",
+      "what": "把当前用户的本地抽卡记录导出成 JSON 文件，回文件路径。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "「[终末地] 抽卡记录文件：<filePath>」。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地写文件。",
+      "keywords": [
+        "导出抽卡记录",
+        "备份抽卡",
+        "抽卡记录文件"
+      ],
+      "params": [],
+      "example": "#zmd导出抽卡记录",
+      "moreExamples": [
+        "#终末地导出抽卡记录"
+      ],
+      "preconditions": [
+        "本地已有抽卡记录"
+      ],
+      "pitfalls": [
+        "**回的是服务器本地路径，不是文件本身** —— 群友拿不到，只有你能上服务器取",
+        "路径在服务器上，机器人容器内的话宿主机看不到同一路径",
+        "没有记录时回失败提示"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "本地没有该用户的抽卡记录"
+        }
+      ],
+      "edgeCases": [
+        "重复导出会覆盖同名文件"
+      ],
+      "scenarios": [
+        "换机器前备份",
+        "把记录发给别人"
+      ],
+      "vs": [
+        {
+          "command": "#zmd导入抽卡记录",
+          "diff": "反向操作"
+        },
+        {
+          "command": "#zmd删除抽卡记录",
+          "diff": "那个删之前会先备份"
+        }
+      ],
+      "related": [
+        "#zmd导入抽卡记录",
+        "#zmd抽卡记录",
+        "#zmd删除抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-delete",
+      "command": "#zmd删除抽卡记录",
+      "aliases": [
+        "#终末地删除抽卡记录",
+        "%zmd删除抽卡记录"
+      ],
+      "title": "删除抽卡记录",
+      "summary": "删之前自动备份",
+      "what": "把当前用户的抽卡记录文件移到备份位置再删除。",
+      "returns": "一条纯文本消息（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 已删除抽卡记录（已备份）：<backupPath>」。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地文件操作。",
+      "keywords": [
+        "删除抽卡记录",
+        "清空抽卡",
+        "重置抽卡记录"
+      ],
+      "params": [],
+      "example": "#zmd删除抽卡记录",
+      "moreExamples": [
+        "#终末地删除抽卡记录"
+      ],
+      "preconditions": [
+        "本地已有抽卡记录"
+      ],
+      "pitfalls": [
+        "删之前会备份，备份路径写在回复里，**记住这个路径才能恢复**",
+        "删完统计会全部归零，`#zmd抽卡记录` 变成空图",
+        "和「重置抽卡记录」不是一回事 —— 那个是重拉，这个是真删"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有可删的记录"
+        }
+      ],
+      "edgeCases": [
+        "备份文件长期堆积会占空间"
+      ],
+      "scenarios": [
+        "数据乱了想重来"
+      ],
+      "vs": [
+        {
+          "command": "#zmd重置抽卡记录",
+          "diff": "那个是重拉数据，不删文件"
+        },
+        {
+          "command": "#zmd导出抽卡记录",
+          "diff": "那个是主动备份"
+        }
+      ],
+      "related": [
+        "#zmd导出抽卡记录",
+        "#zmd重置抽卡记录",
+        "#zmd抽卡记录"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-refresh",
+      "command": "#zmd更新抽卡记录",
+      "aliases": [
+        "#zmd刷新抽卡记录",
+        "#zmd抽卡记录更新",
+        "#终末地更新抽卡记录",
+        "%zmd更新抽卡记录"
+      ],
+      "title": "增量更新抽卡记录",
+      "summary": "用已绑账号拉最新记录，只补新增",
+      "what": "按定向账号拉抽卡记录，只补新增部分，不再重拉历史。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 抽卡记录已更新！」+ 各卡池新增/总数。支持 @ 别人；也可在指令后跟 roleId 指定角色。",
+      "timing": "5~30 秒。",
+      "cost": "走森空岛抽卡接口。",
+      "keywords": [
+        "更新抽卡记录",
+        "刷新抽卡",
+        "抽卡记录更新",
+        "拉抽卡"
+      ],
+      "params": [
+        {
+          "name": "roleId 或 @人",
+          "required": false,
+          "desc": "指定账号；@ 别人时查对方"
+        }
+      ],
+      "example": "#zmd更新抽卡记录",
+      "moreExamples": [
+        "#zmd更新抽卡记录 123456789",
+        "#zmd更新抽卡记录 @某人"
+      ],
+      "preconditions": [
+        "已绑定账号且有 cred"
+      ],
+      "pitfalls": [
+        "**只补新增**，历史缺失的补不上 —— 那种要用 `#zmd全量更新抽卡记录`",
+        "和查看类指令共用「抽卡记录」关键词，写成「抽卡记录更新」才进这条",
+        "记录很多时耗时长，中途容易超时"
+      ],
+      "failures": [
+        {
+          "symptom": "更新失败提示",
+          "cause": "未绑定 / 凭证失效 / 接口异常"
+        },
+        {
+          "symptom": "更新完记录还是不全",
+          "cause": "用的是增量模式，需全量更新"
+        }
+      ],
+      "edgeCases": [
+        "@ 别人时用的是对方的绑定，不是你的"
+      ],
+      "scenarios": [
+        "抽完卡同步一次"
+      ],
+      "vs": [
+        {
+          "command": "#zmd全量更新抽卡记录",
+          "diff": "那个补齐历史并修正，慢但完整"
+        },
+        {
+          "command": "#zmd导入抽卡记录",
+          "diff": "那个用 token/文件手动导入"
+        },
+        {
+          "command": "#zmd抽卡记录",
+          "diff": "那个只查看，不拉数据"
+        }
+      ],
+      "related": [
+        "#zmd全量更新抽卡记录",
+        "#zmd抽卡记录",
+        "#zmd导入抽卡记录",
+        "#zmd更新武器图标"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-refresh-all",
+      "command": "#zmd全量更新抽卡记录",
+      "aliases": [
+        "#zmd重刷抽卡记录",
+        "#zmd重置抽卡记录",
+        "#zmd重拉抽卡记录",
+        "#zmd重新获取抽卡记录",
+        "%zmd全量更新抽卡记录"
+      ],
+      "title": "全量重拉抽卡记录",
+      "summary": "补齐历史并修正，保留旧数据",
+      "what": "从头拉取全部抽卡记录，补齐缺失并修正错误，旧数据保留。",
+      "returns": "一条纯文本结果（引用回复）。",
+      "returnsDetail": "成功：「[终末地] 抽卡记录全量重拉完成！」+ 统计。",
+      "timing": "30 秒~数分钟（按记录总量）。",
+      "cost": "走森空岛抽卡接口，**翻页次数最多**，最容易触发限速。",
+      "keywords": [
+        "全量更新抽卡记录",
+        "重刷抽卡记录",
+        "重置抽卡记录",
+        "重拉抽卡记录",
+        "补齐抽卡"
+      ],
+      "params": [
+        {
+          "name": "roleId 或 @人",
+          "required": false,
+          "desc": "指定账号"
+        }
+      ],
+      "example": "#zmd全量更新抽卡记录",
+      "moreExamples": [
+        "#zmd重刷抽卡记录",
+        "#zmd重置抽卡记录",
+        "#zmd重拉抽卡记录"
+      ],
+      "preconditions": [
+        "已绑定账号且有 cred"
+      ],
+      "pitfalls": [
+        "**「重置抽卡记录」是这条，不是删除** —— 名字容易误解成清空重来，实际是重拉",
+        "耗时最长，抽卡次数多时几分钟都跑不完",
+        "旧的错误记录会被修正，但不会丢数据",
+        "中途失败会留下不完整状态，重跑即可"
+      ],
+      "failures": [
+        {
+          "symptom": "长时间无响应",
+          "cause": "记录太多，还在翻页"
+        },
+        {
+          "symptom": "跑一半失败",
+          "cause": "接口限速或网络中断，重跑可续"
+        }
+      ],
+      "edgeCases": [
+        "「重新获取所有/全部抽卡记录」是同一功能的更长别名"
+      ],
+      "scenarios": [
+        "记录有明显缺漏或统计不对"
+      ],
+      "vs": [
+        {
+          "command": "#zmd更新抽卡记录",
+          "diff": "那个只补新增，快但补不了历史"
+        },
+        {
+          "command": "#zmd删除抽卡记录",
+          "diff": "那个是真的删文件"
+        }
+      ],
+      "related": [
+        "#zmd更新抽卡记录",
+        "#zmd删除抽卡记录",
+        "#zmd抽卡记录"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-show",
+      "command": "#zmd抽卡记录",
+      "aliases": [
+        "#zmd抽卡纪录",
+        "#终末地抽卡记录",
+        "%zmd抽卡记录"
+      ],
+      "title": "查看全部抽卡记录",
+      "summary": "角色池 + 武器池合并的总览图",
+      "what": "读本地记录渲染成一张抽卡记录图，包含角色池与武器池。",
+      "returns": "一张抽卡记录图片（渲染失败时退回文本）。",
+      "returnsDetail": "图里按卡池分组列出抽卡条目与统计；图片失败时发文本版。",
+      "timing": "3~15 秒。",
+      "cost": "纯本地读文件 + 渲染。",
+      "keywords": [
+        "抽卡记录",
+        "看抽卡",
+        "抽卡纪录",
+        "我的抽卡"
+      ],
+      "params": [
+        {
+          "name": "roleId 或 @人",
+          "required": false,
+          "desc": "指定账号或查别人"
+        }
+      ],
+      "example": "#zmd抽卡记录",
+      "moreExamples": [
+        "#zmd抽卡记录 @某人",
+        "#zmd抽卡记录 123456789"
+      ],
+      "preconditions": [
+        "本地有抽卡记录（先导入或更新过）"
+      ],
+      "pitfalls": [
+        "**只读本地文件，不拉数据**；记录旧要先 `#zmd更新抽卡记录`",
+        "「抽卡纪录」也是这条（纪/记两种写法都认）",
+        "没有记录时会回失败提示，不会出空图"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "本地没有记录"
+        },
+        {
+          "symptom": "只有文本没有图",
+          "cause": "渲染失败，退化成文本版"
+        }
+      ],
+      "edgeCases": [
+        "渲染失败仍会给文本版，信息不丢"
+      ],
+      "scenarios": [
+        "看自己总共抽了多少"
+      ],
+      "vs": [
+        {
+          "command": "#zmd角色抽卡记录",
+          "diff": "那个只看角色池"
+        },
+        {
+          "command": "#zmd武器抽卡记录",
+          "diff": "那个只看武器池"
+        },
+        {
+          "command": "#zmd更新抽卡记录",
+          "diff": "那个才是拉数据"
+        }
+      ],
+      "related": [
+        "#zmd角色抽卡记录",
+        "#zmd武器抽卡记录",
+        "#zmd更新抽卡记录",
+        "#zmd全量更新抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-show-char",
+      "command": "#zmd角色抽卡记录",
+      "aliases": [
+        "#zmd角色抽卡纪录",
+        "#zmd角色记录",
+        "#zmd角色纪录",
+        "%zmd角色抽卡记录"
+      ],
+      "title": "只看角色池抽卡记录",
+      "summary": "过滤出角色池部分",
+      "what": "与 `#zmd抽卡记录` 相同，但只渲染角色池。",
+      "returns": "一张抽卡记录图片（失败时文本）。",
+      "returnsDetail": "只含角色池条目与统计。",
+      "timing": "3~15 秒。",
+      "cost": "纯本地 + 渲染。",
+      "keywords": [
+        "角色抽卡记录",
+        "角色池",
+        "只看角色",
+        "角色记录"
+      ],
+      "params": [
+        {
+          "name": "roleId 或 @人",
+          "required": false,
+          "desc": "指定账号"
+        }
+      ],
+      "example": "#zmd角色抽卡记录",
+      "moreExamples": [
+        "#zmd角色记录",
+        "#zmd角色抽卡记录 @某人"
+      ],
+      "preconditions": [
+        "本地有抽卡记录"
+      ],
+      "pitfalls": [
+        "「角色记录」这四个字很泛，容易和别的插件的角色查询撞名",
+        "只读本地，不拉数据"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有记录"
+        }
+      ],
+      "edgeCases": [
+        "角色池为空但武器池有数据时，图的角色部分为空"
+      ],
+      "scenarios": [
+        "只关心角色出了什么"
+      ],
+      "vs": [
+        {
+          "command": "#zmd武器抽卡记录",
+          "diff": "那个只看武器池"
+        },
+        {
+          "command": "#zmd抽卡记录",
+          "diff": "那个两个池都看"
+        }
+      ],
+      "related": [
+        "#zmd武器抽卡记录",
+        "#zmd抽卡记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "zmd/gacha-show-weapon",
+      "command": "#zmd武器抽卡记录",
+      "aliases": [
+        "#zmd武器抽卡纪录",
+        "#zmd武器记录",
+        "#zmd武器纪录",
+        "%zmd武器抽卡记录"
+      ],
+      "title": "只看武器池抽卡记录",
+      "summary": "过滤出武器池部分",
+      "what": "与 `#zmd抽卡记录` 相同，但只渲染武器池。",
+      "returns": "一张抽卡记录图片（失败时文本）。",
+      "returnsDetail": "只含武器池条目与统计，武器图标靠 `#zmd更新武器图标` 补全。",
+      "timing": "3~15 秒。",
+      "cost": "纯本地 + 渲染。",
+      "keywords": [
+        "武器抽卡记录",
+        "武器池",
+        "只看武器",
+        "武器记录"
+      ],
+      "params": [
+        {
+          "name": "roleId 或 @人",
+          "required": false,
+          "desc": "指定账号"
+        }
+      ],
+      "example": "#zmd武器抽卡记录",
+      "moreExamples": [
+        "#zmd武器记录",
+        "#zmd武器抽卡记录 @某人"
+      ],
+      "preconditions": [
+        "本地有抽卡记录"
+      ],
+      "pitfalls": [
+        "武器图标缺失时显示成空白方块，要跑 `#zmd更新武器图标` 补",
+        "只读本地，不拉数据"
+      ],
+      "failures": [
+        {
+          "symptom": "回失败提示",
+          "cause": "没有记录"
+        },
+        {
+          "symptom": "武器图标是空白方块",
+          "cause": "图标缓存缺，需更新武器图标"
+        }
+      ],
+      "edgeCases": [
+        "武器池为空时图里对应区域为空"
+      ],
+      "scenarios": [
+        "看武器出了几把"
+      ],
+      "vs": [
+        {
+          "command": "#zmd角色抽卡记录",
+          "diff": "那个只看角色池"
+        },
+        {
+          "command": "#zmd更新武器图标",
+          "diff": "那个补图标，不是看记录"
+        }
+      ],
+      "related": [
+        "#zmd角色抽卡记录",
+        "#zmd抽卡记录",
+        "#zmd更新武器图标"
+      ],
+      "risk": "q",
+      "permission": ""
+    }
+  ]
+}
