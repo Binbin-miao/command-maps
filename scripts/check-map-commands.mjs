@@ -47,6 +47,9 @@ const walk = d => {
       while ((m = re.exec(t))) {
         let s = m[1].slice(1, -1).replace(/\\\\/g, '\\')
         for (const pf of prefixes) s = s.split('${rulePrefix}').join(pf)
+        // 剩下的 ${...} 是运行时拼进来的变量：字符类里的当成「任意一个字符」，其它当成 .*
+        // 只能近似校验，但比整条判死强
+        s = s.replace(/\[\$\{[^}]*\}\]/g, '[^]').replace(/\$\{[^}]*\}/g, '.*')
         regs.push(s)
       }
       // 正则字面量形式：reg: /^#绑定ck$/i

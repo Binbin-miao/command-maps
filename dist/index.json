@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 24,
-  "updated": "2026-10-28T23:02:14.402Z",
+  "revision": 26,
+  "updated": "2026-10-28T23:13:33.483Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -57,6 +57,20 @@
       "fingerprint": "7ba734b73a15",
       "sha256": "b2009454f1e5725a361eedb80b79d0649533df5554fc428349c4e0e0d96d45cb",
       "bytes": 177604,
+      "used": 0
+    },
+    "rconsole-plugin": {
+      "file": "maps/rconsole-plugin.json",
+      "display": "R插件",
+      "category": "工具",
+      "version": "0.0.2",
+      "revision": 2,
+      "command_count": 53,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "c29400666f1c",
+      "sha256": "1bd53ee90770b37fe846221d9b2d8df977af63414236265b03fced2d62ead3b5",
+      "bytes": 132570,
       "used": 0
     },
     "StarRail-plugin": {
@@ -150,6 +164,15 @@
       "command_count": 77,
       "units": [
         "miao-plugin"
+      ],
+      "used": 0
+    },
+    "rconsole-plugin": {
+      "display": "R插件",
+      "category": "工具",
+      "command_count": 53,
+      "units": [
+        "rconsole-plugin"
       ],
       "used": 0
     },

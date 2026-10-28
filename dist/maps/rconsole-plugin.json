@@ -1,0 +1,3642 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "rconsole-plugin",
+    "display": "R插件",
+    "category": "工具",
+    "summary": "万能链接解析 + 点歌：抖音/B站/小红书/微博/YouTube/TikTok/网易云等 20+ 站点解析下载，网易云云盘点歌与上传，翻译、猫图、医药查询、信任用户与解析开关",
+    "homepage": "https://gitee.com/kyrzy0416/rconsole-plugin",
+    "notes": "两类指令混在一起：一类是 `#R...` 显式命令（帮助/版本/更新/状态/开关），另一类**没有前缀，发链接就触发**（20 多条解析规则）。所有解析共用 `isEnableResolve` 准入：私聊需 `privateResolve: true`，`globalBlackList` 命中「中文名」时**静默忽略、不给任何提示**。点歌另有总开关 `useNeteaseSongRequest`，默认 `false`。",
+    "interactsWith": [
+      "miao-plugin（#角色 等指令不冲突，但 R插件 的 #cat/#累了 会抢闲聊）",
+      "StarRail-plugin / genshin（同名的 #原图 之类无关，但都吃 *# 前缀）",
+      "xiaoyao-cvs-plugin（#上传 类指令可能重名）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助、版本与更新",
+        "小工具查询（医药/猫图/软件/买家秀/cos）",
+        "点歌与云盘",
+        "解析开关与信任用户",
+        "视频解析（抖音/B站/快手/YouTube/TikTok 等）",
+        "图文社区解析（微博/贴吧/小红书/小黑盒/米游社）",
+        "音乐解析（网易云/QQ/酷狗/波点/汽水）",
+        "音乐平台登录状态与扫码",
+        "翻译与 AI 总结"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "rconsole/help",
+      "command": "#R帮助",
+      "aliases": [
+        "#R插件帮助",
+        "#r命令",
+        "R菜单",
+        "#R插件使用说明",
+        "#R指令"
+      ],
+      "title": "查看 R 插件帮助图",
+      "summary": "渲染整张帮助图，带群禁用状态",
+      "what": "把插件自带的功能清单渲染成一张帮助图发出，已在本群被禁用的分组会标灰。",
+      "returns": "一张帮助图片。",
+      "returnsDetail": "按分组列出指令与说明；配置 `help` 里维护文案，版本号取自 `config/version.yaml`。群被 `disable` 的分组显示为禁用态。",
+      "timing": "2~8 秒（首次要截图，之后走 md5 缓存直接复用同一张图）。",
+      "cost": "纯本地渲染，走 puppeteer 截图。",
+      "keywords": [
+        "R插件帮助",
+        "R帮助",
+        "rconsole帮助",
+        "插件菜单",
+        "指令列表"
+      ],
+      "params": [],
+      "example": "#R帮助",
+      "moreExamples": [
+        "#R插件命令",
+        "R菜单",
+        "#r指令"
+      ],
+      "preconditions": [
+        "**`#` 可以一个都不写** —— 正则是 `^#*(R|r)(插件)?(...)$`，所以裸写 `R帮助` 也生效"
+      ],
+      "pitfalls": [
+        "**`#` 是零到多个**（`#*`），`R帮助`、`#R帮助`、`##R帮助` 都能触发",
+        "**中间那个词必须是「插件」或直接省略**，`#R插件帮助` 对，`#R的插件帮助` 不对",
+        "结尾只认「命令/帮助/菜单/help/说明/功能/指令/使用说明」八个词，其它后缀一律不匹配",
+        "帮助图有 md5 缓存：改了 `config/help.yaml` 但内容 md5 没变时可能仍显示旧图，重启插件最稳"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#帮助` 没反应",
+          "cause": "缺 `R`，`#帮助` 是别的插件的"
+        },
+        {
+          "symptom": "帮助图里某组是灰的",
+          "cause": "该组在本群被 `disable`，不是插件坏了"
+        }
+      ],
+      "edgeCases": [
+        "大小写 r/R 都认",
+        "`#R插件help` 这类中英混搭也能命中"
+      ],
+      "scenarios": [
+        "新人问这机器人能干嘛",
+        "确认某个指令有没有被本群禁用"
+      ],
+      "vs": [
+        {
+          "command": "#R版本",
+          "diff": "那个看版本号与更新日志，不是功能清单"
+        }
+      ],
+      "related": [
+        "#R版本",
+        "#R更新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/medical-query",
+      "command": "#医药查询阿莫西林",
+      "aliases": [
+        "#医药查询 布洛芬"
+      ],
+      "title": "查询药品信息",
+      "summary": "只响应群聊，回合并转发",
+      "what": "拿关键词去 `server.dayi.org.cn` 搜药品，取前 10 条，把标题与简介拼成合并转发发出。",
+      "returns": "一条合并转发消息（药品名 + 副标题 + 简介）。",
+      "returnsDetail": "每条含「📌 标题 - 副标题」和「📝 简介」，HTML 标签会被剥掉；没搜到回纯文本「未找到相关医药信息」。",
+      "timing": "2~8 秒。",
+      "cost": "走外部接口 `server.dayi.org.cn`，且**跳过 TLS 证书校验**。",
+      "keywords": [
+        "医药查询",
+        "查药",
+        "药品说明",
+        "用药",
+        "副作用"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "药名或症状，可留空但会搜出无关结果"
+        }
+      ],
+      "example": "#医药查询阿莫西林",
+      "moreExamples": [
+        "#医药查询 布洛芬",
+        "#医药查询感冒"
+      ],
+      "preconditions": [
+        "**只在群聊里响应** —— 这类是 `event: \"message.group\"`，私聊发完全没反应",
+        "需要外网能访问 `server.dayi.org.cn`"
+      ],
+      "pitfalls": [
+        "**私聊发没反应**，不是配置问题，是事件类型就限定了群聊",
+        "**接口证书有问题，代码里显式 `rejectUnauthorized: false` 跳过校验** —— 属于插件自身的安全妥协，不是你环境的问题",
+        "**关键字直接拼进 URL**，不做消歧；搜「感冒」这类词结果很杂",
+        "**结果是转发消息不是图片**，部分客户端要手动展开",
+        "只取第 1 页前 10 条，没有翻页参数"
+      ],
+      "failures": [
+        {
+          "symptom": "私聊发完全没反应",
+          "cause": "该指令只注册了群消息事件"
+        },
+        {
+          "symptom": "回「未找到相关医药信息」",
+          "cause": "关键词没搜到，换药名或通用名再试"
+        },
+        {
+          "symptom": "回「医药查询失败，请稍后重试」",
+          "cause": "接口超时或被墙"
+        }
+      ],
+      "edgeCases": [
+        "关键词可以为空（`#医药查询` 后面什么都不带），会返回首页默认结果"
+      ],
+      "scenarios": [
+        "群里问某个药是干嘛的",
+        "查药品副标题确认是不是同一款"
+      ],
+      "vs": [
+        {
+          "command": "#推荐软件",
+          "diff": "那个推的是软件不是药"
+        }
+      ],
+      "related": [
+        "#推荐软件",
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/cat",
+      "command": "#cat",
+      "aliases": [],
+      "title": "随机猫图",
+      "summary": "两个图源各取 10 张",
+      "what": "同时请求 shibe.online 与 thecatapi，各取 10 张猫图合并发出。",
+      "returns": "最多 20 张图片，分批发送。",
+      "returnsDetail": "先回一句「涩图也不看了,就看猫是吧」，再按 `imageBatchThreshold`（默认 50）分批发图。",
+      "timing": "3~10 秒。",
+      "cost": "走两个公开图源，无鉴权。",
+      "keywords": [
+        "猫图",
+        "cat",
+        "来点猫",
+        "随机猫"
+      ],
+      "params": [],
+      "example": "#cat",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊（同属 `message.group` 事件）",
+        "能访问 shibe.online 与 api.thecatapi.com"
+      ],
+      "pitfalls": [
+        "**`#cat` 必须小写**，正则带 `^#cat$`，`#CAT` 不匹配",
+        "**两个图源用 `Promise.allSettled`** —— 一个挂了另一个照发，不会整体失败",
+        "固定 10+10 张，没有数量参数",
+        "两个源都挂时不会有报错提示，只是图很少或没有"
+      ],
+      "failures": [
+        {
+          "symptom": "只回一句话没有图",
+          "cause": "两个图源都请求失败（常见于服务器无外网）"
+        },
+        {
+          "symptom": "发 `#CAT` 没反应",
+          "cause": "大小写不匹配"
+        }
+      ],
+      "edgeCases": [
+        "图多时会分多条消息发，不是一次全出"
+      ],
+      "scenarios": [
+        "群里活跃气氛"
+      ],
+      "vs": [
+        {
+          "command": "#累了",
+          "diff": "那个是 cos 图，图源不同"
+        }
+      ],
+      "related": [
+        "#累了",
+        "#买家秀"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/software-recommend",
+      "command": "#推荐软件",
+      "aliases": [],
+      "title": "推荐软件",
+      "summary": "PC 与安卓各拉一批",
+      "what": "同时请求两个第三方接口（`ghxi.com` 的 pc 与 and 频道），把标题和下载地址拼成合并转发。",
+      "returns": "一条合并转发消息。",
+      "returnsDetail": "每条格式为「推荐软件：标题 / 地址：链接」；两个接口都失败时消息为空。",
+      "timing": "2~8 秒。",
+      "cost": "走 `www.ghxi.com` 的公开接口。",
+      "keywords": [
+        "推荐软件",
+        "软件推荐",
+        "好用的软件",
+        "pc软件"
+      ],
+      "params": [],
+      "example": "#推荐软件",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊",
+        "外网可访问 www.ghxi.com"
+      ],
+      "pitfalls": [
+        "**只推「PC」和「安卓」两个频道**，没有 iOS、没有分类参数",
+        "内容完全由第三方站点决定，**插件不做安全审核**，链接点开有风险",
+        "两个接口任一失败就少一半内容，不报错"
+      ],
+      "failures": [
+        {
+          "symptom": "转发消息是空的",
+          "cause": "两个接口都失败"
+        },
+        {
+          "symptom": "私聊没反应",
+          "cause": "只注册了群消息事件"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "找 Windows 小工具"
+      ],
+      "vs": [
+        {
+          "command": "#医药查询",
+          "diff": "那个查药，同样只回群聊"
+        }
+      ],
+      "related": [
+        "#医药查询",
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/buyer-show",
+      "command": "#买家秀",
+      "aliases": [],
+      "title": "随机买家秀图",
+      "summary": "单张，第三方接口",
+      "what": "从 `api.suyanw.cn` 取一张买家秀图发出。",
+      "returns": "一张图片，或失败提示。",
+      "returnsDetail": "接口回 `imgurl` 就发图；否则回「获取买家秀失败」。",
+      "timing": "1~5 秒。",
+      "cost": "走第三方接口，内容不可控。",
+      "keywords": [
+        "买家秀",
+        "淘宝买家秀",
+        "随机图"
+      ],
+      "params": [],
+      "example": "#买家秀",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊",
+        "外网可访问 api.suyanw.cn"
+      ],
+      "pitfalls": [
+        "**一次只发一张**，重复发才会换图",
+        "内容来自第三方图床，**可能包含不适宜图片**，群管理要心里有数",
+        "接口返回非预期结构时只回一句「获取买家秀失败」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取买家秀失败」",
+          "cause": "接口返回里没有 imgurl"
+        },
+        {
+          "symptom": "回「获取买家秀失败，请稍后重试」",
+          "cause": "请求异常（超时 / 被墙）"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "闲聊斗图"
+      ],
+      "vs": [
+        {
+          "command": "#cat",
+          "diff": "那个是猫图，图源不同且一次多张"
+        }
+      ],
+      "related": [
+        "#cat",
+        "#累了"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/tired",
+      "command": "#累了",
+      "aliases": [],
+      "title": "随机 cos 图",
+      "summary": "两个 cos 图源合并",
+      "what": "同时请求 `imgapi.cn` 的两个 cos 接口，把返回的所有图片分批发出。",
+      "returns": "一组图片，或空。",
+      "returnsDetail": "先回一句「哪天克火掉一定是在这个群里面...」，再按 `imageBatchThreshold` 分批发送。",
+      "timing": "3~12 秒。",
+      "cost": "走 `imgapi.cn` 公开接口，图片量大时耗流量。",
+      "keywords": [
+        "累了",
+        "cos图",
+        "来点图",
+        "cosplay"
+      ],
+      "params": [],
+      "example": "#累了",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊",
+        "外网可访问 imgapi.cn"
+      ],
+      "pitfalls": [
+        "**图片数量不固定**，取决于接口一次给几张，可能几十张刷屏",
+        "`Promise.allSettled` 过滤失败的那个源，**两个都失败时 `req` 为空数组，只剩一句嘴炮文案**",
+        "图片 URL 会 `encodeURI` 后再发，个别链接仍可能失效",
+        "内容尺度由第三方决定"
+      ],
+      "failures": [
+        {
+          "symptom": "只回一句话没图",
+          "cause": "两个 cos 接口都失败"
+        },
+        {
+          "symptom": "部分图裂开",
+          "cause": "图源链接失效"
+        }
+      ],
+      "edgeCases": [
+        "图太多会分多条消息发"
+      ],
+      "scenarios": [
+        "群里活跃气氛"
+      ],
+      "vs": [
+        {
+          "command": "#cat",
+          "diff": "那个是猫图"
+        }
+      ],
+      "related": [
+        "#cat",
+        "#买家秀"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/version",
+      "command": "#R版本",
+      "aliases": [
+        "#R插件版本",
+        "R版本"
+      ],
+      "title": "查看插件版本与更新日志",
+      "summary": "渲染版本卡片",
+      "what": "读取 `config/version.yaml` 的前 3 条记录，渲染成一张版本卡片发出。",
+      "returns": "一张版本图片。",
+      "returnsDetail": "含当前版本号、更新说明与时间。",
+      "timing": "2~6 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "R插件版本",
+        "版本号",
+        "更新日志",
+        "rconsole版本"
+      ],
+      "params": [],
+      "example": "#R版本",
+      "moreExamples": [
+        "#R插件版本",
+        "R版本"
+      ],
+      "preconditions": [
+        "`config/version.yaml` 存在（缺了会让 `index.js` 直接加载失败）"
+      ],
+      "pitfalls": [
+        "**`#` 可省略**（`^#*R`），`R版本` 一样生效",
+        "只展示 `version.yaml` 前 3 条，更早的历史看不到",
+        "版本号来自配置文件不是 `package.json`（这个插件的 package.json 里 version 是 undefined）"
+      ],
+      "failures": [
+        {
+          "symptom": "整个插件加载失败报错",
+          "cause": "缺 `config/version.yaml`，`index.js` 顶层就读它"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "确认更新有没有生效"
+      ],
+      "vs": [
+        {
+          "command": "#R更新",
+          "diff": "那个才真的拉代码"
+        }
+      ],
+      "related": [
+        "#R更新",
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/update",
+      "command": "#R更新",
+      "aliases": [
+        "#R强制更新",
+        "#R插件更新",
+        "R更新"
+      ],
+      "title": "更新插件并自动重启 Bot",
+      "summary": "主人专用，会 process.exit",
+      "what": "先备份 `config/tools.yaml`，再 `git pull`（强制模式先 `reset --hard` + `clean -fd`），成功且确实有新提交时**自动重启整个 Yunzai 进程**。",
+      "returns": "多条文本进度。",
+      "returnsDetail": "「正在执行更新操作，请稍等」→ 成功回「R插件更新成功，最后更新时间：…」+ git log；没新提交回「R插件已经是最新: x.y.z」；失败回「更新失败！重试一下！」并贴 git 错误。",
+      "timing": "10~120 秒，之后进程重启。",
+      "cost": "走 git 网络拉取 + 写磁盘 + **重启进程**。",
+      "keywords": [
+        "R更新",
+        "更新插件",
+        "强制更新",
+        "rconsole更新"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "写成 `#R强制更新` 时先 `git reset --hard HEAD` 再 `git clean -fd`，会丢弃本地改动与未跟踪文件"
+        }
+      ],
+      "example": "#R更新",
+      "moreExamples": [
+        "#R强制更新",
+        "#R插件更新"
+      ],
+      "preconditions": [
+        "**必须是机器人主人** —— 否则回「您无权操作」",
+        "插件目录里要有 `.git` 且能连上远端"
+      ],
+      "pitfalls": [
+        "**更新成功会 `process.exit()` 重启整个 Bot**，不只是插件；`isUp` 为真或用了强制模式才触发",
+        "**强制更新会 `git reset --hard` + `git clean -fd`** —— 你在插件目录里改过的源码、放进去的未跟踪文件都会没",
+        "只备份 `tools.yaml` 一个配置文件，其它 yaml 被上游改动会走 `compareAndUpdateYaml` 合并逻辑",
+        "git 报「Already up」时**不会重启**，只会回一句「已经是最新」",
+        "重启前会尝试把提示写进 redis（`Yz:restart`），redis 不可用时只记日志、用户看不到重启后的问候"
+      ],
+      "failures": [
+        {
+          "symptom": "回「您无权操作」",
+          "cause": "不是主人"
+        },
+        {
+          "symptom": "回「更新失败！重试一下！」",
+          "cause": "git pull 失败，看后面贴的 git 输出（常见是本地改动冲突、网络不通）"
+        },
+        {
+          "symptom": "更新后配置丢了",
+          "cause": "只有 tools.yaml 被备份，其它配置走了合并；强制更新还会清掉未跟踪文件"
+        }
+      ],
+      "edgeCases": [
+        "强制模式即使已是最新也会重启（`isForce` 直接触发 restart）",
+        "`#R插件强制更新` 这种带「插件」二字的写法同样有效"
+      ],
+      "scenarios": [
+        "上游发了新功能想立刻用上",
+        "插件代码被自己改乱了想还原"
+      ],
+      "vs": [
+        {
+          "command": "#R版本",
+          "diff": "那个只看版本不拉代码"
+        }
+      ],
+      "related": [
+        "#R版本",
+        "#R帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/oversea-toggle",
+      "command": "#设置海外解析",
+      "aliases": [],
+      "title": "切换海外/国内服务器模式",
+      "summary": "主人专用，一次切换一次生效",
+      "what": "翻转 redis 里的 `Yz:rconsole:isover` 开关，影响 TikTok / YouTube / Instagram / 小飞机等需要梯子的解析走哪条线路。",
+      "returns": "一条文本。",
+      "returnsDetail": "回「当前服务器：海外服务器」或「当前服务器：国内服务器」。",
+      "timing": "1~2 秒。",
+      "cost": "只改 redis。",
+      "keywords": [
+        "海外解析",
+        "海外服务器",
+        "国内服务器",
+        "切线路"
+      ],
+      "params": [],
+      "example": "#设置海外解析",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须是主人**（`permission: master`）",
+        "redis 可用"
+      ],
+      "pitfalls": [
+        "**没有 on/off 参数，纯翻转** —— 连发两次会回到原状态，容易切错",
+        "**不影响已经在下发的任务**，只对之后触发的解析生效",
+        "实现里用的是按位取反 `os = ~os`，redis 里存的是 `-1` / `0` 而不是 `true` / `false`；碰巧 `-1` 是 truthy 所以能工作，但看 redis 值会一脸问号",
+        "切到「海外」不等于自动配好代理，还得 `proxyAddr` / `proxyPort` 可用"
+      ],
+      "failures": [
+        {
+          "symptom": "回「设置海外模式时发生错误」",
+          "cause": "redis 写失败"
+        },
+        {
+          "symptom": "切了海外还是解析不了 TikTok",
+          "cause": "代理没配好，代码里还会再测一次 `testProxy`"
+        }
+      ],
+      "edgeCases": [
+        "首次执行时 redis 里没有该键，代码会先写 `os: false` 再翻转，等价于切到海外"
+      ],
+      "scenarios": [
+        "服务器搬到境外后打开海外解析",
+        "TikTok 突然解析不了想切线路试试"
+      ],
+      "vs": [
+        {
+          "command": "#设置R信任用户",
+          "diff": "那个管谁能用受限解析，不管线路"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "#R帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/clear-trash",
+      "command": "清理垃圾",
+      "aliases": [],
+      "title": "手动清理临时文件",
+      "summary": "主人专用，注意没有井号",
+      "what": "删 `data/` 下 32 位 md5 命名的缓存文件，再递归清理 `defaultPath`（默认 `./data/rcmp4/`）里的空文件夹与群临时文件。",
+      "returns": "一条统计文本。",
+      "returnsDetail": "回「清理了 N 个垃圾文件 / M 个空文件夹 / K 个群临时文件」。",
+      "timing": "1~10 秒，取决文件量。",
+      "cost": "**真删文件**，不可恢复。",
+      "keywords": [
+        "清理垃圾",
+        "清缓存",
+        "删临时文件",
+        "清理视频"
+      ],
+      "params": [],
+      "example": "清理垃圾",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须是主人**",
+        "`./data/` 与 `defaultPath` 存在"
+      ],
+      "pitfalls": [
+        "**这条没有 `#`** —— 正则是 `^清理垃圾$`，写成 `#清理垃圾` 不匹配",
+        "**删的是真文件**：`data/` 下 md5 命名的缓存 + `defaultPath` 里的临时文件与空目录，删完不可恢复",
+        "`defaultPath` 默认 `./data/rcmp4/`，如果你把它改成别的目录（比如整个 data），会把那里清空",
+        "插件本身有定时自动清理（`autoclearTrashtime`），这条只是手动触发一次"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#清理垃圾` 没反应",
+          "cause": "多了井号"
+        },
+        {
+          "symptom": "回「手动清理垃圾时发生错误」",
+          "cause": "目录不存在或无权限"
+        }
+      ],
+      "edgeCases": [
+        "统计里的「垃圾文件」只算 `data/` 下文件名正好 32 位十六进制的"
+      ],
+      "scenarios": [
+        "磁盘满了想立刻腾空间",
+        "解析失败的残留视频太多"
+      ],
+      "vs": [
+        {
+          "command": "#清除云盘缓存",
+          "diff": "那个清的是网易云盘歌单缓存，不是临时视频"
+        }
+      ],
+      "related": [
+        "#清除云盘缓存",
+        "#R更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/trust-add",
+      "command": "#设置R信任用户",
+      "aliases": [
+        "#设置R信任用户 123456789"
+      ],
+      "title": "添加 R 信任用户",
+      "summary": "可直接带 QQ 号，也可引用消息",
+      "what": "把 QQ 号写进 redis 白名单 `Yz:rconsole:whitelist`，让非主人也能用受限解析（X / Instagram / 小飞机）。",
+      "returns": "一条文本。",
+      "returnsDetail": "成功回「成功添加R信任用户：QQ号」；已在名单回「R信任用户已存在，无须添加!」。",
+      "timing": "1~2 秒。",
+      "cost": "只写 redis。",
+      "keywords": [
+        "R信任用户",
+        "白名单",
+        "信任用户",
+        "加白"
+      ],
+      "params": [
+        {
+          "name": "QQ号",
+          "required": false,
+          "desc": "写在指令后面；也可以**引用对方的一条消息**再发本条，会自动取被引用者的 QQ"
+        }
+      ],
+      "example": "#设置R信任用户 123456789",
+      "moreExamples": [
+        "（引用某人消息后）#设置R信任用户"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "redis 可用"
+      ],
+      "pitfalls": [
+        "**引用消息优先于文本参数** —— 只要消息带 `reply_id`，就取被引用者的 QQ，后面写什么都不看",
+        "只影响 X(Twitter) / Instagram / 小飞机这三个受限解析，其它解析本来就不看白名单",
+        "名单存 redis，**清库或换 redis 会丢**",
+        "只能加单个 QQ，不能批量、不能加群"
+      ],
+      "failures": [
+        {
+          "symptom": "回「R信任用户已存在，无须添加!」",
+          "cause": "已在名单里"
+        },
+        {
+          "symptom": "回「无效的R信任用户」",
+          "cause": "既没引用也没写 QQ 号"
+        }
+      ],
+      "edgeCases": [
+        "参数里写了多个 QQ 号不会拆分，会被当成一个字符串存进去（等于无效）"
+      ],
+      "scenarios": [
+        "让某个群友也能用 X 解析",
+        "临时给朋友开权限"
+      ],
+      "vs": [
+        {
+          "command": "#查询R信任用户",
+          "diff": "那个只查在不在名单，不写"
+        }
+      ],
+      "related": [
+        "#R信任用户",
+        "#查询R信任用户",
+        "#删除R信任用户"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/trust-list",
+      "command": "#R信任用户",
+      "aliases": [],
+      "title": "查看全部信任用户",
+      "summary": "群里触发会走私聊",
+      "what": "读出 redis 白名单，拼成合并转发消息。",
+      "returns": "合并转发消息（群里触发时改发到你的私聊）。",
+      "returnsDetail": "群聊里发会先私聊你「R插件的信任用户名单已发送至您的私信了~」；私聊里发直接给转发消息。",
+      "timing": "1~3 秒。",
+      "cost": "只读 redis。",
+      "keywords": [
+        "R信任用户",
+        "白名单列表",
+        "看白名单",
+        "信任用户名单"
+      ],
+      "params": [],
+      "example": "#R信任用户",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须是主人**",
+        "机器人能私聊到你（需要先加好友）"
+      ],
+      "pitfalls": [
+        "**群里触发会走私聊**，没加机器人好友时只能看到那句提示，拿不到名单",
+        "**和 `#设置R信任用户` 只差「设置」两字，但语义完全不同** —— 这条是查询列表",
+        "名单为空时转发内容是空的，看起来像没发东西"
+      ],
+      "failures": [
+        {
+          "symptom": "只看到「已发送至您的私信」但没收到",
+          "cause": "没加 bot 好友，私聊发不出去"
+        },
+        {
+          "symptom": "想加人却查了列表",
+          "cause": "漏了「设置」二字"
+        }
+      ],
+      "edgeCases": [
+        "私聊里发这条直接回转发消息，不会再多一句提示"
+      ],
+      "scenarios": [
+        "核对白名单有没有配错"
+      ],
+      "vs": [
+        {
+          "command": "#设置R信任用户",
+          "diff": "那个是加人"
+        },
+        {
+          "command": "#查询R信任用户",
+          "diff": "那个查单个 QQ 在不在"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "#查询R信任用户",
+        "#删除R信任用户"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/trust-search",
+      "command": "#查询R信任用户 123456789",
+      "aliases": [
+        "#查询R信任用户"
+      ],
+      "title": "查某人是否在信任名单",
+      "summary": "支持引用消息取 QQ",
+      "what": "判断指定 QQ 是否在白名单，回一句带 ✅ / ⚠️ 的结论。",
+      "returns": "一条文本。",
+      "returnsDetail": "在名单回「✅ xxx已经是R插件的信任用户哦~」；不在回「⚠️ xxx不是R插件的信任用户哦~」。",
+      "timing": "1~2 秒。",
+      "cost": "只读 redis。",
+      "keywords": [
+        "查询R信任用户",
+        "是不是信任用户",
+        "查白名单",
+        "有没有权限"
+      ],
+      "params": [
+        {
+          "name": "QQ号",
+          "required": false,
+          "desc": "也可引用对方消息，自动取被引用者的 QQ"
+        }
+      ],
+      "example": "#查询R信任用户 123456789",
+      "moreExamples": [
+        "（引用某人消息后）#查询R信任用户"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "redis 可用"
+      ],
+      "pitfalls": [
+        "**不带参数也不引用时会拿空字符串去比**，永远回「不是」，看着像 bug 但其实是没给目标",
+        "引用消息同样优先于文本参数",
+        "只回文本不带名单，想看全部用 `#R信任用户`"
+      ],
+      "failures": [
+        {
+          "symptom": "明明加过却回「不是」",
+          "cause": "redis 被清过，或加的时候存成了别的字符串（比如一次写了多个号）"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群友说没权限，先查一下"
+      ],
+      "vs": [
+        {
+          "command": "#R信任用户",
+          "diff": "那个列全部"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "#R信任用户",
+        "#删除R信任用户"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/trust-delete",
+      "command": "#删除R信任用户 123456789",
+      "aliases": [
+        "#删除R信任用户"
+      ],
+      "title": "移除信任用户",
+      "summary": "支持引用消息取 QQ",
+      "what": "把指定 QQ 从白名单里删掉。",
+      "returns": "一条文本。",
+      "returnsDetail": "成功回「成功删除R信任用户：QQ号」；不在名单回「R信任用户不存在，无须删除！」。",
+      "timing": "1~2 秒。",
+      "cost": "写 redis。",
+      "keywords": [
+        "删除R信任用户",
+        "移除白名单",
+        "撤销权限",
+        "删信任用户"
+      ],
+      "params": [
+        {
+          "name": "QQ号",
+          "required": false,
+          "desc": "也可引用对方消息自动取 QQ"
+        }
+      ],
+      "example": "#删除R信任用户 123456789",
+      "moreExamples": [
+        "（引用某人消息后）#删除R信任用户"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "redis 可用"
+      ],
+      "pitfalls": [
+        "引用消息优先于文本参数",
+        "删除是**按字符串精确匹配**，历史上存进去的脏值（比如多个号拼一起）删不掉，得去 redis 手动清",
+        "删完立刻生效，对方的 X / Instagram / 小飞机解析马上就没了"
+      ],
+      "failures": [
+        {
+          "symptom": "回「R信任用户不存在，无须删除！」",
+          "cause": "不在名单，或名单里存的是脏值"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "收回临时开的权限"
+      ],
+      "vs": [
+        {
+          "command": "#设置R信任用户",
+          "diff": "那个是加人"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "#R信任用户",
+        "#查询R信任用户"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/weixin-channel-cookie",
+      "command": "#设置视频号Cookie",
+      "aliases": [
+        "#设置视频号cookie 清除"
+      ],
+      "title": "设置视频号解析用的元宝 Cookie",
+      "summary": "只准私聊，三种用法",
+      "what": "写入 / 查看 / 清除 `tools.weixinChannelYuanbaoCookie`，供视频号链接解析使用。",
+      "returns": "状态说明或写入结果。",
+      "returnsDetail": "不带参数回当前状态（前 10 字符 + 长度）与获取步骤；带 `清除`/`clear` 回「已清除视频号解析 Cookie」；带 Cookie 值回「✅ …已写入配置文件（长度 N）」并提示需重启。",
+      "timing": "1~2 秒。",
+      "cost": "写 `config/tools.yaml`。",
+      "keywords": [
+        "视频号Cookie",
+        "元宝Cookie",
+        "设置视频号",
+        "视频号解析"
+      ],
+      "params": [
+        {
+          "name": "Cookie",
+          "required": false,
+          "desc": "留空=看状态；`清除`/`clear`=删掉；其它=写入（长度需 ≥20）"
+        }
+      ],
+      "example": "#设置视频号Cookie",
+      "moreExamples": [
+        "#设置视频号Cookie 完整Cookie值",
+        "#设置视频号Cookie 清除"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "**必须在私聊里发** —— 群聊里直接回「该命令涉及 Cookie 安全，仅限私聊使用」"
+      ],
+      "pitfalls": [
+        "**群聊一律拒绝**，这是硬编码的，不是权限问题",
+        "写入后**要重启插件才生效**，回复里也写了这句",
+        "Cookie 长度 <20 会被当成没复制全而拒绝",
+        "参数里的换行会被自动去掉，避免粘贴带换行导致无效",
+        "Cookie 是从 `yuanbao.tencent.com` 抓的，不是视频号本身的；过期了要重新抓"
+      ],
+      "failures": [
+        {
+          "symptom": "回「仅限私聊使用」",
+          "cause": "在群里发的"
+        },
+        {
+          "symptom": "回「Cookie 长度过短」",
+          "cause": "只复制了一小段"
+        },
+        {
+          "symptom": "设置完解析还是提示未配置",
+          "cause": "没重启插件"
+        }
+      ],
+      "edgeCases": [
+        "`clear` 与 `清除` 等价，大小写不敏感（匹配用的是 `[Cc]ookie`）"
+      ],
+      "scenarios": [
+        "视频号链接解析不了，补 Cookie",
+        "Cookie 过期了要换"
+      ],
+      "vs": [
+        {
+          "command": "#R更新",
+          "diff": "那个更新代码，不碰 Cookie"
+        }
+      ],
+      "related": [
+        "#R信任用户",
+        "#R帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/song-pick",
+      "command": "#点歌 起风了",
+      "aliases": [
+        "#点歌 晴天 2",
+        "#听1",
+        "#听3"
+      ],
+      "title": "点歌：搜索出列表，再用 #听N 播放",
+      "summary": "两步：先搜出图，再选序号",
+      "what": "拿关键词去当前点歌平台搜歌（网易云 / 酷狗 / QQ 音乐），把结果渲染成一张编号列表图；之后发 `#听N` 播第 N 首。",
+      "returns": "一张搜索结果图（1~10 条），播放时回卡片或音频文件。",
+      "returnsDetail": "列表最多 `songRequestMaxList` 条（默认 10）；网易云会先把云盘里匹配的歌排在前面混搜。播放成功发音乐卡片；卡片失败则上传群文件 + 语音。",
+      "timing": "搜索 2~8 秒；播放 5~30 秒（要下音频）。",
+      "cost": "走音乐平台接口 + 下载音频文件，占用磁盘。",
+      "keywords": [
+        "点歌",
+        "听歌",
+        "搜歌",
+        "播放音乐",
+        "网易云点歌"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "歌名或歌手，支持空格"
+        },
+        {
+          "name": "类型",
+          "required": false,
+          "desc": "`1` 歌曲（默认）/ `2` 播客，**只有网易云支持播客**"
+        }
+      ],
+      "example": "#点歌 起风了",
+      "moreExamples": [
+        "#点歌 晴天 2",
+        "#点歌 周杰伦"
+      ],
+      "preconditions": [
+        "**点歌总开关 `useNeteaseSongRequest` 必须为 true** —— 默认配置是 `false`，关着时**完全静默无响应**，只在日志里写一行",
+        "**只在群聊可用** —— 函数里 `if (!group_id) return`，私聊发没有任何反应",
+        "酷狗平台要先配 `kugouApiServer`，QQ 音乐建议配 `qqMusicCookie`"
+      ],
+      "pitfalls": [
+        "**默认是关的**：`tools.yaml` 里 `useNeteaseSongRequest: false`，不改就永远没反应",
+        "**两步指令**：`#点歌` 只出列表不播放，要再发 `#听1`；列表存在 redis 里按群隔离，换群看不到上一个群的列表",
+        "**`#听N` 的 N 从 1 开始**，超出范围回「序号超出范围，请重新选择」，没搜过就发 `#听1` 回「请先使用 #点歌 搜索后再选择」",
+        "**`#点歌` 后面跟 `2` 表示播客**，不是「第二个结果」；酷狗/QQ 不支持播客会提示切换平台",
+        "**私聊完全没反应**，不是权限问题",
+        "网易云会把**云盘里的歌混进搜索结果**，所以点歌列表里可能混着你云盘上传的歌"
+      ],
+      "failures": [
+        {
+          "symptom": "完全没反应",
+          "cause": "点歌总开关没开，或是在私聊里发"
+        },
+        {
+          "symptom": "回「暂未找到你想听的歌哦~」",
+          "cause": "关键词没搜到，或该平台接口挂了"
+        },
+        {
+          "symptom": "回「点歌失败：…」",
+          "cause": "平台接口报错，看括号里的原始错误"
+        },
+        {
+          "symptom": "回「序号超出范围」",
+          "cause": "`#听N` 的 N 超过列表长度"
+        },
+        {
+          "symptom": "回「未获取到可播放音源，请检查 Cookie / API / 会员权限」",
+          "cause": "该曲目要会员或版权受限"
+        },
+        {
+          "symptom": "回「当前点歌平台「X」不支持播客」",
+          "cause": "用了 `2` 参数但当前平台不支持"
+        }
+      ],
+      "edgeCases": [
+        "`#听` 后面可以写多位数字，`#听10` 也认",
+        "搜索结果是图片不是文字列表，选歌要靠图上的编号",
+        "播放过的音频会落在 `defaultPath`，可用 `清理垃圾` 清"
+      ],
+      "scenarios": [
+        "群里点歌",
+        "找不到歌名时先搜再看列表"
+      ],
+      "vs": [
+        {
+          "command": "#播放 起风了",
+          "diff": "那个搜完直接播第一首，不出列表"
+        },
+        {
+          "command": "#上传",
+          "diff": "那个是把卡片对应的音频发到群文件"
+        }
+      ],
+      "related": [
+        "#播放 起风了",
+        "#我的云盘",
+        "#上传云盘",
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/song-play",
+      "command": "#播放 起风了",
+      "aliases": [
+        "#播放 晴天 2"
+      ],
+      "title": "直接播放搜到的第一首",
+      "summary": "跳过列表，搜完即播",
+      "what": "搜关键词只取第 1 条，直接进入播放流程，不出列表图。",
+      "returns": "音乐卡片 / 群文件 + 语音。",
+      "returnsDetail": "卡片发送成功就只发卡片；失败则 `uploadGroupFile` 传文件，再按 `isSendVocal` 决定要不要补一条语音。",
+      "timing": "5~30 秒。",
+      "cost": "走平台接口 + 下音频。",
+      "keywords": [
+        "播放",
+        "直接播放",
+        "听这首",
+        "点播"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "歌名或歌手"
+        },
+        {
+          "name": "类型",
+          "required": false,
+          "desc": "`1` 歌曲 / `2` 播客"
+        }
+      ],
+      "example": "#播放 起风了",
+      "moreExamples": [
+        "#播放 晴天 2"
+      ],
+      "preconditions": [
+        "**`useNeteaseSongRequest` 必须为 true**，否则静默返回",
+        "**只在群聊可用**"
+      ],
+      "pitfalls": [
+        "**没有「选第几首」的能力** —— 永远播搜索结果的第 1 条，想挑就先用 `#点歌`",
+        "**受同样的总开关限制**，关着时一点反应都没有",
+        "**私聊无效**",
+        "QQ 音乐平台会先提示「未配置 Cookie，结果可能受限」再继续，不算失败",
+        "和 `#点歌` 共用播放策略，所以同样可能因为会员/版权拿不到音源"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "总开关没开 / 私聊"
+        },
+        {
+          "symptom": "回「暂未找到你想听的歌哦~」",
+          "cause": "没搜到"
+        },
+        {
+          "symptom": "回「播放失败：…」",
+          "cause": "平台接口异常"
+        },
+        {
+          "symptom": "回「音频下载失败，请稍后重试」",
+          "cause": "拿到 URL 但下载失败（CDN 拒绝 / 无外网）"
+        }
+      ],
+      "edgeCases": [
+        "同一首歌连发两次会重复下载两份音频"
+      ],
+      "scenarios": [
+        "已经知道歌名，懒得看图选号"
+      ],
+      "vs": [
+        {
+          "command": "#点歌 起风了",
+          "diff": "那个出列表让你选"
+        }
+      ],
+      "related": [
+        "#点歌 起风了",
+        "#听1",
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/song-upload-group",
+      "command": "#上传",
+      "aliases": [],
+      "title": "把卡片对应的歌曲传到群文件",
+      "summary": "必须回复网易云卡片",
+      "what": "读取你引用的那条网易云音乐卡片，取出歌曲 id，找不到本地文件就现下，然后上传到群文件。",
+      "returns": "一个群文件。",
+      "returnsDetail": "上传成功后本地临时文件会被删掉；卡片里是播客时先查 `dj/program/detail` 换成主歌曲 id。",
+      "timing": "5~40 秒（含按需下载）。",
+      "cost": "走网易云接口 + 下载 + 上传群文件。",
+      "keywords": [
+        "上传",
+        "传群文件",
+        "发到群文件",
+        "网易云上传"
+      ],
+      "params": [],
+      "example": "（引用一条网易云音乐卡片）#上传",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须引用一条网易云音乐卡片消息** —— 从卡片 JSON 里抠 id，普通文本/别的卡片都取不到",
+        "**只在群聊可用**（要传群文件）"
+      ],
+      "pitfalls": [
+        "**不引用卡片就只会回「请回复一条网易云音乐卡片消息再使用此命令」**",
+        "**这条是传群文件，不是传网易云云盘** —— 传云盘用 `#上传云盘`",
+        "卡片 id 抠不出来时**直接静默 return**，连提示都没有（`if (id === \"\") return`）",
+        "文件名按「歌手-歌名.后缀」拼，`FileSuffix` 是模块级变量，会被上一次播放的格式影响",
+        "临时文件上传后会被删，别指望在 `defaultPath` 里找到"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请回复一条网易云音乐卡片消息再使用此命令」",
+          "cause": "没引用卡片，或引用的不是网易云卡片"
+        },
+        {
+          "symptom": "发完完全没反应",
+          "cause": "卡片里没有可识别的歌曲 id"
+        },
+        {
+          "symptom": "回「获取歌曲下载链接失败，无法上传」",
+          "cause": "本地没文件且现下失败"
+        },
+        {
+          "symptom": "回「出现错误，无法上传」",
+          "cause": "播客详情接口失败"
+        }
+      ],
+      "edgeCases": [
+        "播客卡片也能传，会转成对应的主歌曲"
+      ],
+      "scenarios": [
+        "想把歌存到群文件里反复听"
+      ],
+      "vs": [
+        {
+          "command": "#上传云盘",
+          "diff": "那个传到网易云云盘，还能从群文件反向上传"
+        }
+      ],
+      "related": [
+        "#上传云盘",
+        "#点歌 起风了",
+        "#我的云盘"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/cloud-info",
+      "command": "#我的云盘",
+      "aliases": [
+        "#rnc",
+        "#RNC"
+      ],
+      "title": "查看网易云云盘容量",
+      "summary": "主人专用，只读统计",
+      "what": "请求网易云 `/user/cloud`，回歌曲数量、总容量、已用容量。",
+      "returns": "一条文本。",
+      "returnsDetail": "格式「云盘数据 / 歌曲数量:N / 云盘容量:X / 已使用容量:Y / 数据可能有延迟」。",
+      "timing": "1~5 秒。",
+      "cost": "走网易云接口，需要云盘 Cookie。",
+      "keywords": [
+        "我的云盘",
+        "云盘容量",
+        "rnc",
+        "网易云云盘"
+      ],
+      "params": [],
+      "example": "#我的云盘",
+      "moreExamples": [
+        "#rnc",
+        "#RNC"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "配了 `neteaseCloudCookie`（否则接口拿不到数据）"
+      ],
+      "pitfalls": [
+        "**`#` 可省略**，`rnc` / `#rnc` / `#RNC` 都认（正则 `^#?我的云盘$|^#rnc$|^#RNC$`）",
+        "**请求异常时函数没有 catch，会直接抛到框架层**，用户侧可能只看到没反应或框架报错",
+        "数字是接口原始值，单位经 `toGBorTB` 转换，可能显示成 TB",
+        "云盘 Cookie 和点歌 Cookie 是两套（`neteaseCloudCookie` vs `neteaseCookie`）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应或报错",
+          "cause": "云盘 Cookie 无效 / 接口挂了（这条没有 try-catch）"
+        },
+        {
+          "symptom": "容量显示 0",
+          "cause": "没登录云盘账号"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看云盘还剩多少空间"
+      ],
+      "vs": [
+        {
+          "command": "#云盘更新",
+          "diff": "那个会重新拉歌单缓存再顺便显示一次数据"
+        }
+      ],
+      "related": [
+        "#云盘更新",
+        "#上传云盘",
+        "#清除云盘缓存"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/cloud-refresh",
+      "command": "#云盘更新",
+      "aliases": [
+        "#更新云盘"
+      ],
+      "title": "刷新云盘歌曲缓存",
+      "summary": "清缓存重拉，顺带回统计",
+      "what": "先清空 redis 里的云盘歌单缓存，再强制从网易云重新拉一遍，然后回「更新成功」并显示云盘数据。",
+      "returns": "两条文本。",
+      "returnsDetail": "「更新成功」+ 云盘统计（同 `#我的云盘` 的格式）。",
+      "timing": "3~20 秒（取决于云盘歌多不多）。",
+      "cost": "走网易云接口，可能翻多页。",
+      "keywords": [
+        "云盘更新",
+        "更新云盘",
+        "刷新云盘",
+        "同步云盘"
+      ],
+      "params": [],
+      "example": "#云盘更新",
+      "moreExamples": [
+        "#更新云盘"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "配了云盘 Cookie"
+      ],
+      "pitfalls": [
+        "**`#` 可省略**（正则 `^#?云盘更新$|#?更新云盘$`）",
+        "**内部调用会把整个缓存清空再重建**，歌多时耗时明显",
+        "`#点歌` 会把云盘歌混进搜索结果，**更新完再点歌才会看到新歌**",
+        "失败时只有日志，用户侧可能收不到任何提示（外层 catch 只 `logger.error`）"
+      ],
+      "failures": [
+        {
+          "symptom": "只回「更新成功」没有统计数据",
+          "cause": "后续 `myCloud` 请求失败"
+        },
+        {
+          "symptom": "点了完全没反应",
+          "cause": "拉取抛错，被外层 catch 吞了，只有日志"
+        }
+      ],
+      "edgeCases": [
+        "「更新成功」那条是 try 包着的，TRSS 偶发发送失败时只在日志写「trss又拉屎了？」"
+      ],
+      "scenarios": [
+        "刚在手机上传了歌，想让 bot 也能点到"
+      ],
+      "vs": [
+        {
+          "command": "#清除云盘缓存",
+          "diff": "那个只清不重拉，且完全静默"
+        }
+      ],
+      "related": [
+        "#我的云盘",
+        "#清除云盘缓存",
+        "#上传云盘"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/cloud-upload",
+      "command": "#上传云盘",
+      "aliases": [
+        "#上传网盘",
+        "#rnu",
+        "#RNU"
+      ],
+      "title": "把歌传到网易云云盘",
+      "summary": "两种入口：卡片或群文件",
+      "what": "回复网易云卡片直接取歌上传；或者你先发一个音频文件、再发这条，它从群文件里取下来写 ID3 标签后上传云盘。群文件路径要求文件名是「歌手-歌名」。",
+      "returns": "上传结果文本。",
+      "returnsDetail": "成功回上传结果；命名不合规回「请规范上传文件的命名：歌手-歌名，例如：梁静茹-勇气」。",
+      "timing": "10~60 秒（要下载 + 写标签 + 上传）。",
+      "cost": "下载群文件 + 写 ID3 + 上传云盘，占带宽和磁盘。",
+      "keywords": [
+        "上传云盘",
+        "上传网盘",
+        "rnu",
+        "传网易云",
+        "云盘上传"
+      ],
+      "params": [],
+      "example": "（引用网易云卡片或先发音频） #上传云盘",
+      "moreExamples": [
+        "#rnu",
+        "#RNU",
+        "#上传网盘"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "两种入口二选一：引用网易云卡片，或先发音频文件再发本指令",
+        "群文件入口要求**文件名必须是「歌手-歌名」**"
+      ],
+      "pitfalls": [
+        "**`#` 可省略**，`rnu` 也行（正则 `^#?上传云盘|#?上传网盘$|#rnu|#RNU`，注意前半段没有结尾锚点）",
+        "**文件名必须带 `-`**：`梁静茹-勇气.mp3` 可以，`勇气.mp3` 会被拒",
+        "**会给文件写 ID3 标签并重命名**，原群文件不动，本地副本会被改",
+        "**上传耗时长**，大文件容易超时",
+        "`#上传` 和 `#上传云盘` 是两件事：前者进群文件，后者进网易云云盘"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请规范上传文件的命名：歌手-歌名」",
+          "cause": "文件名里没有 `-` 分隔"
+        },
+        {
+          "symptom": "回「请回复一条网易云音乐卡片消息，或在发送音频文件后使用此命令」",
+          "cause": "既没引用卡片也没检测到群文件"
+        },
+        {
+          "symptom": "回「获取歌曲下载链接失败，无法上传」",
+          "cause": "卡片对应的歌拿不到音源"
+        },
+        {
+          "symptom": "回「出现错误，无法上传」",
+          "cause": "下载/写标签过程异常"
+        }
+      ],
+      "edgeCases": [
+        "群文件下载有超时限制，超时会回「等待文件下载N秒超时，上传任务已取消。」",
+        "非 mp3 格式写 ID3 可能失败，代码里自己也留了「如果不是mp3可能会有问题」的注释"
+      ],
+      "scenarios": [
+        "把自己压的歌传进云盘，让 bot 能点到",
+        "把群友发的音频收进云盘"
+      ],
+      "vs": [
+        {
+          "command": "#上传",
+          "diff": "那个只传群文件，不动云盘"
+        }
+      ],
+      "related": [
+        "#上传",
+        "#我的云盘",
+        "#云盘更新"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/cloud-clean",
+      "command": "#清除云盘缓存",
+      "aliases": [],
+      "title": "清空云盘歌单缓存",
+      "summary": "主人专用，完全静默",
+      "what": "把 redis 里 `Yz:rconsole:cloudsonglist` 置为空数组，不重新拉取。",
+      "returns": "**什么都不回**。",
+      "returnsDetail": "函数只有一句 `redisSetKey(..., [])`，没有 reply。",
+      "timing": "瞬间。",
+      "cost": "只写 redis。",
+      "keywords": [
+        "清除云盘缓存",
+        "清云盘缓存",
+        "清空歌单缓存"
+      ],
+      "params": [],
+      "example": "#清除云盘缓存",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须是主人**",
+        "redis 可用"
+      ],
+      "pitfalls": [
+        "**发了没有任何回复** —— 不是没生效，是代码里就没有 reply，去 `#我的云盘` 或再点歌验证",
+        "**只清不拉**：清完云盘列表是空的，下次点歌时才会重新拉（想立刻重建用 `#云盘更新`）",
+        "`#` 不能省（正则 `^#?清除云盘缓存$` 里 `#` 是可选的，但整串必须完全一致）"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "正常现象，本来就静默"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "云盘歌单和实际不一致，想强制重建"
+      ],
+      "vs": [
+        {
+          "command": "#云盘更新",
+          "diff": "那个清完会立刻重拉并回统计数据"
+        }
+      ],
+      "related": [
+        "#云盘更新",
+        "#我的云盘"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/resolve-douyin",
+      "command": "https://v.douyin.com/xxxxxx/",
+      "aliases": [
+        "https://www.douyin.com/video/7300000000000000000",
+        "https://www.douyin.com/note/7300000000000000000"
+      ],
+      "title": "解析抖音链接",
+      "summary": "发链接就下，需 Cookie",
+      "what": "从消息里认出抖音链接（短链先跳转），拿视频/图集/动图/直播信息，下载后发出。",
+      "returns": "视频文件，或图集多张图，或动图（带 BGM）。",
+      "returnsDetail": "内容超限或图太多时改用合并转发；动图走 `processDouyinImageAlbum` 单独处理 BGM；直播走 stream 分段拉取（`streamDuration` 秒）。",
+      "timing": "5~60 秒，直播与长视频更久。",
+      "cost": "走抖音接口 + 下载到 `defaultPath` + 上传群文件，占磁盘与带宽。",
+      "keywords": [
+        "抖音",
+        "douyin",
+        "抖音解析",
+        "去水印",
+        "抖音视频下载"
+      ],
+      "params": [],
+      "example": "https://v.douyin.com/xxxxxx/",
+      "moreExamples": [
+        "（直接粘分享文案里的整段链接也行）"
+      ],
+      "preconditions": [
+        "**要配 `douyinCookie`** —— 没配回「检测到没有Cookie，无法解析抖音」+ 帮助文档",
+        "**私聊要 `privateResolve: true`**，否则私聊不解析",
+        "`globalBlackList` 里不能包含「抖音」"
+      ],
+      "pitfalls": [
+        "**不是指令，是发链接自动触发** —— 不需要任何前缀，粘链接就动",
+        "**没 Cookie 直接失败**，这是最常见的坑；Cookie 会过期，过期后表现是解析失败而不是明确提示",
+        "**短链必须先跳转**：`v.douyin.com` 会先请求拿到真实地址，短链本身不完整时静默忽略",
+        "**超时长的视频只提示不发文件**（`durationForCheck` 对比阈值），很多人误以为是下载坏了",
+        "**被拉黑时完全静默**（`isEnableResolve` 返回 false 只写日志），群里看不出任何反应",
+        "图集张数多时会分多条消息发，容易刷屏"
+      ],
+      "failures": [
+        {
+          "symptom": "回「检测到没有Cookie，无法解析抖音」",
+          "cause": "`tools.douyinCookie` 空着"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "在私聊且没开 privateResolve / 被 globalBlackList 拦了 / 链接不完整"
+        },
+        {
+          "symptom": "回「解析抖音动图失败，请稍后再试！」",
+          "cause": "slides 类型接口拿不到数据"
+        },
+        {
+          "symptom": "只回一段文字没有视频",
+          "cause": "视频超过时长阈值，插件只提示不下载"
+        }
+      ],
+      "edgeCases": [
+        "`www.douyin.com/jingxuan?modal_id=xxx` 这类精选页链接也认",
+        "直播链接走的是 stream 分段录制，只录 `streamDuration` 秒",
+        "同一链接连发两次会下两份"
+      ],
+      "scenarios": [
+        "群里有人发抖音分享链接",
+        "想把抖音视频存下来"
+      ],
+      "vs": [
+        {
+          "command": "https://www.tiktok.com/...",
+          "diff": "那个走 TikTok 分支，需要梯子"
+        },
+        {
+          "command": "#R插件帮助",
+          "diff": "那条是看功能清单"
+        }
+      ],
+      "related": [
+        "https://www.tiktok.com/xxx",
+        "#设置海外解析",
+        "#设置R信任用户"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-tiktok",
+      "command": "https://www.tiktok.com/@user/video/7300000000000000000",
+      "aliases": [
+        "https://vt.tiktok.com/xxxxxx/",
+        "https://vm.tiktok.com/xxxxxx/"
+      ],
+      "title": "解析 TikTok 链接",
+      "summary": "必须有梯子或标海外",
+      "what": "剥掉链接参数后用 yt-dlp 拿标题与视频，下载发出。",
+      "returns": "一条进度文字 + 视频文件。",
+      "returnsDetail": "先回「识别：TikTok，视频下载中请耐心等待 \\n 标题」，再发视频。",
+      "timing": "10~90 秒（走代理，慢）。",
+      "cost": "走代理 + yt-dlp + 下载。",
+      "keywords": [
+        "tiktok",
+        "tik tok",
+        "抖音国际版",
+        "tiktok解析"
+      ],
+      "params": [],
+      "example": "https://www.tiktok.com/@user/video/7300000000000000000",
+      "moreExamples": [
+        "https://vt.tiktok.com/xxxxxx/"
+      ],
+      "preconditions": [
+        "**必须是海外服务器，或本地代理可用** —— 否则回「检测到没有梯子，无法解析TikTok」",
+        "服务器装了 yt-dlp",
+        "`globalBlackList` 不含「TikTok」"
+      ],
+      "pitfalls": [
+        "**依赖 `testProxy(proxyAddr, proxyPort)` 实测通不通**，配了地址但代理没起来一样会被判「没有梯子」",
+        "**`#设置海外解析` 切到海外可以绕过代理检测**，但真没网照样下不下来",
+        "分享链接里的多余 query 会被清掉再下载，`?is_from_webapp=1` 之类不影响",
+        "**私聊要 `privateResolve: true`**",
+        "被拉黑时静默"
+      ],
+      "failures": [
+        {
+          "symptom": "回「检测到没有梯子，无法解析TikTok」",
+          "cause": "既不是海外服务器，代理也测不通"
+        },
+        {
+          "symptom": "回进度文字后没有视频",
+          "cause": "yt-dlp 下载失败（Cookie/风控/网络）"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "私聊未开解析 / 被拉黑"
+        }
+      ],
+      "edgeCases": [
+        "`vm.tiktok.com` / `vt.tiktok.com` 短链也认"
+      ],
+      "scenarios": [
+        "搬 TikTok 视频到群里"
+      ],
+      "vs": [
+        {
+          "command": "https://v.douyin.com/xxx",
+          "diff": "抖音分支，不用梯子但要 Cookie"
+        }
+      ],
+      "related": [
+        "https://v.douyin.com/xxx",
+        "#设置海外解析"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-bili",
+      "command": "https://www.bilibili.com/video/BV1xx411c7mD",
+      "aliases": [
+        "https://b23.tv/xxxxxx",
+        "BV1xx411c7mD",
+        "https://www.bilibili.com/read/cv123456"
+      ],
+      "title": "解析 B 站视频/番剧/动态/专栏",
+      "summary": "认 BV 号、短链、动态、专栏",
+      "what": "识别 B 站各类链接：普通视频、番剧（ep/ss）、动态、专栏文章，分别走不同分支下载或渲染，再发出来。",
+      "returns": "视频文件 / 番剧片段 / 动态图文 / 专栏长图。",
+      "returnsDetail": "普通视频附封面与信息卡（可含在线人数、AI 总结、评论）；番剧按 `biliBangumiResolution` 下载并可能切片；动态与专栏走转发消息或图片。",
+      "timing": "5~120 秒，番剧与大会员内容更久。",
+      "cost": "走 B 站接口 + 下载（可选择 BBDown）+ 上传群文件。",
+      "keywords": [
+        "b站",
+        "bilibili",
+        "哔哩哔哩",
+        "bv号",
+        "b23",
+        "番剧解析"
+      ],
+      "params": [],
+      "example": "https://www.bilibili.com/video/BV1xx411c7mD",
+      "moreExamples": [
+        "BV1xx411c7mD",
+        "https://b23.tv/xxxxxx",
+        "https://www.bilibili.com/read/cv123456"
+      ],
+      "preconditions": [
+        "`globalBlackList` 不含「哔哩哔哩」",
+        "**动态解析需要 `biliSessData`**，普通视频不需要",
+        "私聊需 `privateResolve: true`"
+      ],
+      "pitfalls": [
+        "**直接发 BV 号就行**，正则有 `^BV[1-9a-zA-Z]{10}$` 分支，会自动拼成视频地址",
+        "**`b23.tv` 短链是先发 HEAD 拿跳转地址**，短链失效或超时会拿不到真实 URL",
+        "**时长超限只发信息不发视频**：普通视频看 `biliDuration`（默认 3600 秒），番剧看 `biliBangumiDuration`（默认 1800 秒）",
+        "**`biliSmartResolution: true` 时**代码会智能降清晰度而不是直接拒，所以「明明超时长却发出去了」是正常的",
+        "**番剧可能需要大会员 Cookie**，没 `biliSessData` 或没会员时只能拿到试看片段，会回「该视频为试看视频，仅能解析预览片段」",
+        "**开了 `biliUseBBDown` 但环境里没有 BBDown**，会回一条「开启但未检测到当前环境有【BBDown】，即将使用默认下载方式」再降级",
+        "**动态链接没 Cookie 回「检测到没有填写biliSessData，无法解析动态」**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「检测到没有填写biliSessData，无法解析动态」",
+          "cause": "解析的是动态，但没配 SESSDATA"
+        },
+        {
+          "symptom": "回「该视频为试看视频，仅能解析预览片段」",
+          "cause": "番剧/大会员内容鉴权不足"
+        },
+        {
+          "symptom": "回「解析失败，请重试一下」",
+          "cause": "取流接口失败"
+        },
+        {
+          "symptom": "回「BBDown下载完成但未找到视频文件，请重试」",
+          "cause": "BBDown 输出路径异常"
+        },
+        {
+          "symptom": "只回信息不发视频",
+          "cause": "超过时长阈值且没开智能降清晰度"
+        }
+      ],
+      "edgeCases": [
+        "`bili2233.cn` 短链也认",
+        "专栏文章走 `biliArticle`，结果是长图不是视频",
+        "评论区解析由 `biliComments` 开关控制，默认关"
+      ],
+      "scenarios": [
+        "群里发 B 站视频链接",
+        "只想看专栏不想点开 App"
+      ],
+      "vs": [
+        {
+          "command": "#RBQ",
+          "diff": "那个是扫码登录拿 SESSDATA"
+        },
+        {
+          "command": "#RBS",
+          "diff": "那个查 B 站账号状态"
+        }
+      ],
+      "related": [
+        "#RBQ",
+        "#RBS",
+        "https://www.bilibili.com/read/cv123456"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/bili-scan",
+      "command": "#RBQ",
+      "aliases": [
+        "#rbq"
+      ],
+      "title": "扫码登录 B 站拿 SESSDATA",
+      "summary": "主人专用，会发二维码",
+      "what": "先发一段免责声明，再生成登录二维码，扫码成功后把 SESSDATA 与 refresh_token 写进 `tools.biliSessData`。",
+      "returns": "免责声明文本 + 二维码图片 + 结果提示。",
+      "returnsDetail": "声明与二维码都带 180 秒撤回；成功回「登录成功！相关信息已保存至配置文件」。",
+      "timing": "最长 8 轮轮询，约 1~2 分钟。",
+      "cost": "走 B 站登录接口 + 写配置 + 发图。",
+      "keywords": [
+        "RBQ",
+        "扫码登录b站",
+        "b站登录",
+        "获取sessdata"
+      ],
+      "params": [],
+      "example": "#RBQ",
+      "moreExamples": [
+        "#rbq"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "手机装了 B 站 App 能扫码",
+        "服务器能访问 B 站接口"
+      ],
+      "pitfalls": [
+        "**会往群里发二维码并 @ 你**，虽然是主人指令但**别在人多的大群跑**，二维码谁扫谁登录",
+        "**免责声明和二维码都设了 180 秒撤回**，超时没扫就得重来",
+        "**扫码后 SESSDATA 直接写 `tools.yaml`**，等于把账号凭据落盘，注意文件权限",
+        "**只更新 SESSDATA 与 refresh_token**，不会清掉你其它配置",
+        "扫码轮询 8 次就结束，超时不会给明确失败提示"
+      ],
+      "failures": [
+        {
+          "symptom": "二维码一直不出现",
+          "cause": "生成二维码接口失败 / 无外网"
+        },
+        {
+          "symptom": "扫了没反应",
+          "cause": "轮询次数用完，重发指令再扫"
+        }
+      ],
+      "edgeCases": [
+        "`#RBQ` 与 `#rbq` 等价（正则 `^#(RBQ|rbq)$`，`#` 必须有）"
+      ],
+      "scenarios": [
+        "番剧解析不了，需要大会员 Cookie",
+        "SESSDATA 过期要重登"
+      ],
+      "vs": [
+        {
+          "command": "#RBS",
+          "diff": "那个是查状态，不登录"
+        }
+      ],
+      "related": [
+        "#RBS",
+        "https://www.bilibili.com/video/BV1xx411c7mD"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/bili-state",
+      "command": "#RBS",
+      "aliases": [
+        "#rbs"
+      ],
+      "title": "查 B 站账号状态",
+      "summary": "主人专用，出一张状态图",
+      "what": "用 `biliSessData` 并行请求账号信息与状态接口，渲染成图片发出。",
+      "returns": "一张状态图。",
+      "returnsDetail": "含昵称、等级、硬币、粉丝等；截图失败回「截图生成失败，请稍后重试」。",
+      "timing": "2~10 秒。",
+      "cost": "走 B 站接口 + puppeteer 截图。",
+      "keywords": [
+        "RBS",
+        "b站状态",
+        "b站账号",
+        "查b站登录"
+      ],
+      "params": [],
+      "example": "#RBS",
+      "moreExamples": [
+        "#rbs"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "已配 `biliSessData`"
+      ],
+      "pitfalls": [
+        "**没配 SESSDATA 回「未检测到 B 站登录信息，请填写 SessData」**",
+        "**接口挂了回「请求失败，请稍后重试」**，不是 Cookie 失效的专用提示",
+        "**`#` 必须有**（`^#(RBS|rbs)$`）",
+        "这条只读，不改任何配置"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未检测到 B 站登录信息」",
+          "cause": "`tools.biliSessData` 空着"
+        },
+        {
+          "symptom": "回「请求失败，请稍后重试」",
+          "cause": "接口异常或 Cookie 已失效"
+        },
+        {
+          "symptom": "回「截图生成失败」",
+          "cause": "puppeteer 渲染失败"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "确认 B 站 Cookie 还有效",
+        "看看 bot 用的是哪个账号"
+      ],
+      "vs": [
+        {
+          "command": "#RBQ",
+          "diff": "那个才是登录"
+        }
+      ],
+      "related": [
+        "#RBQ",
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/resolve-twitter",
+      "command": "https://x.com/user/status/1234567890",
+      "aliases": [
+        "https://twitter.com/user/status/1234567890",
+        "https://r.com/user/status/1234567890"
+      ],
+      "title": "解析 X / Twitter 推文",
+      "summary": "要信任用户 + 可能要 Cookie",
+      "what": "用 twitter-scraper 抓推文，取文本、图片、视频，视频走 CycleTLS 下载后发出。",
+      "returns": "预览消息（文本 + 图）+ 视频文件。",
+      "returnsDetail": "抓不到内容回「❌ 抓取失败，未获取到推文内容。可能需要配置 X Cookie」；视频拿不到地址回「❌ 推文包含视频，但未解析到可下载地址」。",
+      "timing": "10~60 秒。",
+      "cost": "走 X 接口 + 可能用 CycleTLS 绕指纹 + 下载视频。",
+      "keywords": [
+        "推特",
+        "twitter",
+        "x.com",
+        "小蓝鸟",
+        "推文解析"
+      ],
+      "params": [],
+      "example": "https://x.com/user/status/1234567890",
+      "moreExamples": [
+        "https://twitter.com/user/status/1234567890"
+      ],
+      "preconditions": [
+        "**必须是主人或 R 信任用户** —— 否则回「你没有权限使用此命令」",
+        "`globalBlackList` 不含「Twitter」",
+        "大概率需要配 X Cookie，否则抓不到内容"
+      ],
+      "pitfalls": [
+        "**这条是少数会校验信任用户的解析**（另一个是 Instagram 和小飞机）",
+        "**不需要 `#`，发链接就触发**",
+        "**链接必须带 `/status/数字`**，主页链接、搜索页都不匹配",
+        "**CycleTLS 有并发计数与退出回收逻辑**，抓取过程中频繁触发可能排队",
+        "**`x.com` / `twitter.com` / `r.com` 三种域名都认**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「你没有权限使用此命令」",
+          "cause": "不是主人也不在信任名单"
+        },
+        {
+          "symptom": "回「❌ 无法识别 X 链接」",
+          "cause": "链接格式不含 status id"
+        },
+        {
+          "symptom": "回「❌ 抓取失败，未获取到推文内容」",
+          "cause": "没配 Cookie 或该推文需登录可见"
+        },
+        {
+          "symptom": "回「❌ 推文包含视频，但未解析到可下载地址」",
+          "cause": "视频地址被风控或已删除"
+        }
+      ],
+      "edgeCases": [
+        "推文带多条视频时只处理能拿到地址的那条"
+      ],
+      "scenarios": [
+        "搬推特视频到群里"
+      ],
+      "vs": [
+        {
+          "command": "https://www.instagram.com/p/xxx",
+          "diff": "Instagram 分支，同样要信任用户"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "https://www.instagram.com/p/xxx"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-instagram",
+      "command": "https://www.instagram.com/p/XXXXXXXXX/",
+      "aliases": [
+        "https://www.instagram.com/reel/XXXXXXXXX/"
+      ],
+      "title": "解析 Instagram 帖子/Reels",
+      "summary": "要信任用户 + 梯子",
+      "what": "调第三方临时接口拿媒体地址，图片直接发，视频下载后发；拿不到全部时先发预览再补。",
+      "returns": "预览消息 + 图片或视频。",
+      "returnsDetail": "接口失效回「❌ Instagram 解析失败，第三方临时接口可能已下架或失效，请稍后重试」。",
+      "timing": "5~40 秒。",
+      "cost": "走第三方接口 + 下载，稳定性依赖别人。",
+      "keywords": [
+        "instagram",
+        "ins",
+        "reels",
+        "instagram解析"
+      ],
+      "params": [],
+      "example": "https://www.instagram.com/p/XXXXXXXXX/",
+      "moreExamples": [
+        "https://www.instagram.com/reel/XXXXXXXXX/"
+      ],
+      "preconditions": [
+        "**必须是主人或信任用户**，否则「你没有权限使用此命令」",
+        "**需要梯子**，否则「检测到没有梯子，无法解析 Instagram」",
+        "`globalBlackList` 不含「Instagram」"
+      ],
+      "pitfalls": [
+        "**依赖第三方临时接口**，接口一挂整个功能就废，报错文案自己都写了「可能已下架或失效」",
+        "**只认 `/p/`、`/reel/`、`/reels/` 三种路径**，`/stories/` 不支持",
+        "**私聊要 `privateResolve: true`**",
+        "被拉黑时静默"
+      ],
+      "failures": [
+        {
+          "symptom": "回「你没有权限使用此命令」",
+          "cause": "非主人且不在信任名单"
+        },
+        {
+          "symptom": "回「检测到没有梯子，无法解析 Instagram」",
+          "cause": "代理不可用"
+        },
+        {
+          "symptom": "回「❌ 无法识别 Instagram 链接」",
+          "cause": "路径不是 p/reel/reels"
+        },
+        {
+          "symptom": "回「第三方临时接口可能已下架或失效」",
+          "cause": "接口挂了，只能等上游修"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "搬 ins 图片/短视频"
+      ],
+      "vs": [
+        {
+          "command": "https://x.com/user/status/123",
+          "diff": "X 分支，同样需要信任用户"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "https://x.com/user/status/123"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-acfun",
+      "command": "https://www.acfun.cn/v/ac12345678",
+      "aliases": [
+        "ac12345678"
+      ],
+      "title": "解析 AcFun 视频",
+      "summary": "认链接也认 ac 号",
+      "what": "解析 AcFun 视频页，拉 m3u8 分片下载后合并成 mp4 发出。",
+      "returns": "一条识别文字 + 视频文件。",
+      "returnsDetail": "先回「识别：猴山，{视频名}」，再发合并后的视频。",
+      "timing": "15~90 秒（m3u8 要逐片下）。",
+      "cost": "走 AcFun 页面 + 大量分片下载 + ffmpeg 合并。",
+      "keywords": [
+        "acfun",
+        "a站",
+        "猴山",
+        "ac号",
+        "acfun解析"
+      ],
+      "params": [],
+      "example": "https://www.acfun.cn/v/ac12345678",
+      "moreExamples": [
+        "ac12345678"
+      ],
+      "preconditions": [
+        "服务器装了 ffmpeg（合并 m3u8 用）",
+        "`globalBlackList` 不含「Acfun」"
+      ],
+      "pitfalls": [
+        "**可以直接发 `ac` + 8 位数字**（`^ac[0-9]{8}$`），不用整条链接",
+        "**m3u8 分片下载很慢**，长视频容易超时或占用大量临时空间",
+        "**合并依赖 ffmpeg**，没装会失败但提示不明显",
+        "视频名里的特殊字符可能影响落盘文件名"
+      ],
+      "failures": [
+        {
+          "symptom": "只回识别文字没有视频",
+          "cause": "分片下载或 ffmpeg 合并失败"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "被拉黑 / 私聊未开解析 / 链接不是视频页"
+        }
+      ],
+      "edgeCases": [
+        "`ac` 号必须正好 8 位"
+      ],
+      "scenarios": [
+        "搬 A 站视频"
+      ],
+      "vs": [
+        {
+          "command": "https://www.bilibili.com/video/BV1xx411c7mD",
+          "diff": "B 站分支，支持 BV 号与番剧"
+        }
+      ],
+      "related": [
+        "https://www.bilibili.com/video/BV1xx411c7mD",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-xhs",
+      "command": "https://www.xiaohongshu.com/explore/xxxxxxxx",
+      "aliases": [
+        "http://xhslink.com/xxxxxx",
+        "http://xhslink.cn/xxxxxx"
+      ],
+      "title": "解析小红书笔记",
+      "summary": "要 Cookie，且链接得带 token",
+      "what": "短链先跳转，再抓笔记页，取文案与图片（可选去水印），长文案用转发消息补全。",
+      "returns": "文案 + 图片，或多条转发消息。",
+      "returnsDetail": "短链失败回「小红书短链解析失败，请稍后重试或换一条链接」；缺 id / xsec_token 回一条三点排查提示；被验证回「小红书页面数据解析失败，可能被验证或 Cookie 失效」。",
+      "timing": "5~40 秒。",
+      "cost": "走小红书页面 + 图片下载。",
+      "keywords": [
+        "小红书",
+        "xhs",
+        "xhslink",
+        "笔记解析",
+        "去水印"
+      ],
+      "params": [],
+      "example": "https://www.xiaohongshu.com/explore/xxxxxxxx",
+      "moreExamples": [
+        "http://xhslink.com/xxxxxx"
+      ],
+      "preconditions": [
+        "**必须配小红书 Cookie**",
+        "**链接必须带 `xsec_token` 与 `xsec_source`**（App 分享出来的才带）",
+        "`globalBlackList` 不含「小红书」"
+      ],
+      "pitfalls": [
+        "**从浏览器地址栏复制的链接经常缺 `xsec_token`**，会被直接拒，必须用 App 的「复制链接」",
+        "**新短链是 `xhslink.cn`，旧的是 `xhslink.com`**，两个都认",
+        "**Cookie 失效表现是「可能被验证或 Cookie 失效」**，不一定是链接问题",
+        "**文案超长会截断预览 + 补一条转发消息**（`XHS_DESC_LEN_LIMIT` 控制）",
+        "去水印靠特定请求头，图源改版时可能失效"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请检查以下问题：1.是否填写 Cookie 2.链接是否有id 3.链接是否有 xsec_token…」",
+          "cause": "链接不完整或没 Cookie"
+        },
+        {
+          "symptom": "回「小红书短链解析失败」",
+          "cause": "短链过期或跳转被拦"
+        },
+        {
+          "symptom": "回「小红书页面数据解析失败，可能被验证或 Cookie 失效」",
+          "cause": "触发风控或 Cookie 过期"
+        }
+      ],
+      "edgeCases": [
+        "图片数量多时分批发送"
+      ],
+      "scenarios": [
+        "搬小红书图文",
+        "保存笔记文案"
+      ],
+      "vs": [
+        {
+          "command": "#R插件帮助",
+          "diff": "那条是功能清单"
+        }
+      ],
+      "related": [
+        "https://www.weibo.com/xxx",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-weishi",
+      "command": "https://weishi.qq.com/xxxxxx",
+      "aliases": [],
+      "title": "解析微视视频",
+      "summary": "只认域名，取不到 id 会明说",
+      "what": "从微视分享页拿视频信息，下载后发出。",
+      "returns": "封面 + 识别文字 + 视频。",
+      "returnsDetail": "取不到视频 id 回「识别：微视，但无法完整检测到视频ID」。",
+      "timing": "10~50 秒。",
+      "cost": "走微视页面 + 下载。",
+      "keywords": [
+        "微视",
+        "weishi",
+        "腾讯微视",
+        "微视解析"
+      ],
+      "params": [],
+      "example": "https://weishi.qq.com/xxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「微视」",
+        "私聊需 `privateResolve: true`"
+      ],
+      "pitfalls": [
+        "**只要有 `weishi.qq.com` 字样就会进这条**，不是视频页的链接也会尝试解析然后失败",
+        "**视频 id 提取是硬编码正则**，微视改版后容易失效",
+        "没有 Cookie 配置项，纯匿名抓取"
+      ],
+      "failures": [
+        {
+          "symptom": "回「识别：微视，但无法完整检测到视频ID」",
+          "cause": "链接里没有可用 id"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "被拉黑 / 私聊未开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "搬微视短视频"
+      ],
+      "vs": [
+        {
+          "command": "https://www.douyin.com/video/xxx",
+          "diff": "抖音分支，需 Cookie 但更稳"
+        }
+      ],
+      "related": [
+        "https://www.douyin.com/video/xxx",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-youtube",
+      "command": "https://www.youtube.com/watch?v=xxxxxxxx",
+      "aliases": [
+        "https://youtu.be/xxxxxxxx",
+        "https://music.youtube.com/watch?v=xxxxxxxx"
+      ],
+      "title": "解析 YouTube 视频/音频",
+      "summary": "要梯子，超 8 分钟只提示",
+      "what": "用 yt-dlp 取标题与时长，按时长决定发视频还是只发提示，也可只取音频。",
+      "returns": "视频文件，或超限提示，或音频。",
+      "returnsDetail": "超 `youtubeDuration`（默认 480 秒）时只回一条含时长与限制说明的文字；`youtubeClipTime` 可指定裁剪起点。",
+      "timing": "15~120 秒。",
+      "cost": "走代理 + yt-dlp + 下载（可能转码）。",
+      "keywords": [
+        "油管",
+        "youtube",
+        "youtu.be",
+        "ytb",
+        "油管解析"
+      ],
+      "params": [],
+      "example": "https://www.youtube.com/watch?v=xxxxxxxx",
+      "moreExamples": [
+        "https://youtu.be/xxxxxxxx"
+      ],
+      "preconditions": [
+        "**需要梯子或标海外**，否则回「检测到没有梯子，无法解析油管」",
+        "服务器装了 yt-dlp",
+        "`globalBlackList` 不含「YouTube」"
+      ],
+      "pitfalls": [
+        "**默认只解析 8 分钟以内的视频**（`youtubeDuration: 480`），超了只回文字不发文件",
+        "**`youtubeClipTime` 是裁剪起点不是终点**，配错会从视频中间开始",
+        "**`youtubeGraphicsOptions` 控制输出清晰度**（默认 720）",
+        "`music.youtube.com` 也走这条，但**音频/视频的判断靠 yt-dlp 返回的格式**",
+        "代理不通时提示很明确，但不是所有失败都有提示"
+      ],
+      "failures": [
+        {
+          "symptom": "回「检测到没有梯子，无法解析油管」",
+          "cause": "代理不可用且未标海外"
+        },
+        {
+          "symptom": "只回一段时长超限的文字",
+          "cause": "视频超过 `youtubeDuration`"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "被拉黑 / 私聊未开解析"
+        }
+      ],
+      "edgeCases": [
+        "短视频（Shorts）也走这条"
+      ],
+      "scenarios": [
+        "搬油管视频",
+        "只想听油管上的歌"
+      ],
+      "vs": [
+        {
+          "command": "https://www.tiktok.com/@user/video/xxx",
+          "diff": "TikTok 分支，同样要梯子"
+        }
+      ],
+      "related": [
+        "https://www.tiktok.com/@user/video/xxx",
+        "#设置海外解析"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-telegram",
+      "command": "https://t.me/channel/123",
+      "aliases": [
+        "https://t.me/c/1234567890/123/456"
+      ],
+      "title": "解析 Telegram 消息（小飞机）",
+      "summary": "要信任用户 + 梯子 + 环境",
+      "what": "按 t.me 消息链接抓取该条消息的媒体，保存后发出。",
+      "returns": "文件，或保存提示。",
+      "returnsDetail": "成功回「文件已保存到 Save Messages！」并附媒体；缺环境回「未检测到必要的环境，无法解析小飞机」。",
+      "timing": "10~60 秒。",
+      "cost": "走 Telegram + 代理 + 落盘。",
+      "keywords": [
+        "telegram",
+        "tg",
+        "t.me",
+        "小飞机",
+        "电报"
+      ],
+      "params": [],
+      "example": "https://t.me/channel/123",
+      "moreExamples": [
+        "https://t.me/c/1234567890/123/456"
+      ],
+      "preconditions": [
+        "**必须是主人或信任用户**，否则「你没有权限使用此命令」",
+        "**需要梯子**，否则「检测到没有梯子，无法解析小飞机」",
+        "需要配置好 Telegram 抓取所需环境（账号/会话）"
+      ],
+      "pitfalls": [
+        "**链接格式限制很死**：必须是 `t.me/频道/数字`、`t.me/c/数字/数字`、`t.me/用户名/数字` 这几种，带 `?single` 之类参数也算但格式要对",
+        "**私有频道必须用 `t.me/c/...` 形式**，用用户名形式拿不到",
+        "**三重门槛**：信任用户 + 代理 + 环境，任一不满足都失败",
+        "文件名会写成固定提示语「文件已保存到 Save Messages！」，不是原文件名"
+      ],
+      "failures": [
+        {
+          "symptom": "回「你没有权限使用此命令」",
+          "cause": "非主人且不在信任名单"
+        },
+        {
+          "symptom": "回「检测到没有梯子，无法解析小飞机」",
+          "cause": "代理不可用"
+        },
+        {
+          "symptom": "回「未检测到必要的环境，无法解析小飞机」",
+          "cause": "缺 TG 抓取依赖或登录态"
+        }
+      ],
+      "edgeCases": [
+        "带 `?single` 的单条消息链接也匹配"
+      ],
+      "scenarios": [
+        "搬 TG 频道的视频"
+      ],
+      "vs": [
+        {
+          "command": "https://x.com/user/status/123",
+          "diff": "X 分支，同样要信任用户"
+        }
+      ],
+      "related": [
+        "#设置R信任用户",
+        "#设置海外解析"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-weixin-channel",
+      "command": "https://weixin.qq.com/sph/xxxxxx",
+      "aliases": [],
+      "title": "解析微信视频号",
+      "summary": "要元宝 Cookie，否则只给提示",
+      "what": "用腾讯元宝的 Cookie 解开视频号分享页，拿到视频地址后下载发出。",
+      "returns": "视频文件，或配置提示。",
+      "returnsDetail": "没 Cookie 回「识别：视频号 ⚠️ 未配置腾讯元宝 Cookie，请联系管理员私聊发送 #设置视频号Cookie 进行设置…」；下载失败回「视频号视频下载失败，可能视频链接已过期」；拿到页面但没有视频地址回「未获取到视频地址，可能是图文动态或不支持的内容类型」。",
+      "timing": "10~60 秒。",
+      "cost": "走腾讯接口 + 下载。",
+      "keywords": [
+        "视频号",
+        "weixin channel",
+        "sph",
+        "微信视频号解析"
+      ],
+      "params": [],
+      "example": "https://weixin.qq.com/sph/xxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须配 `weixinChannelYuanbaoCookie`**（私聊 `#设置视频号Cookie` 设置，设完要重启）",
+        "`globalBlackList` 不含「视频号」"
+      ],
+      "pitfalls": [
+        "**Cookie 是从 `yuanbao.tencent.com` 抓的，不是视频号本身**，这点最容易搞错",
+        "**设置完必须重启插件**，否则仍按未配置处理",
+        "**Cookie 过期后提示还是「未配置」那套文案**，容易误判成没配",
+        "**图文动态解析不了**，只支持视频",
+        "分享链接有有效期，过期回「可能视频链接已过期」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置腾讯元宝 Cookie…」",
+          "cause": "没配或配完没重启"
+        },
+        {
+          "symptom": "回「视频号视频下载失败，可能视频链接已过期」",
+          "cause": "链接过期 / Cookie 失效"
+        },
+        {
+          "symptom": "回「未获取到视频地址，可能是图文动态」",
+          "cause": "分享的是图文不是视频"
+        }
+      ],
+      "edgeCases": [
+        "有额外的 `hint` 分支，某些异常会回一条自定义提示而不是上面三种"
+      ],
+      "scenarios": [
+        "群里有人发视频号链接"
+      ],
+      "vs": [
+        {
+          "command": "#设置视频号Cookie",
+          "diff": "那个是配 Cookie，这条是发链接触发解析"
+        }
+      ],
+      "related": [
+        "#设置视频号Cookie",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-miyoushe",
+      "command": "https://www.miyoushe.com/ys/article/xxxxxxxx",
+      "aliases": [],
+      "title": "解析米游社文章",
+      "summary": "取正文与配图",
+      "what": "抓米游社文章页，取标题、正文与图片，正文用文本发出、图片单独发。",
+      "returns": "一段文字 + 若干图片。",
+      "returnsDetail": "正文过长会截断；图片数量多时分批发送。",
+      "timing": "3~20 秒。",
+      "cost": "走米游社页面 + 图片下载。",
+      "keywords": [
+        "米游社",
+        "miyoushe",
+        "原神文章",
+        "星铁文章",
+        "米游社解析"
+      ],
+      "params": [],
+      "example": "https://www.miyoushe.com/ys/article/xxxxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「米游社」",
+        "私聊需 `privateResolve: true`"
+      ],
+      "pitfalls": [
+        "**只要域名含 `miyoushe.com` 就进这条**，不是文章的页面也会尝试解析",
+        "**不需要 Cookie**，纯公开页抓取",
+        "正文是纯文本，**排版、公式、视频都丢失**，只剩字和图",
+        "被拉黑时静默"
+      ],
+      "failures": [
+        {
+          "symptom": "只回标题没有正文",
+          "cause": "页面结构变了，正文选择器没命中"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "被拉黑 / 私聊未开解析"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把米游社长文转到群里看"
+      ],
+      "vs": [
+        {
+          "command": "https://www.weibo.com/xxx",
+          "diff": "微博分支，支持 Cookie 提高成功率"
+        }
+      ],
+      "related": [
+        "https://www.weibo.com/xxx",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-weibo",
+      "command": "https://weibo.com/1234567890/abcdefg",
+      "aliases": [
+        "https://m.weibo.cn/detail/1234567890123456"
+      ],
+      "title": "解析微博",
+      "summary": "有 Cookie 更稳，支持转发/评论/投票",
+      "what": "抓微博正文、图片、视频、转发链、评论与投票，按内容类型组合发出。",
+      "returns": "文本 + 图片/视频，评论与投票各用转发消息。",
+      "returnsDetail": "取不到 id 回「解析失败：无法获取到微博ID」；有 Cookie 时失败回「微博解析失败：无法获取数据」，没 Cookie 时多一句「可尝试设置Cookie」。",
+      "timing": "5~40 秒。",
+      "cost": "走微博接口 + 图片/视频下载。",
+      "keywords": [
+        "微博",
+        "weibo",
+        "m.weibo.cn",
+        "微博解析",
+        "微博视频"
+      ],
+      "params": [],
+      "example": "https://weibo.com/1234567890/abcdefg",
+      "moreExamples": [
+        "https://m.weibo.cn/detail/1234567890123456"
+      ],
+      "preconditions": [
+        "`globalBlackList` 不含「微博」",
+        "配 Cookie 能显著提高成功率（非必需）"
+      ],
+      "pitfalls": [
+        "**没 Cookie 时很多博文抓不到**，提示里会多一句「可尝试设置Cookie」，这是唯一能看出差别的线索",
+        "**`/detail/` 与 `/用户id/短码` 两种链接形态都认**，其它形态可能取不到 id",
+        "**转发链、评论、投票是分开的转发消息**，一次可能收到好几条",
+        "微博长图会按原图地址下载，个别图有防盗链"
+      ],
+      "failures": [
+        {
+          "symptom": "回「解析失败：无法获取到微博ID」",
+          "cause": "链接不是博文页（比如主页、话题页）"
+        },
+        {
+          "symptom": "回「微博解析失败：无法获取数据，可尝试设置Cookie」",
+          "cause": "未登录抓不到，需配 Cookie"
+        }
+      ],
+      "edgeCases": [
+        "投票微博会单独生成一条投票图片转发消息"
+      ],
+      "scenarios": [
+        "搬微博长文/视频"
+      ],
+      "vs": [
+        {
+          "command": "https://www.xiaohongshu.com/explore/xxx",
+          "diff": "小红书分支，必须有 Cookie 和 token"
+        }
+      ],
+      "related": [
+        "https://www.xiaohongshu.com/explore/xxx",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-zuiyou",
+      "command": "https://share.xiaochuankeji.cn/hybrid/share/post?pid=xxxxxx",
+      "aliases": [],
+      "title": "解析最右帖子",
+      "summary": "取作者、标题、图片",
+      "what": "抓最右分享页，取短视频/图文信息，先回作者与标题，再发图片。",
+      "returns": "一条识别文字 + 图片。",
+      "returnsDetail": "格式「识别：最右，{作者}\\n{标题}」，随后发图。",
+      "timing": "3~20 秒。",
+      "cost": "走最右页面 + 图片下载。",
+      "keywords": [
+        "最右",
+        "zuiyou",
+        "xiaochuankeji",
+        "最右解析"
+      ],
+      "params": [],
+      "example": "https://share.xiaochuankeji.cn/hybrid/share/post?pid=xxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「最右」",
+        "私聊需 `privateResolve: true`"
+      ],
+      "pitfalls": [
+        "**只认 `share.xiaochuankeji.cn` 这个域名**，`izuiyou.com` 的链接不匹配",
+        "**正则里没有 `^`**，消息里任何位置出现该域名都会触发",
+        "图片是主输出，**视频支持有限**，多数情况只发图"
+      ],
+      "failures": [
+        {
+          "symptom": "只回文字没有图",
+          "cause": "帖子是纯视频或图片地址失效"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "域名不对 / 被拉黑"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "搬最右段子图"
+      ],
+      "vs": [
+        {
+          "command": "https://www.douyin.com/video/xxx",
+          "diff": "抖音分支，需 Cookie"
+        }
+      ],
+      "related": [
+        "https://www.douyin.com/video/xxx",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-apple-spotify",
+      "command": "https://music.apple.com/cn/album/xxxxxx/1468323115?i=1468323724",
+      "aliases": [
+        "https://open.spotify.com/track/xxxxxxxx"
+      ],
+      "title": "下载 Apple Music / Spotify 歌曲",
+      "summary": "要装 freyr，缺环境只提示",
+      "what": "调 `freyr` 命令行下载音频，取标题/专辑/歌手后发出；Apple Music 解析失败时会退到第三方接口兜底。",
+      "returns": "识别文字 + 音频文件。",
+      "returnsDetail": "先回「识别：Apple Music，{标题}--{歌手}」或「识别：Spotify，…」，再发音频；缺工具回「检测到没有{平台}需要的环境，无法解析！」+ 帮助文档。",
+      "timing": "10~60 秒。",
+      "cost": "调外部命令行 + 下载，占磁盘。",
+      "keywords": [
+        "apple music",
+        "spotify",
+        "音乐下载",
+        "am音乐",
+        "freyr"
+      ],
+      "params": [],
+      "example": "https://music.apple.com/cn/album/xxxxxx/1468323115?i=1468323724",
+      "moreExamples": [
+        "https://open.spotify.com/track/xxxxxxxx"
+      ],
+      "preconditions": [
+        "**服务器必须装 `freyr` 命令**（`checkToolInCurEnv(\"freyr\")` 检测）",
+        "`globalBlackList` 不含「AM+Spotify」"
+      ],
+      "pitfalls": [
+        "**没有 freyr 就只会回一句「检测到没有…需要的环境」**，不会自动装",
+        "**平台是靠链接里有没有 `spotify` 字样判断的**，所以两种平台的报错文案不同但逻辑同一条",
+        "**Apple Music 有第三方接口兜底**（`api.fabdl.com`），Spotify 没有",
+        "`&ls` 参数会被替换掉再传，其它参数保留",
+        "下载的文件落在 `defaultPath/am/`，不会自动清"
+      ],
+      "failures": [
+        {
+          "symptom": "回「检测到没有Apple Music需要的环境，无法解析！」",
+          "cause": "没装 freyr"
+        },
+        {
+          "symptom": "有识别文字没有音频",
+          "cause": "freyr 下载失败（地区限制/会员曲目）"
+        }
+      ],
+      "edgeCases": [
+        "专辑链接带 `?i=` 时下的是单曲不是整张专辑"
+      ],
+      "scenarios": [
+        "群里分享 Apple Music 歌"
+      ],
+      "vs": [
+        {
+          "command": "https://music.163.com/song?id=123",
+          "diff": "网易云分支，走自己的接口不用外部命令"
+        },
+        {
+          "command": "#点歌 起风了",
+          "diff": "那个是搜索点歌，不是解析链接"
+        }
+      ],
+      "related": [
+        "https://music.163.com/song?id=123",
+        "https://y.qq.com/n/ryqq/songDetail/xxx"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/link-summary",
+      "command": "#总结一下 https://mp.weixin.qq.com/s/xxxxxx",
+      "aliases": [
+        "#总结一下 https://github.com/user/repo",
+        "https://zhuanlan.zhihu.com/p/xxxxxx"
+      ],
+      "title": "AI 总结网页内容",
+      "summary": "两种触发：带 #总结一下 或直接发链接",
+      "what": "抓目标网页正文，交给配置的 AI 接口（或腾讯元宝）生成摘要后回一段文字。",
+      "returns": "一段摘要文本。",
+      "returnsDetail": "走元宝模式时用元宝总结；走通用模式时调 `aiApiKey` 配置的接口。没配 AI 回「未配置 AI 接口，无法为您总结内容！」+ 帮助文档。",
+      "timing": "5~40 秒（要抓页面 + 调模型）。",
+      "cost": "走目标站点 + AI 接口，消耗 token。",
+      "keywords": [
+        "总结一下",
+        "AI总结",
+        "网页总结",
+        "文章摘要",
+        "summarize"
+      ],
+      "params": [
+        {
+          "name": "链接",
+          "required": true,
+          "desc": "用 `#总结一下` 时必须带；直接发链接时由插件自己识别"
+        }
+      ],
+      "example": "#总结一下 https://mp.weixin.qq.com/s/xxxxxx",
+      "moreExamples": [
+        "https://zhuanlan.zhihu.com/p/xxxxxx",
+        "#总结一下 https://github.com/user/repo"
+      ],
+      "preconditions": [
+        "**必须配 AI**：`linkSummaryResolveMode: yuanbao` 走元宝（需元宝 Cookie），否则要配 `aiApiKey`",
+        "`globalBlackList` 不含「AI总结」",
+        "目标站点在白名单里（公众号 / arxiv / sspai / chinadaily / 知乎 / github / v2ex）"
+      ],
+      "pitfalls": [
+        "**只有这 7 类站点会自动触发**：`mp.weixin.qq.com`、`arxiv.org`、`sspai.com`、`chinadaily.com.cn`、`zhihu.com`、`github.com`、`v2ex.com`；其它站点必须显式写 `#总结一下 <链接>`",
+        "**`#总结一下` 后面的链接必须带 `http://` 或 `https://`**，正则是 `^#总结一下\\s*(http|https)://.*`",
+        "**元宝模式不需要 `aiApiKey`，但需要元宝 Cookie**；配置改了运行时才读，不用重启",
+        "**抓不到正文时摘要会瞎编**，这类模型幻觉在长文上尤其明显",
+        "私聊需 `privateResolve: true`"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置 AI 接口，无法为您总结内容！」",
+          "cause": "既没开元宝模式也没配 aiApiKey"
+        },
+        {
+          "symptom": "发链接完全没反应",
+          "cause": "站点不在 7 类白名单里，且没用 `#总结一下`"
+        },
+        {
+          "symptom": "摘要与原文无关",
+          "cause": "正文抓取失败，模型在空内容上生成"
+        }
+      ],
+      "edgeCases": [
+        "GitHub 的 issue / PR / 仓库页都在 `github.com` 下，会一并触发",
+        "`#总结一下` 大小写敏感，`#總結一下` 不认"
+      ],
+      "scenarios": [
+        "群里丢一篇长文让别人看摘要",
+        "快速判断 GitHub 项目值不值得看"
+      ],
+      "vs": [
+        {
+          "command": "https://www.zhihu.com/question/xxx",
+          "diff": "同一个 fnc，但走的是自动识别分支"
+        }
+      ],
+      "related": [
+        "#R帮助",
+        "#设置视频号Cookie"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-tieba",
+      "command": "https://tieba.baidu.com/p/1234567890",
+      "aliases": [],
+      "title": "解析贴吧帖子",
+      "summary": "楼主内容 + 图片 + 楼层转发",
+      "what": "用 HIBI 接口取帖子，先把楼主正文/图/视频发出，再把其它楼层拼成一条转发消息。",
+      "returns": "一条正文 + 图片 + 一条楼层转发消息。",
+      "returnsDetail": "格式「识别：贴吧，{标题}」，正文里带「📝 简介：」；图片超 `globalImageLimit` 时改分批发。",
+      "timing": "5~40 秒。",
+      "cost": "走第三方 HIBI 接口 + 图片/视频下载。",
+      "keywords": [
+        "贴吧",
+        "tieba",
+        "百度贴吧",
+        "帖子解析"
+      ],
+      "params": [],
+      "example": "https://tieba.baidu.com/p/1234567890",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「贴吧」",
+        "第三方 HIBI 接口可用"
+      ],
+      "pitfalls": [
+        "**只认 `https://tieba.baidu.com/p/数字` 这种帖子链接**，吧首页、用户页都不行",
+        "**依赖第三方 HIBI 接口**，它挂了整条功能就废，且没有友好报错",
+        "**楼层内容用转发消息发**，人多时很长",
+        "帖子里的视频会先下载再发，可能拖慢整体"
+      ],
+      "failures": [
+        {
+          "symptom": "完全没反应或报错",
+          "cause": "HIBI 接口不可用 / 链接不是帖子页"
+        },
+        {
+          "symptom": "只有标题没有正文",
+          "cause": "楼主楼层是纯图片或视频"
+        }
+      ],
+      "edgeCases": [
+        "`?pn=2` 这类翻页参数会被忽略，只取第一页"
+      ],
+      "scenarios": [
+        "搬贴吧神帖"
+      ],
+      "vs": [
+        {
+          "command": "https://xiaoheihe.cn/xxx",
+          "diff": "小黑盒分支，要 Cookie"
+        }
+      ],
+      "related": [
+        "https://xiaoheihe.cn/xxx",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-xiaoheihe",
+      "command": "https://xiaoheihe.cn/bbs/link/xxxxxxxx",
+      "aliases": [
+        "https://xiaoheihe.cn/game/pc/xxxxxxxx",
+        "https://xiaoheihe.cn/game/mobile/xxxxxxxx"
+      ],
+      "title": "解析小黑盒帖子/游戏页",
+      "summary": "四种链接类型，必须 Cookie",
+      "what": "按链接类型（bbs 帖子 / pc / console / mobile 游戏）分别取内容：帖子发图文与评论，游戏页发价格与信息。",
+      "returns": "图文、多张图、或游戏信息卡。",
+      "returnsDetail": "没 Cookie 回「检测到没有填写小黑盒Cookie，无法解析小黑盒」；帖子失败回「小黑盒帖子解析失败，请检查链接是否正确或Cookie是否过期。」",
+      "timing": "5~40 秒。",
+      "cost": "走小黑盒接口 + 图片下载。",
+      "keywords": [
+        "小黑盒",
+        "xiaoheihe",
+        "黑盒",
+        "游戏价格",
+        "小黑盒解析"
+      ],
+      "params": [],
+      "example": "https://xiaoheihe.cn/bbs/link/xxxxxxxx",
+      "moreExamples": [
+        "https://xiaoheihe.cn/game/pc/xxxxxxxx"
+      ],
+      "preconditions": [
+        "**必须配 `xiaoheiheCookie`** —— 这条是硬门槛，没配直接拒",
+        "`globalBlackList` 不含「小黑盒」"
+      ],
+      "pitfalls": [
+        "**四种链接走四条不同分支**：含 `bbs` 走帖子、含 `pc`/`console`/`mobile` 走游戏页；**只含域名不带这些关键字时直接静默 return**（连提示都没有）",
+        "**Cookie 是硬门槛**，没配就完全不能解析，和微博那种「可选 Cookie」不一样",
+        "**`bbs/app/api/web/share?link_id=` 这种 App 内分享链也认**",
+        "帖子评论会拼转发消息，长帖很占屏"
+      ],
+      "failures": [
+        {
+          "symptom": "回「检测到没有填写小黑盒Cookie，无法解析小黑盒」",
+          "cause": "没配 Cookie"
+        },
+        {
+          "symptom": "发链接完全没反应",
+          "cause": "链接里没有 bbs/pc/console/mobile 关键字"
+        },
+        {
+          "symptom": "回「小黑盒帖子解析失败…」",
+          "cause": "Cookie 过期或帖子被删"
+        }
+      ],
+      "edgeCases": [
+        "游戏页三种平台（pc/console/mobile）输出结构不同，字段缺失时会显示为空"
+      ],
+      "scenarios": [
+        "查小黑盒上的游戏史低价格",
+        "搬小黑盒攻略帖"
+      ],
+      "vs": [
+        {
+          "command": "https://tieba.baidu.com/p/1234567890",
+          "diff": "贴吧分支，不需要 Cookie"
+        }
+      ],
+      "related": [
+        "https://tieba.baidu.com/p/1234567890",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-general",
+      "command": "https://v.kuaishou.com/xxxxxx",
+      "aliases": [
+        "https://www.ixigua.com/xxxxxxxx",
+        "https://h5.pipix.com/item/xxxxxxxx",
+        "https://m.okjike.com/originalPosts/xxxxxxxx",
+        "https://s.xsj.qq.com/xxxxxx"
+      ],
+      "title": "解析快手/西瓜/皮皮虾等通用短视频",
+      "summary": "一个 fnc 覆盖 7 个站点",
+      "what": "按链接域名选对应适配器，抓标题、作者、图片或视频后发出。",
+      "returns": "识别文字 + 图片或视频。",
+      "returnsDetail": "格式「识别：{平台名}{, 描述}」；适配器拿不到内容回「解析失败：无法获取到资源」。",
+      "timing": "5~40 秒。",
+      "cost": "走各站点 + 媒体下载。",
+      "keywords": [
+        "快手",
+        "kuaishou",
+        "西瓜视频",
+        "ixigua",
+        "皮皮虾",
+        "即刻",
+        "通用解析"
+      ],
+      "params": [],
+      "example": "https://v.kuaishou.com/xxxxxx",
+      "moreExamples": [
+        "https://www.ixigua.com/xxxxxxxx",
+        "https://m.okjike.com/originalPosts/xxxxxxxx"
+      ],
+      "preconditions": [
+        "`globalBlackList` 不含「通用（包含快手等）」—— **拉黑时的名字是这个长串**"
+      ],
+      "pitfalls": [
+        "**这条是「一家拉黑、七家全哑」**：`globalBlackList` 里要写「通用（包含快手等）」才能关掉它",
+        "**覆盖域名**：`chenzhongtech.com`、`kuaishou.com`、`ixigua.com`、`h5.pipix.com`、`h5.pipigx.com`、`s.xsj.qq.com`、`m.okjike.com`",
+        "**不同站点能力不一样**：快手多为视频，即刻多为图文，皮皮虾图文视频混排",
+        "**识别文字里的平台名来自适配器配置**，与域名不完全对应"
+      ],
+      "failures": [
+        {
+          "symptom": "回「解析失败：无法获取到资源」",
+          "cause": "适配器没拿到有效媒体"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "域名不在 7 个之内 / 被拉黑 / 私聊未开"
+        }
+      ],
+      "edgeCases": [
+        "快手极速版分享链 `v.kuaishou.com` 与标准链都认"
+      ],
+      "scenarios": [
+        "群里发快手视频",
+        "搬即刻动态"
+      ],
+      "vs": [
+        {
+          "command": "https://www.douyin.com/video/xxx",
+          "diff": "抖音有独立分支，需要 Cookie"
+        }
+      ],
+      "related": [
+        "https://www.douyin.com/video/xxx",
+        "https://www.xiaohongshu.com/explore/xxx"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/translate",
+      "command": "翻中 Hello world",
+      "aliases": [
+        "翻英 你好世界",
+        "trans日 こんにちは",
+        "翻文 天地玄黄"
+      ],
+      "title": "翻译文本（6 种目标语言）",
+      "summary": "翻+语种，或 trans+语种",
+      "what": "把后面那段文本翻成指定语言，先试百度翻译，失败换 Google；也支持引用别人的消息直接翻。",
+      "returns": "一条翻译结果。",
+      "returnsDetail": "翻译结果以 `reply(..., true)` 发出（带引用原消息）。格式不对回「输入格式有误或暂不支持该语言！+ 例子」。",
+      "timing": "1~5 秒。",
+      "cost": "走翻译接口（多引擎轮询）。",
+      "keywords": [
+        "翻译",
+        "翻中",
+        "翻英",
+        "trans",
+        "文言文翻译"
+      ],
+      "params": [
+        {
+          "name": "目标语言",
+          "required": true,
+          "desc": "紧跟在 `翻`/`trans` 后一个字：`中` `日` `文` `英` `俄` `韩`"
+        },
+        {
+          "name": "文本",
+          "required": false,
+          "desc": "留空时会去读被引用消息里的文本"
+        }
+      ],
+      "example": "翻中 Hello world",
+      "moreExamples": [
+        "翻英 你好世界",
+        "trans日 こんにちは"
+      ],
+      "preconditions": [
+        "无需权限",
+        "翻译接口可用"
+      ],
+      "pitfalls": [
+        "**`翻` 与语言之间不能有空格** —— 正则是 `^(翻|trans)[中日文英俄韩]`，`翻 中 xxx` 不匹配",
+        "**`文` 不是「文字」而是文言文**（映射到 `wyw`），想翻中文要写 `翻中`",
+        "**文本留空时必须引用一条消息**，否则函数直接 return，一句话都不回",
+        "**`trans` 后面也要紧跟语言**，`trans 英 xxx` 同样不匹配",
+        "`trans` 的 `s` 后面跟的是语言字，不是空格"
+      ],
+      "failures": [
+        {
+          "symptom": "回「输入格式有误或暂不支持该语言！」",
+          "cause": "语言字不在 中/日/文/英/俄/韩 里，或格式带了空格"
+        },
+        {
+          "symptom": "发完完全没反应",
+          "cause": "文本为空且没有引用消息"
+        }
+      ],
+      "edgeCases": [
+        "引用消息里有多段文本时只取第一段 `text`",
+        "翻译结果会带引用回复，长文本可能被客户端截断"
+      ],
+      "scenarios": [
+        "翻译英文推文",
+        "把日文歌词翻成中文"
+      ],
+      "vs": [
+        {
+          "command": "#总结一下 https://zhuanlan.zhihu.com/p/xxx",
+          "diff": "那个是总结不是翻译"
+        }
+      ],
+      "related": [
+        "#R帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-netease",
+      "command": "https://music.163.com/song?id=1234567",
+      "aliases": [
+        "https://music.163.com/mv?id=54321",
+        "https://163cn.tv/xxxxxx"
+      ],
+      "title": "解析网易云歌曲/MV/播客",
+      "summary": "自动分辨歌、MV、电台",
+      "what": "按链接类型分流：歌曲下音频发语音或文件，MV 下视频，播客取节目音频，歌单与电台另有分支。",
+      "returns": "音频（语音/文件）或视频，或歌单图。",
+      "returnsDetail": "MV 先回「识别：网易云MV，{名} - {歌手}」加封面；播客失败回「识别：网易云播客，解析失败！」。",
+      "timing": "5~40 秒。",
+      "cost": "走网易云接口 + 下载音频/视频。",
+      "keywords": [
+        "网易云",
+        "netease",
+        "163cn",
+        "网易云音乐",
+        "网易云解析"
+      ],
+      "params": [],
+      "example": "https://music.163.com/song?id=1234567",
+      "moreExamples": [
+        "https://music.163.com/mv?id=54321",
+        "https://163cn.tv/xxxxxx"
+      ],
+      "preconditions": [
+        "`globalBlackList` 不含「网易云音乐」",
+        "**部分曲目需要 `neteaseCookie`**（会员/版权曲）",
+        "私聊需 `privateResolve: true`"
+      ],
+      "pitfalls": [
+        "**短链 `163cn.tv` 会先跳转**，跳转失败就解析不了",
+        "**能不能听取决于 Cookie 与会员**：没 Cookie 时大量歌曲只回「识别：网易云音乐，解析失败！」",
+        "**`isSendVocal: true` 时会补发一条语音**，长音频容易被客户端截断",
+        "**`useLocalNeteaseAPI` 决定走自建还是公共接口**，公共接口经常限流",
+        "和 `#点歌` 用的是两套逻辑：这条解析链接，那条搜索"
+      ],
+      "failures": [
+        {
+          "symptom": "回「识别：网易云音乐，解析失败！」",
+          "cause": "拿不到音源（版权/会员/接口限流）"
+        },
+        {
+          "symptom": "回「识别：网易云播客，解析失败！」",
+          "cause": "播客节目接口异常"
+        },
+        {
+          "symptom": "有识别文字没有音频",
+          "cause": "下载失败或文件过大"
+        }
+      ],
+      "edgeCases": [
+        "`music.163.com/#/song?id=` 这种带 `#` 的旧版链接也认",
+        "歌单链接输出的是歌单图，不是音频"
+      ],
+      "scenarios": [
+        "群里分享网易云歌",
+        "搬 MV"
+      ],
+      "vs": [
+        {
+          "command": "#点歌 起风了",
+          "diff": "那个是搜歌点了就播，不吃链接"
+        },
+        {
+          "command": "https://y.qq.com/n/ryqq/songDetail/xxx",
+          "diff": "QQ 音乐分支，常只有 60 秒试听"
+        }
+      ],
+      "related": [
+        "#点歌 起风了",
+        "#网易云状态",
+        "https://y.qq.com/n/ryqq/songDetail/xxx"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-bodian",
+      "command": "https://h5app.kuwo.cn/musicshare/xxxxxx",
+      "aliases": [],
+      "title": "解析波点音乐（酷我）",
+      "summary": "只认 h5app.kuwo.cn",
+      "what": "抓波点音乐分享页，取歌曲信息，能拿音频就发语音，拿不到就退成视频或图文。",
+      "returns": "识别信息 + 音频或视频。",
+      "returnsDetail": "先回一条含歌名歌手的信息，再按可用资源发 `segment.record` 或视频。",
+      "timing": "5~30 秒。",
+      "cost": "走酷我/波点接口 + 下载。",
+      "keywords": [
+        "波点音乐",
+        "kuwo",
+        "酷我",
+        "bodian",
+        "波点解析"
+      ],
+      "params": [],
+      "example": "https://h5app.kuwo.cn/musicshare/xxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「波点」",
+        "私聊需 `privateResolve: true`"
+      ],
+      "pitfalls": [
+        "**只认 `h5app.kuwo.cn`**，`www.kuwo.cn` 的网页链接不匹配",
+        "**资源类型不确定**：有时给音频、有时给 MV 视频，取决于分享页里有什么",
+        "**没有 Cookie 配置项**，纯匿名抓取，受限曲目直接失败",
+        "被拉黑时静默"
+      ],
+      "failures": [
+        {
+          "symptom": "只回信息没有音频",
+          "cause": "分享页没有可下载音源"
+        },
+        {
+          "symptom": "完全没反应",
+          "cause": "域名不对 / 被拉黑"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里分享波点音乐卡片"
+      ],
+      "vs": [
+        {
+          "command": "https://music.163.com/song?id=123",
+          "diff": "网易云分支，能力更全"
+        }
+      ],
+      "related": [
+        "https://music.163.com/song?id=123",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-qqmusic",
+      "command": "https://y.qq.com/n/ryqq/songDetail/xxxxxxxx",
+      "aliases": [],
+      "title": "解析 QQ 音乐",
+      "summary": "没 Cookie 常只有 60 秒试听",
+      "what": "按链接取歌曲信息与音源，能拿完整版就发完整版，只能拿试听就发 60 秒片段并说明。",
+      "returns": "识别图 + 音频。",
+      "returnsDetail": "取流被拒回「QQ 音乐拒绝了取流请求（服务器所在地区受限，或该曲目需要会员/存在版权限制），这首暂时解析不了」；只拿到试听时回「注意：这首只拿到 60 秒试听片段，不是完整版…」。",
+      "timing": "5~40 秒。",
+      "cost": "走 QQ 音乐接口 + 下载。",
+      "keywords": [
+        "qq音乐",
+        "y.qq.com",
+        "qq音乐解析",
+        "绿钻"
+      ],
+      "params": [],
+      "example": "https://y.qq.com/n/ryqq/songDetail/xxxxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「扣扣音乐」",
+        "**强烈建议配 `qqMusicCookie`**，否则多数歌只有试听"
+      ],
+      "pitfalls": [
+        "**拉黑名是「扣扣音乐」不是「QQ音乐」**，写错就关不掉",
+        "**没 Cookie 时大量歌曲只给 60 秒试听**，回复里有明确提示，别以为是下载坏了",
+        "**服务器地区受限**会被直接拒流，这跟 Cookie 无关",
+        "**`qqMusicAudioQuality` 默认 `auto`**，音质由接口给什么算什么",
+        "这条和 `#点歌` 里选 QQ 平台是两套配置，但共用 `qqMusicCookie`"
+      ],
+      "failures": [
+        {
+          "symptom": "回「QQ 音乐拒绝了取流请求…」",
+          "cause": "地区受限 / 会员曲 / 版权限制"
+        },
+        {
+          "symptom": "回「QQ音乐解析失败（无可用音源）…」",
+          "cause": "接口没给任何可播地址"
+        },
+        {
+          "symptom": "回「注意：这首只拿到 60 秒试听片段」",
+          "cause": "未配 Cookie 或非会员"
+        }
+      ],
+      "edgeCases": [
+        "歌单/专辑链接不在支持范围，只认歌曲详情页"
+      ],
+      "scenarios": [
+        "群里分享 QQ 音乐链接"
+      ],
+      "vs": [
+        {
+          "command": "https://music.163.com/song?id=123",
+          "diff": "网易云分支，无 Cookie 时成功率略高"
+        }
+      ],
+      "related": [
+        "https://music.163.com/song?id=123",
+        "#点歌 起风了"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-kugou",
+      "command": "https://t1.kugou.com/xxxxxx",
+      "aliases": [
+        "https://m.kugou.com/share/song.html?chain=xxxxxx",
+        "https://www.kugou.com/share/xxxxxx"
+      ],
+      "title": "解析酷狗音乐分享链",
+      "summary": "必须有自建酷狗 API",
+      "what": "把链接交给配置的酷狗开源 API，取音源后下载发出。",
+      "returns": "识别图 + 音频。",
+      "returnsDetail": "没配 API 回「未配置酷狗开源API地址，请先填写 tools.kugouApiServer」；拿不到音源回「未从酷狗开源API获取到可用音源，请检查自建服务、酷狗Cookie或歌曲权限」。",
+      "timing": "5~30 秒。",
+      "cost": "走自建 API + 下载。",
+      "keywords": [
+        "酷狗",
+        "kugou",
+        "酷狗音乐",
+        "酷狗解析",
+        "kugouApiServer"
+      ],
+      "params": [],
+      "example": "https://t1.kugou.com/xxxxxx",
+      "moreExamples": [
+        "https://m.kugou.com/share/song.html?chain=xxxxxx"
+      ],
+      "preconditions": [
+        "**必须配 `kugouApiServer`**（自建酷狗 API 地址），这是硬门槛",
+        "`globalBlackList` 不含「酷狗音乐」"
+      ],
+      "pitfalls": [
+        "**官方接口不给用，必须自建 API 服务** —— 没配就完全用不了，不是网络问题",
+        "**四种链接形态都认**：`t1.kugou.com`、`m.kugou.com/share/song.html`、`www.kugou.com/share/`、`h5.kugou.com/v2/`",
+        "**`kugouCookie` 与 `kugouAudioQuality`（默认 `viper_clear`）影响能拿到的音源**，没有 Cookie 时高音质曲目拿不到",
+        "自建服务挂了报错和「歌曲无权限」是同一句，不好区分"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置酷狗开源API地址…」",
+          "cause": "没填 kugouApiServer"
+        },
+        {
+          "symptom": "回「未从酷狗开源API获取到可用音源…」",
+          "cause": "自建服务异常 / Cookie 失效 / 无该曲权限"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里分享酷狗歌"
+      ],
+      "vs": [
+        {
+          "command": "#酷狗状态",
+          "diff": "那个查登录状态，不解析链接"
+        }
+      ],
+      "related": [
+        "#酷狗状态",
+        "#rkq",
+        "https://music.163.com/song?id=123"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/resolve-qishui",
+      "command": "https://qishui.douyin.com/s/xxxxxx",
+      "aliases": [],
+      "title": "解析汽水音乐",
+      "summary": "字节系音乐，走临时接口",
+      "what": "用汽水的临时接口拿音源，下载后发语音。",
+      "returns": "一条语音/音频文件。",
+      "returnsDetail": "成功直接发 `segment.record`，失败多为一句话都没有或框架报错。",
+      "timing": "3~25 秒。",
+      "cost": "走第三方临时接口 + 下载。",
+      "keywords": [
+        "汽水音乐",
+        "qishui",
+        "抖音音乐",
+        "汽水解析"
+      ],
+      "params": [],
+      "example": "https://qishui.douyin.com/s/xxxxxx",
+      "moreExamples": [],
+      "preconditions": [
+        "`globalBlackList` 不含「汽水音乐」",
+        "临时接口可用"
+      ],
+      "pitfalls": [
+        "**只认 `qishui.douyin.com` 这一个域名**，抖音主站的音乐卡片不走这条",
+        "**依赖临时接口**（`QISHUI_MUSIC_TEMP_API`），接口变了就静默失败",
+        "**没有 Cookie 配置**，纯匿名",
+        "失败时几乎没有友好提示，别指望看到原因"
+      ],
+      "failures": [
+        {
+          "symptom": "完全没反应",
+          "cause": "临时接口失效 / 被拉黑 / 链接不是分享页"
+        },
+        {
+          "symptom": "框架报错",
+          "cause": "接口返回结构变化导致取值异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里分享汽水音乐"
+      ],
+      "vs": [
+        {
+          "command": "https://music.163.com/song?id=123",
+          "diff": "网易云分支，提示更完整"
+        }
+      ],
+      "related": [
+        "https://music.163.com/song?id=123",
+        "#R帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "rconsole/netease-status",
+      "command": "#网易云状态",
+      "aliases": [
+        "#rns",
+        "#RNS",
+        "#网易云云盘状态",
+        "#rncs",
+        "#RNCS"
+      ],
+      "title": "查网易云/云盘登录状态",
+      "summary": "主人专用，出一张状态图",
+      "what": "用对应 Cookie 请求 `/login/status`，渲染成图片发出；未登录会提示去扫码。",
+      "returns": "一张状态图，或一条提示。",
+      "returnsDetail": "未登录回「暂未登录网易云，请发 #rnq 进行登陆绑定ck」（云盘版提示 `#rncq`）；接口异常回「获取{名称}状态时出错，请稍后再试」。",
+      "timing": "2~10 秒。",
+      "cost": "走网易云接口 + 截图。",
+      "keywords": [
+        "网易云状态",
+        "rns",
+        "rncs",
+        "云盘状态",
+        "网易云登录"
+      ],
+      "params": [],
+      "example": "#rns",
+      "moreExamples": [
+        "#rncs",
+        "#网易云云盘状态"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "配了自建 API 或能访问公共网易云 API"
+      ],
+      "pitfalls": [
+        "**一条指令两个目标**：`#rns`/`#网易云状态` 查**歌曲** Cookie，`#rncs`/`#网易云云盘状态` 查**云盘** Cookie，靠正则里有没有「云盘状态/rncs」区分",
+        "**未登录时给的扫码指令也不一样**（`#rnq` vs `#rncq`），照抄提示就行",
+        "**走哪个 API 由 `useLocalNeteaseAPI` 决定**，用公共 API 时经常连不上，报错会和 Cookie 失效混在一起",
+        "这条只读，不改 Cookie"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂未登录网易云，请发 #rnq …」",
+          "cause": "Cookie 空或已失效"
+        },
+        {
+          "symptom": "回「获取网易云状态时出错，请稍后再试」",
+          "cause": "API 地址不可用"
+        }
+      ],
+      "edgeCases": [
+        "`RNCS` 大写也认（正则带 `i` 语义的字符串匹配）"
+      ],
+      "scenarios": [
+        "确认网易云 Cookie 还能不能用"
+      ],
+      "vs": [
+        {
+          "command": "#rnq",
+          "diff": "那个是扫码登录，会真的改 Cookie"
+        }
+      ],
+      "related": [
+        "#rnq",
+        "#rncq",
+        "#我的云盘"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/netease-scan",
+      "command": "#rnq",
+      "aliases": [
+        "#rncq",
+        "#RNQ",
+        "#RNCQ"
+      ],
+      "title": "扫码登录网易云（歌曲/云盘）",
+      "summary": "主人专用，40 秒内扫码",
+      "what": "向网易云 API 要二维码 key 与图片，发出后轮询登录状态，成功后把 ck 写入配置。",
+      "returns": "二维码图片 + 提示，最后回登录结果。",
+      "returnsDetail": "发图时提示「请在40秒内使用网易云APP进行扫码」；成功回「扫码登录网易云成功，ck已自动保存」；过期回「二维码过期，请重新获取」；超时回「扫码超时，请重新获取」。",
+      "timing": "40 秒内要扫完。",
+      "cost": "走网易云 API + 写 `tools.yaml`。",
+      "keywords": [
+        "rnq",
+        "rncq",
+        "网易云登录",
+        "扫码登录网易云",
+        "绑定网易云ck"
+      ],
+      "params": [],
+      "example": "#rnq",
+      "moreExamples": [
+        "#rncq"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "手机装了网易云音乐 App",
+        "**最好用自建 API**（`useLocalNeteaseAPI: true` + `neteaseCloudAPIServer`）"
+      ],
+      "pitfalls": [
+        "**`#rnq` 登的是歌曲 Cookie，`#rncq` 登的是云盘 Cookie**，两套独立，点歌和云盘要各扫一次",
+        "**不用自建服务器时会先回一句「未使用自建服务器，高概率#rnq失败」** —— 这不是玩笑，公共接口经常拿不到二维码",
+        "**40 秒内必须扫完**，超时要重发",
+        "**成功后 ck 直接写配置文件**，等于凭据落盘",
+        "二维码图片会落在 `defaultPath`，不会被自动清"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未使用自建服务器，高概率#rnq失败」后没二维码",
+          "cause": "公共 API 拿不到 key"
+        },
+        {
+          "symptom": "回「执行网易云扫码登录时出错…请检查API服务器地址」",
+          "cause": "`neteaseCloudAPIServer` 配错（非法 URL）"
+        },
+        {
+          "symptom": "回「二维码过期，请重新获取」",
+          "cause": "40 秒没扫"
+        }
+      ],
+      "edgeCases": [
+        "`#RNQ` / `#RNCQ` 全大写等价"
+      ],
+      "scenarios": [
+        "点歌拿不到音源，补网易云 Cookie"
+      ],
+      "vs": [
+        {
+          "command": "#网易云状态",
+          "diff": "那个只查不登"
+        }
+      ],
+      "related": [
+        "#网易云状态",
+        "#我的云盘",
+        "#rncq"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/kugou-status",
+      "command": "#酷狗状态",
+      "aliases": [
+        "#rks",
+        "#RKS"
+      ],
+      "title": "查酷狗登录状态",
+      "summary": "主人专用，需自建 API",
+      "what": "调自建酷狗 API 的用户信息接口，渲染成图片发出。",
+      "returns": "一张状态图。",
+      "returnsDetail": "没配 API 回「未配置酷狗开源API地址，请先填写 tools.kugouApiServer」；未登录回「暂未登录酷狗，请发 #rkq 进行登陆绑定ck」；出错回「获取酷狗状态时出错，请稍后再试」。",
+      "timing": "2~10 秒。",
+      "cost": "走自建 API + 截图。",
+      "keywords": [
+        "酷狗状态",
+        "rks",
+        "酷狗登录",
+        "酷狗ck"
+      ],
+      "params": [],
+      "example": "#rks",
+      "moreExamples": [
+        "#酷狗状态"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "配了 `kugouApiServer`"
+      ],
+      "pitfalls": [
+        "**没有 `kugouApiServer` 就完全不可用**，提示写得很直白",
+        "**只查状态不登录**，要登录用 `#rkq`",
+        "**酷狗只有一套 Cookie**（不像网易云分歌曲/云盘两套）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置酷狗开源API地址…」",
+          "cause": "没填 kugouApiServer"
+        },
+        {
+          "symptom": "回「暂未登录酷狗…」",
+          "cause": "Cookie 空或失效"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "确认酷狗 Cookie 是否还有效"
+      ],
+      "vs": [
+        {
+          "command": "#rkq",
+          "diff": "那个是扫码登录"
+        }
+      ],
+      "related": [
+        "#rkq",
+        "https://t1.kugou.com/xxxxxx"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "rconsole/kugou-scan",
+      "command": "#rkq",
+      "aliases": [
+        "#RKQ"
+      ],
+      "title": "扫码登录酷狗",
+      "summary": "主人专用，40 秒内扫码",
+      "what": "向自建酷狗 API 要二维码 key 与图片，发出后轮询，成功把 ck 写进配置。",
+      "returns": "二维码图片 + 登录结果。",
+      "returnsDetail": "发图提示「请在40秒内使用酷狗APP进行扫码」；key 失败回「获取酷狗二维码 key 失败，请检查开源 API 是否可用」；图片失败回「获取酷狗二维码图片失败，请检查开源 API 返回」。",
+      "timing": "40 秒内扫完。",
+      "cost": "走自建 API + 写配置。",
+      "keywords": [
+        "rkq",
+        "酷狗登录",
+        "扫码登录酷狗",
+        "绑定酷狗ck"
+      ],
+      "params": [],
+      "example": "#rkq",
+      "moreExamples": [
+        "#RKQ"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "配了 `kugouApiServer`",
+        "手机装了酷狗 App"
+      ],
+      "pitfalls": [
+        "**没配 API 时第一步就失败**，提示是「未配置酷狗开源API地址」",
+        "**三步都可能单独失败**：拿 key、拿图片、轮询，文案各不相同，看提示就能定位是哪一步",
+        "**40 秒超时要重发**",
+        "成功后 ck 写配置文件，凭据落盘"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取酷狗二维码 key 失败」",
+          "cause": "自建 API 不可用"
+        },
+        {
+          "symptom": "回「获取酷狗二维码图片失败」",
+          "cause": "API 返回结构不对"
+        },
+        {
+          "symptom": "回「执行酷狗扫码登录时出错…请检查API服务器地址」",
+          "cause": "API 地址错"
+        }
+      ],
+      "edgeCases": [
+        "`#RKQ` 大写等价"
+      ],
+      "scenarios": [
+        "酷狗音源拿不到，补 Cookie"
+      ],
+      "vs": [
+        {
+          "command": "#酷狗状态",
+          "diff": "那个只查不登"
+        }
+      ],
+      "related": [
+        "#酷狗状态",
+        "https://t1.kugou.com/xxxxxx"
+      ],
+      "risk": "a",
+      "permission": "master"
+    }
+  ]
+}
