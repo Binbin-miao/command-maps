@@ -67,6 +67,13 @@ const walk = d => {
       walk(p)
     } else if (f.name.endsWith('.js')) {
       const t = fs.readFileSync(p, 'utf8')
+      // 先收集文件内的常量：const NAME = /.../  与 const NAME = '...'
+      const consts = {}
+      const rc = /const\s+(\w+)\s*=\s*\/((?:\\.|\[[^\]]*\]|[^/\\])+)\/[gimsuy]*/g
+      let mc
+      while ((mc = rc.exec(t))) consts[mc[1]] = mc[2]
+      const rc2 = /const\s+(\w+)\s*=\s*(['"`])((?:\\.|(?!\2).)*)\2/g
+      while ((mc = rc2.exec(t))) consts[mc[1]] = mc[3].replace(/\\\\/g, '\\')
       // 字符串 / 模板字面量形式：reg: '...'  reg: `...`
       const re = /reg:\s*(`[^`]*`|'[^']*'|"[^"]*")/g
       let m
@@ -82,6 +89,9 @@ const walk = d => {
       // 正则字面量形式：reg: /^#绑定ck$/i
       const re2 = /reg:\s*\/((?:\\.|\[[^\]]*\]|[^/\\])+)\/[gimsuy]*/g
       while ((m = re2.exec(t))) regs.push(m[1])
+      // reg: SOME_CONST 形式，常量在同文件里定义
+      const re3 = /reg:\s*([A-Za-z_$][\w$]*)\s*[,}\n]/g
+      while ((m = re3.exec(t))) if (consts[m[1]]) regs.push(consts[m[1]])
     }
   }
 }
