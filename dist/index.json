@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 16,
-  "updated": "2026-10-28T22:42:44.312Z",
+  "revision": 20,
+  "updated": "2026-10-28T22:48:15.071Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -29,6 +29,20 @@
       "fingerprint": "e7410e3fad59",
       "sha256": "efcf7d512bf0b1afd0d91c774744fbbc556da354c59523ee6e327839602418b8",
       "bytes": 273785,
+      "used": 0
+    },
+    "miao-plugin": {
+      "file": "maps/miao-plugin.json",
+      "display": "喵喵插件",
+      "category": "游戏",
+      "version": "0.0.4",
+      "revision": 4,
+      "command_count": 77,
+      "default_off_count": 13,
+      "delegated_count": 0,
+      "fingerprint": "7ba734b73a15",
+      "sha256": "b2009454f1e5725a361eedb80b79d0649533df5554fc428349c4e0e0d96d45cb",
+      "bytes": 177604,
       "used": 0
     },
     "yenai-plugin": {
@@ -90,6 +104,15 @@
       "command_count": 113,
       "units": [
         "delta-force-plugin"
+      ],
+      "used": 0
+    },
+    "miao-plugin": {
+      "display": "喵喵插件",
+      "category": "游戏",
+      "command_count": 77,
+      "units": [
+        "miao-plugin"
       ],
       "used": 0
     },
