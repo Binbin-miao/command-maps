@@ -79,6 +79,21 @@ check(`拍平后有 ${expectedPlugins} 个插件`, flat.stats.plugins === expect
 const withRisk = flat.entries.filter(item => item.risk).length
 check('风险档全部带上', withRisk === flat.entries.length, `${withRisk}/${flat.entries.length}`)
 
+// 覆盖率对账：地图条数明显少于源码规则数时，多半是有整块漏写（阈值 10%）
+const countsPath = path.join(path.dirname(DIST), 'maps-v2', '_rule-counts.json')
+if (fs.existsSync(countsPath)) {
+  const counts = JSON.parse(fs.readFileSync(countsPath, 'utf8'))
+  const short = []
+  for (const [key, entry] of Object.entries(index.plugins)) {
+    const expected = Number(counts[key])
+    if (!expected) continue
+    if (entry.command_count < expected * 0.9) {
+      short.push(`${key}(${entry.command_count}/${expected})`)
+    }
+  }
+  check('地图覆盖不低于源码规则的 90%', short.length === 0, short.join(', ') || `已对账 ${Object.keys(index.plugins).length} 个插件`)
+}
+
 // 二次同步应当全部跳过（版本一致）
 const second = await syncPluginMaps({
   indexUrl: 'https://maps.test/index.json',
