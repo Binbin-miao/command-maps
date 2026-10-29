@@ -5,7 +5,6 @@ name: 地图流水线
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 jobs:
@@ -18,10 +17,10 @@ jobs:
         with:
           node-version: 20
 
-      # 已提交的索引必须和地图对得上。这一关专门拦「改了地图的 display、
-      # 却没重建索引」的半更新 —— 等合并进 main 再发现就晚了。
-      - name: 展示名与地图对账
-        run: node scripts/build-index-v2.mjs --check-display
+      # 必须排在「重建索引」之前：重建出来的索引永远自洽，先重建就再也发现不了
+      # 「提交的 dist/ 落后于地图」。这一关拦的是任何字段的漂移，不只是展示名。
+      - name: 索引与地图对账
+        run: node scripts/build-index-v2.mjs --check-index
 
       # 结构门禁：缺必填字段、id 重复、写法重复、schema 不对，都在这里非 0 退出
       - name: 重建索引

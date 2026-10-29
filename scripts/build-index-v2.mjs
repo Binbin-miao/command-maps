@@ -13,10 +13,11 @@ import crypto from 'node:crypto'
  *   - 内容没变 → 沿用上一版，不制造空版本
  *
  * 用法：node scripts/build-index-v2.mjs [--maps maps-v2] [--out dist] [--prev dist/index.json]
- *       node scripts/build-index-v2.mjs --check-display [--index dist/index.json]
+ *       node scripts/build-index-v2.mjs --check-index [--index dist/index.json]
  *
- * `--check-display` 只做一件事：拿已提交的索引跟当前地图比展示名，不一致就非 0 退出。
- * 拦的是「改了地图的 display、却没重建索引」这类半更新 —— 只重建索引本身发现不了它。
+ * `--check-index` 只做一件事：按当前地图把索引算一遍，跟已提交的那份逐字段比，
+ * 不一致就非 0 退出并点名哪个插件的哪一项。拦的是「改了地图、却没重建索引」这类半更新 ——
+ * 只重建索引本身发现不了它，因为重建出来的总是自洽的。
  */
 
 const args = process.argv.slice(2)
@@ -28,8 +29,12 @@ const valueOf = (name, fallback) => {
 const MAPS_DIR = valueOf('maps', 'maps-v2')
 const OUT_DIR = valueOf('out', 'dist')
 const PREV_INDEX = valueOf('prev', path.join(OUT_DIR, 'index.json'))
-/** 只比对不重建：拿这份索引的展示名去对地图 */
-const CHECK_DISPLAY = args.includes('--check-display')
+/** 只比对不重建：按地图算一遍，跟这份已提交的索引逐字段比 */
+const CHECK_INDEX = args.includes('--check-index')
+if (args.includes('--check-display')) {
+  console.error('--check-display 已改名为 --check-index（现在是全字段对账，不再只比展示名）')
+  process.exit(1)
+}
 const INDEX_TO_CHECK = valueOf('index', PREV_INDEX)
 
 const INDEX_SCHEMA = 2
@@ -94,7 +99,8 @@ if (!files.length) {
   process.exit(1)
 }
 
-fs.mkdirSync(path.join(OUT_DIR, 'maps'), { recursive: true })
+// 只比对模式不碰发布目录，连目录都不建
+if (!CHECK_INDEX) fs.mkdirSync(path.join(OUT_DIR, 'maps'), { recursive: true })
 
 const plugins = {}
 const packages = {}
@@ -155,7 +161,7 @@ for (const file of files) {
 
   const mapFile = `maps/${safeKey(key)}.json`
   // 只比对模式不动 dist，免得一次检查顺手改了发布目录
-  if (!CHECK_DISPLAY) fs.writeFileSync(path.join(OUT_DIR, mapFile), raw, 'utf8')
+  if (!CHECK_INDEX) fs.writeFileSync(path.join(OUT_DIR, mapFile), raw, 'utf8')
 
   const previous = prev.plugins?.[key]
   const digest = sha256(raw)
@@ -201,38 +207,6 @@ if (problems.length) {
   process.exit(1)
 }
 
-/**
- * 展示名对账：已提交索引里的 display 必须与当前地图一致。
- * 不一致就意味着「地图改了、索引没重建」，照这样合并下去 main 上的展示名会一直是旧的。
- * 只比双方都收录的插件 —— 这一版下线掉的插件谈不上漂移。
- */
-if (CHECK_DISPLAY) {
-  let committed
-  try {
-    committed = JSON.parse(fs.readFileSync(INDEX_TO_CHECK, 'utf8'))
-  } catch (err) {
-    console.error(`读不到索引 ${INDEX_TO_CHECK}：${err.message}`)
-    process.exit(1)
-  }
-
-  const drift = []
-  for (const [key, old] of Object.entries(committed.plugins || {})) {
-    const fresh = plugins[key]
-    if (!fresh) continue
-    if (String(old.display || '').trim() !== String(fresh.display || '').trim()) {
-      drift.push(`${key}: 索引写「${old.display}」，地图写「${fresh.display}」`)
-    }
-  }
-
-  if (drift.length) {
-    console.error(`展示名与地图不一致（${drift.length} 处）—— 改完地图要重建索引：`)
-    for (const line of drift) console.error(`  - ${line}`)
-    process.exit(1)
-  }
-  console.log(`展示名一致：${Object.keys(plugins).length} 个插件`)
-  process.exit(0)
-}
-
 const index = {
   schema: INDEX_SCHEMA,
   revision: Number(prev.revision) || 0,
@@ -242,6 +216,84 @@ const index = {
 }
 
 if (anyChanged) index.revision = Number(prev.revision || 0) + 1
+
+/**
+ * 索引对账：按当前地图算出来的索引，必须与已提交的那份一致。
+ * 不一致就意味着「地图改了、索引没重建」，照这样合并下去线上发的是旧数据。
+ * 只重建索引本身发现不了这件事 —— 重建出来的永远是自洽的。
+ *
+ * 比法：除两个「不由地图派生」的字段外全比。
+ *   index.updated   —— 每次构建都变
+ *   *.used          —— 运行时统计，来自日志而不是地图
+ * 其余一律算：插件条目的全部字段、packages 整层、顶层 schema / revision。
+ * 不写死字段清单 —— 清单会漏，而漏掉的那一项正好就是没人会去改的那一项。
+ */
+if (CHECK_INDEX) {
+  let committed
+  try {
+    committed = JSON.parse(fs.readFileSync(INDEX_TO_CHECK, 'utf8'))
+  } catch (err) {
+    console.error(`读不到索引 ${INDEX_TO_CHECK}：${err.message}`)
+    process.exit(1)
+  }
+
+  /** 去掉 used（运行时统计），其余按键排序，得到可比字符串 */
+  const withoutUsed = value => {
+    const { used, ...rest } = value || {}
+    return rest
+  }
+  const stable = value => JSON.stringify(Object.keys(value).sort().map(key => [key, value[key]]))
+  /** 字符串直接打原文，其余打 JSON —— 报错信息里少一层引号 */
+  const fmt = value => (typeof value === 'string' ? value : JSON.stringify(value))
+
+  const drift = []
+  const before = committed.plugins || {}
+  const after = index.plugins || {}
+
+  for (const key of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
+    if (!before[key]) {
+      drift.push(`${key}: 地图里有，索引里没有（新地图忘了建索引）`)
+      continue
+    }
+    if (!after[key]) {
+      drift.push(`${key}: 索引里有，地图里没有（地图删了没重建）`)
+      continue
+    }
+    const old = withoutUsed(before[key])
+    const fresh = withoutUsed(after[key])
+    for (const field of [...new Set([...Object.keys(old), ...Object.keys(fresh)])].sort()) {
+      const a = JSON.stringify(old[field])
+      const b = JSON.stringify(fresh[field])
+      if (a !== b) drift.push(`${key}.${field}: 索引写「${fmt(old[field])}」，按地图应为「${fmt(fresh[field])}」`)
+    }
+  }
+
+  // packages 是插件的归拢视图，同样由地图派生，整层比
+  const packagesBefore = Object.fromEntries(Object.entries(committed.packages || {}).map(([key, value]) => [key, withoutUsed(value)]))
+  const packagesAfter = Object.fromEntries(Object.entries(index.packages || {}).map(([key, value]) => [key, withoutUsed(value)]))
+  if (stable(packagesBefore) !== stable(packagesAfter)) {
+    for (const key of [...new Set([...Object.keys(packagesBefore), ...Object.keys(packagesAfter)])].sort()) {
+      if (stable(packagesBefore[key] || {}) === stable(packagesAfter[key] || {})) continue
+      drift.push(`packages.${key}: 索引写「${JSON.stringify(packagesBefore[key] || null)}」，按地图应为「${JSON.stringify(packagesAfter[key] || null)}」`)
+    }
+  }
+
+  // 顶层两项：任一地图内容变化，revision 就该跟着走
+  for (const field of ['schema', 'revision']) {
+    if (String(committed[field]) !== String(index[field])) {
+      drift.push(`${field}: 索引写「${committed[field]}」，按地图应为「${index[field]}」`)
+    }
+  }
+
+  if (drift.length) {
+    console.error(`已提交的索引与地图不一致（${drift.length} 处）—— 改完地图要重建索引：`)
+    for (const line of drift.slice(0, 20)) console.error(`  - ${line}`)
+    if (drift.length > 20) console.error(`  …还有 ${drift.length - 20} 处`)
+    process.exit(1)
+  }
+  console.log(`索引与地图一致：${Object.keys(after).length} 个插件，修订号 ${index.revision}`)
+  process.exit(0)
+}
 
 /**
  * 覆盖率对账：插件源码里有多少条正则规则，地图里就该有差不多数量的说明。
