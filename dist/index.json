@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 37,
-  "updated": "2026-10-29T00:52:30.000Z",
+  "revision": 38,
+  "updated": "2026-10-29T00:52:53.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -268,6 +268,20 @@
       "sha256": "c6319b4fea5ea85a36fbea1c3e9ed66cf4218ede077e57a57040713f5c092bcd",
       "bytes": 47820,
       "used": 0
+    },
+    "meme-plugin": {
+      "file": "maps/meme-plugin.json",
+      "display": "清语表情（meme-plugin）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 13,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "09d427c18efc",
+      "sha256": "3c7f860550f41594963db9415a3d38cc7229d59d4f3736f8145377e2ad28ede8",
+      "bytes": 31390,
+      "used": 0
     }
   },
   "packages": {
@@ -439,6 +453,15 @@
       "command_count": 17,
       "units": [
         "xiaofei-plugin"
+      ],
+      "used": 0
+    },
+    "meme-plugin": {
+      "display": "清语表情（meme-plugin）",
+      "category": "工具",
+      "command_count": 13,
+      "units": [
+        "meme-plugin"
       ],
       "used": 0
     }
