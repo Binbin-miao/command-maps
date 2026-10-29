@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 44,
-  "updated": "2026-10-29T21:27:20.022Z",
+  "revision": 45,
+  "updated": "2026-10-29T23:19:57.841Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -113,6 +113,20 @@
       "fingerprint": "dbb0d9e80cbd",
       "sha256": "28f95040640dcbee5b038723e326fc035640bfe31daef36a976ef769b4a98ed2",
       "bytes": 132555,
+      "used": 0
+    },
+    "GloryOfKings-Plugin": {
+      "file": "maps/GloryOfKings-Plugin.json",
+      "display": "王者荣耀（GloryOfKings）",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 135,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "76c11873d63d",
+      "sha256": "6113a358230491638482fc9d31829e6ed928e5ae5f8ac71a1d3a449a63384e07",
+      "bytes": 213771,
       "used": 0
     },
     "GT-Manual": {
@@ -480,6 +494,15 @@
       "command_count": 67,
       "units": [
         "genshin"
+      ],
+      "used": 0
+    },
+    "GloryOfKings-Plugin": {
+      "display": "王者荣耀（GloryOfKings）",
+      "category": "游戏",
+      "command_count": 135,
+      "units": [
+        "GloryOfKings-Plugin"
       ],
       "used": 0
     },
