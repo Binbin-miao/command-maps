@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 35,
-  "updated": "2026-10-29T00:51:38.000Z",
+  "revision": 36,
+  "updated": "2026-10-29T00:52:00.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -240,6 +240,20 @@
       "sha256": "e71cceb4630dee6c5491b4494837bc5ecd6fd8e29443331464f2bd909dd3b185",
       "bytes": 56609,
       "used": 0
+    },
+    "ws-plugin": {
+      "file": "maps/ws-plugin.json",
+      "display": "ws-plugin（WS/HTTP 连接与转发）",
+      "category": "系统",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 20,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "daba6c6b9fc2",
+      "sha256": "ff775c1d8923a01971528c0545d0d0cde7e55e369b418b0cfdaa2a46eeb5c71c",
+      "bytes": 50625,
+      "used": 0
     }
   },
   "packages": {
@@ -393,6 +407,15 @@
       "command_count": 21,
       "units": [
         "mora-plugin"
+      ],
+      "used": 0
+    },
+    "ws-plugin": {
+      "display": "ws-plugin（WS/HTTP 连接与转发）",
+      "category": "系统",
+      "command_count": 20,
+      "units": [
+        "ws-plugin"
       ],
       "used": 0
     }
