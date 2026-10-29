@@ -1,0 +1,755 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "cyxz-plugin",
+    "display": "次元小镇（cyxz）",
+    "category": "工具",
+    "summary": "抓二次元图站（dimtown / mikagogo / yiimii）随机一页图集：cos、pixiv、私服、JK、汉服、lolita、头像、各类壁纸、插画、图集画册，外加帮助图和调试指令",
+    "homepage": "https://github.com/xiaotian2333/cyxz-plugin",
+    "notes": "**结构**：两个 app（`main.js` 11 条规则 + `help.js` 1 条），全部 `priority: 5000`（抢在所有插件前面）。**前缀整个可选**：`(次元|小镇|次元小镇|cy|xz|cyxz)?` 后面直接跟栏目词，所以**裸发 `#头像`/`#壁纸`/`#帮助`/`#cos` 都会被它接走** —— 这是和别的插件冲突的主要来源。**实现**：`lib/main.js` 用 axios + cheerio 抓页面，抽 `a[href][title]` 与图片，拼成合并转发（标题 / 原文链接 / 图片）。**随机挑站有 off-by-one**：`url_list[random(url_list.length - 1) - 1]` —— 两项时 `random(1)` 恒为 1，永远只抓第一个站；三项时第三个永远用不到。**调试指令 `#次元测试` 能把任意 URL 当目标抓**（SSRF 面），仅 master。",
+    "interactsWith": [
+      "dimtown.com / mikagogo.com / yiimii.com（全部图片都来自这三个站，页面结构一变就空转发）",
+      "Bot.makeForwardMsg（合并转发，适配器需支持）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助",
+        "cos 与 pixiv 栏目",
+        "私服 / JK / 汉服 / lolita 栏目",
+        "头像",
+        "壁纸（按题材/设备）",
+        "插画与图集",
+        "调试抓取"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "cyxz/help",
+      "command": "#次元小镇帮助",
+      "aliases": [
+        "#帮助",
+        "#cy帮助",
+        "#xz帮助",
+        "#次元帮助",
+        "#小镇帮助"
+      ],
+      "title": "次元小镇帮助图",
+      "summary": "返回一张图",
+      "what": "回一张帮助图片（`lib/config.js` 的 `get_Help_img()`）。",
+      "returns": "一张图片。",
+      "returnsDetail": "取图失败时没有文字兜底。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "次元小镇帮助",
+        "cyxz 帮助"
+      ],
+      "params": [],
+      "example": "#次元小镇帮助",
+      "moreExamples": [
+        "#cy帮助",
+        "#帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**前缀整个是可选的**（`(次元|小镇|次元小镇|cy|xz|cyxz)?`），所以**裸发 `#帮助` 也会被它接走** —— 装了这插件之后 `#帮助` 可能不再是你以为的那个帮助",
+        "**priority 5000**，抢在所有插件前面",
+        "「次元小镇」四个字要连着写，`#次元 小镇帮助` 不匹配"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "帮助图片取不到"
+        }
+      ],
+      "edgeCases": [
+        "`#xz帮助`、`#cy帮助` 都能用（缩写也在前缀表里）"
+      ],
+      "scenarios": [
+        "第一次装完看图"
+      ],
+      "vs": [
+        {
+          "command": "#头像",
+          "diff": "那条是抓图，不是帮助"
+        }
+      ],
+      "related": [
+        "#cos",
+        "#壁纸"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/cos",
+      "command": "#cos",
+      "aliases": [
+        "#次元cos",
+        "#小镇cos",
+        "#cyxzcos",
+        "#cycos"
+      ],
+      "title": "随机一页 cosplay 图集",
+      "summary": "随机页码抓图",
+      "what": "从 dimtown / mikagogo 里随机挑一个 cosplay 栏目页，把页面图片做成合并转发。",
+      "returns": "合并转发（第 1 条是标题、第 2 条是原文链接、之后是图片）。",
+      "returnsDetail": "抓不到内容时可能发出空的转发或直接报错（`one_get` 失败只写日志）。",
+      "timing": "5~20 秒（抓页面 + 逐张下载图）。",
+      "cost": "打第三方图站；图片会先下载到本地再发送。",
+      "keywords": [
+        "cos",
+        "cosplay",
+        "次元小镇 cos"
+      ],
+      "params": [],
+      "example": "#cos",
+      "moreExamples": [
+        "#cycos",
+        "#次元cos"
+      ],
+      "preconditions": [
+        "能访问 `dimtown.com` / `mikagogo.com`"
+      ],
+      "pitfalls": [
+        "**前缀可省**：裸发 `cos` 也会触发（`^#?(…)?cos$`），而且 `#cos` 是**完全等于** cos 才行，`#cos 猫耳` 不匹配",
+        "**「随机挑站」其实没生效**：`url_list[random(url_list.length - 1) - 1]` —— 两个站时 `random(1)` 恒等于 1，**永远只抓第一个（dimtown）**",
+        "**页码也是随机上限写死的**（dimtown 296 页 / mikagogo 143 页），站点改版后可能大量 404",
+        "**一次下载整页图片**，图多时很慢、很占流量"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应/报错",
+          "cause": "站点被墙、改版，或图片下载超时（10 秒）"
+        },
+        {
+          "symptom": "转发是空的",
+          "cause": "页面里 `a[href][title]` 结构变了"
+        }
+      ],
+      "edgeCases": [
+        "大小写敏感：`#COS` 不匹配（正则没有 i 标志）"
+      ],
+      "scenarios": [
+        "想看 cos 图"
+      ],
+      "vs": [
+        {
+          "command": "#pixiv",
+          "diff": "那个抓的是 pixiv 插画栏目"
+        }
+      ],
+      "related": [
+        "#p站",
+        "#图集"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/pixiv",
+      "command": "#p站",
+      "aliases": [
+        "#pixiv",
+        "#P站",
+        "#二次元",
+        "#次元p站",
+        "#cypixiv"
+      ],
+      "title": "随机一页 P 站插画",
+      "summary": "不是真 pixiv",
+      "what": "从 dimtown / mikagogo 的 `pixiv-illustration` 栏目随机抓一页图。",
+      "returns": "合并转发（标题 + 原文链接 + 图片）。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "5~20 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "p站",
+        "pixiv",
+        "二次元图片"
+      ],
+      "params": [],
+      "example": "#p站",
+      "moreExamples": [
+        "#pixiv",
+        "#P站",
+        "#二次元"
+      ],
+      "preconditions": [
+        "能访问图站"
+      ],
+      "pitfalls": [
+        "**不是直连 pixiv**，是抓的搬运站（dimtown/mikagogo），所以内容滞后、也没有原图画质",
+        "**`#二次元` 也会触发这条**（正则里 `二次元` 是同一分支）",
+        "**随机挑站同样失效**：两个站永远只抓 dimtown（`random(length-1)` 的 off-by-one）",
+        "**裸发 `p站` 也行**（前缀可省）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达或结构变化"
+        }
+      ],
+      "edgeCases": [
+        "`P站`（大写 P）单独算一个分支，`#p站` 与 `#P站` 都认"
+      ],
+      "scenarios": [
+        "想看插画"
+      ],
+      "vs": [
+        {
+          "command": "#插画",
+          "diff": "那条抓的是 `illustration` 栏目，和 pixiv 栏目不是同一个"
+        }
+      ],
+      "related": [
+        "#插画",
+        "#cos"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/sifu",
+      "command": "#私服",
+      "aliases": [
+        "#次元私服",
+        "#cy私服"
+      ],
+      "title": "随机一页「私服」栏目",
+      "summary": "dimtown 55 页",
+      "what": "抓 dimtown 的 `sifu` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "5~20 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "私服",
+        "次元小镇 私服"
+      ],
+      "params": [],
+      "example": "#私服",
+      "moreExamples": [
+        "#cy私服"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**这里是「私服」这个栏目名，不是游戏私服** —— 别指望它给服务器",
+        "**只在 dimtown 一个站**，没有备用站，站点挂了这条就废",
+        "页码上限写死 55"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达"
+        }
+      ],
+      "edgeCases": [
+        "前缀可省，裸发 `私服` 也触发"
+      ],
+      "scenarios": [
+        "随便看看"
+      ],
+      "vs": [
+        {
+          "command": "#jk",
+          "diff": "另一个栏目"
+        }
+      ],
+      "related": [
+        "#jk",
+        "#汉服"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/jk",
+      "command": "#jk",
+      "aliases": [
+        "#JK",
+        "#次元jk",
+        "#cyjk"
+      ],
+      "title": "随机一页 JK 栏目",
+      "summary": "只有 8 页",
+      "what": "抓 dimtown 的 `jk` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "3~15 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "jk",
+        "JK 图"
+      ],
+      "params": [],
+      "example": "#jk",
+      "moreExamples": [
+        "#JK"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**只有 8 页**（`random(8)`），重复率很高",
+        "`jk` 和 `JK` 都认（正则里两个分支各写了一次）",
+        "**裸发 `jk` 也行**，容易和别的插件撞"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达"
+        }
+      ],
+      "edgeCases": [
+        "每次都是完全随机，没有去重"
+      ],
+      "scenarios": [
+        "随便看看"
+      ],
+      "vs": [
+        {
+          "command": "#汉服",
+          "diff": "另一个栏目"
+        }
+      ],
+      "related": [
+        "#汉服",
+        "#lolita"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/hanfu",
+      "command": "#汉服",
+      "aliases": [
+        "#次元汉服",
+        "#cy汉服"
+      ],
+      "title": "随机一页汉服栏目",
+      "summary": "只有 4 页",
+      "what": "抓 dimtown 的 `hanfu` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "3~15 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "汉服"
+      ],
+      "params": [],
+      "example": "#汉服",
+      "moreExamples": [
+        "#cy汉服"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**只有 4 页**，来回就那么几页",
+        "前缀可省，裸发 `汉服` 会抢在别的插件前面（priority 5000）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达"
+        }
+      ],
+      "edgeCases": [
+        "栏目页数写死，站点加页了也不会自动跟上"
+      ],
+      "scenarios": [
+        "随便看看"
+      ],
+      "vs": [
+        {
+          "command": "#lolita",
+          "diff": "另一个栏目"
+        }
+      ],
+      "related": [
+        "#lolita",
+        "#jk"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/lolita",
+      "command": "#lolita",
+      "aliases": [
+        "#洛丽塔",
+        "#次元lolita",
+        "#cylolita"
+      ],
+      "title": "随机一页 lo 裙栏目",
+      "summary": "12 页",
+      "what": "抓 dimtown 的 `lolita` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "3~15 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "lolita",
+        "洛丽塔"
+      ],
+      "params": [],
+      "example": "#lolita",
+      "moreExamples": [
+        "#洛丽塔"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**大小写敏感**：`#Lolita` 不匹配（正则没 i 标志），但中文「洛丽塔」可以",
+        "只有 12 页，重复率高"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达 / 大小写写错"
+        }
+      ],
+      "edgeCases": [
+        "`#洛丽塔` 与 `#lolita` 等价"
+      ],
+      "scenarios": [
+        "随便看看"
+      ],
+      "vs": [
+        {
+          "command": "#jk",
+          "diff": "另一个栏目"
+        }
+      ],
+      "related": [
+        "#jk",
+        "#汉服"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/avatar",
+      "command": "#头像",
+      "aliases": [
+        "#次元头像",
+        "#cy头像"
+      ],
+      "title": "随机一页头像图",
+      "summary": "13 页",
+      "what": "抓 dimtown 的 `miaotx` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "3~15 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "头像",
+        "动漫头像"
+      ],
+      "params": [],
+      "example": "#头像",
+      "moreExamples": [
+        "#cy头像"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**裸发 `#头像` 就被它接走**（前缀可省 + priority 5000），非常容易和其它头像插件冲突",
+        "每条是整页图集，不是单张头像",
+        "只有 13 页"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达"
+        }
+      ],
+      "edgeCases": [
+        "`#次元头像` 与 `#头像` 完全等价"
+      ],
+      "scenarios": [
+        "想换头像找素材"
+      ],
+      "vs": [
+        {
+          "command": "#壁纸",
+          "diff": "壁纸按设备/题材分栏目"
+        }
+      ],
+      "related": [
+        "#壁纸",
+        "#插画"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/wallpaper",
+      "command": "#壁纸",
+      "aliases": [
+        "#手机壁纸",
+        "#电脑壁纸",
+        "#平板壁纸",
+        "#汽车壁纸",
+        "#游戏壁纸",
+        "#动漫壁纸",
+        "#风景壁纸",
+        "#次元壁纸"
+      ],
+      "title": "按题材/设备抓壁纸",
+      "summary": "关键词决定站点",
+      "what": "按消息里的关键词挑栏目：手机 / 电脑·平板 / 汽车 / 游戏 / 动漫 / 风景，不写关键词时走默认（dimtown 壁纸 + yiimii 美女/风景）。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "5~20 秒。",
+      "cost": "打 1~3 个图站之一。",
+      "keywords": [
+        "壁纸",
+        "手机壁纸",
+        "电脑壁纸",
+        "动漫壁纸"
+      ],
+      "params": [
+        {
+          "name": "题材",
+          "required": false,
+          "desc": "手机 / 电脑 / 平板 / 汽车 / 游戏 / 动漫 / 风景，写在「壁纸」前面"
+        }
+      ],
+      "example": "#手机壁纸",
+      "moreExamples": [
+        "#电脑壁纸",
+        "#游戏壁纸",
+        "#壁纸"
+      ],
+      "preconditions": [
+        "能访问 dimtown / mikagogo / yiimii"
+      ],
+      "pitfalls": [
+        "**关键词是靠 `msg.includes` 判的**，所以「手机」优先于「电脑」；同时写两个只认第一个命中的分支",
+        "**「平板」走的是电脑壁纸的栏目**（和「电脑」同一个分支）",
+        "**不写题材时默认会去 yiimii 的「美女」栏目**，公开群里注意场合",
+        "**随机挑站有 off-by-one**：3 个候选站时 `random(2)` 只会返回 1 或 2，**第 3 个站永远用不到**"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "所有候选站都不可达"
+        },
+        {
+          "symptom": "出来的图和题材不符",
+          "cause": "站点栏目本身就混着放"
+        }
+      ],
+      "edgeCases": [
+        "`#壁纸` 裸发会走默认分支（含美女栏目）",
+        "「汽车」「风景」候选站很少，重复率高"
+      ],
+      "scenarios": [
+        "给手机换壁纸"
+      ],
+      "vs": [
+        {
+          "command": "#头像",
+          "diff": "那个固定是头像栏目"
+        }
+      ],
+      "related": [
+        "#头像",
+        "#插画"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/illustration",
+      "command": "#插画",
+      "aliases": [
+        "#次元插画",
+        "#cy插画"
+      ],
+      "title": "随机一页插画栏目",
+      "summary": "34 页",
+      "what": "抓 dimtown 的 `illustration` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "5~20 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "插画",
+        "插图"
+      ],
+      "params": [],
+      "example": "#插画",
+      "moreExamples": [
+        "#cy插画"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**和 `#p站` 不是同一个栏目**：这条是 `illustration`，那条是 `pixiv-illustration`",
+        "页码上限 34，站点改版后可能大量空页"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达"
+        }
+      ],
+      "edgeCases": [
+        "裸发 `插画` 也触发"
+      ],
+      "scenarios": [
+        "看插画"
+      ],
+      "vs": [
+        {
+          "command": "#p站",
+          "diff": "栏目不同，来源同站"
+        }
+      ],
+      "related": [
+        "#p站",
+        "#图集"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/gallery",
+      "command": "#图集",
+      "aliases": [
+        "#画册",
+        "#图集画册",
+        "#次元图集",
+        "#cy图集"
+      ],
+      "title": "随机一页图集/画册",
+      "summary": "只有 2 页",
+      "what": "抓 dimtown 的 `tujihuace` 栏目随机一页图。",
+      "returns": "合并转发。",
+      "returnsDetail": "抓不到时同 cos。",
+      "timing": "5~20 秒。",
+      "cost": "打第三方图站。",
+      "keywords": [
+        "图集",
+        "画册"
+      ],
+      "params": [],
+      "example": "#图集",
+      "moreExamples": [
+        "#画册",
+        "#图集画册"
+      ],
+      "preconditions": [
+        "能访问 dimtown"
+      ],
+      "pitfalls": [
+        "**只有 2 页**，`random(2)` 来回就是这两页，几乎没有新内容",
+        "`图集`、`画册`、`图集画册` 三个写法都在正则里（第三个其实被前两个覆盖）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "站点不可达"
+        }
+      ],
+      "edgeCases": [
+        "裸发 `图集` 也会触发"
+      ],
+      "scenarios": [
+        "看整本画册"
+      ],
+      "vs": [
+        {
+          "command": "#插画",
+          "diff": "那个是单图栏目"
+        }
+      ],
+      "related": [
+        "#插画",
+        "#cos"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cyxz/test",
+      "command": "#次元测试",
+      "aliases": [
+        "#cytest",
+        "#次元test",
+        "#小镇测试"
+      ],
+      "title": "抓任意 URL 调试用（仅 master）",
+      "summary": "SSRF 风险",
+      "what": "把 `#次元测试` 后面的内容原样当 URL 去抓，然后按同样格式发合并转发。",
+      "returns": "合并转发（抓取结果）。",
+      "returnsDetail": "抓不到只写日志，不回错误。",
+      "timing": "取决于目标站点。",
+      "cost": "**会让服务器请求任意地址**（含内网），属于 SSRF 面。",
+      "keywords": [
+        "次元测试",
+        "test"
+      ],
+      "params": [
+        {
+          "name": "URL",
+          "required": true,
+          "desc": "紧跟指令，不要空格"
+        }
+      ],
+      "example": "#次元测试https://dimtown.com/cosplay",
+      "moreExamples": [
+        "#cytesthttps://example.com"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**调试指令，正式环境应该删掉**：它能请求任意 URL，包括 `127.0.0.1` 和内网地址",
+        "**正则没有结尾锚点**（`^#(次元|小镇|…)(测试|test)`），后面跟什么都会被当成 URL",
+        "**`#` 必须带**（这条是 `^#`，不是 `^#?`）",
+        "抓取结果按「标题 / 原文链接 / 图片」三段落，如果目标页面没有这些结构就会发出空转发"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 目标不可达"
+        },
+        {
+          "symptom": "发出空转发",
+          "cause": "页面里没有 `a[href][title]` 与图片"
+        }
+      ],
+      "edgeCases": [
+        "`测 试` 中间空格不匹配；`#次元test` 与 `#次元测试` 等价"
+      ],
+      "scenarios": [
+        "作者调试栏目地址"
+      ],
+      "vs": [
+        {
+          "command": "#cos",
+          "diff": "那条只能抓写死的栏目页"
+        }
+      ],
+      "related": [
+        "#cos"
+      ],
+      "risk": "a",
+      "permission": "master"
+    }
+  ]
+}
