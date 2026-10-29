@@ -1,0 +1,1271 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "xiaofei-plugin",
+    "display": "小飞插件（xiaofei）",
+    "category": "工具",
+    "summary": "点歌（QQ/网易/酷我/酷狗/哔哩，含多选、电台、每日推荐、收藏、语音、歌词）、地区天气截图、代发言、QQ 违规记录查询、游戏注册时间与星铁纪念册、音乐 ck 管理、通行证 ck 转米游社 ck、文本设置台",
+    "homepage": "https://gitee.com/xfdown/xiaofei-plugin",
+    "notes": "**结构**：`index.js` 扫 `apps/` 逐个 import 后 `export { apps }`；6 个 app 用 `priority: 2000`（很靠后），`代发言` 是 **10**（很靠前），`通行证ck转米游社ck` 是 **-1**（最靠前，靠 `accept()` 先嗅探 cookie）。**优先级可被设置改**：`#小飞设置 点歌 开启` 之后点歌 app 会动态重载成 priority 10，`setting.weather` 为 true 时天气也变 10。**一条极宽正则**：`^#?(小飞)?(.*)天气$`，任何以「天气」结尾的消息都会进来。**两个转发器**：`#小飞更新`/`#小飞更新日志` 借 `other/update.js`，拿不到时改写成 `#更新xiaofei-plugin` 放行给 miao。点歌模块 2346 行，是整个插件最重的部分（多选列表 3 分钟过期、语音上传、歌词转发、6 个平台源）。",
+    "interactsWith": [
+      "other/update.js（框架自带更新器，`#小飞更新`/`#小飞更新日志` 实际由它执行）",
+      "genshin（ck/sk 来自它的数据表；`#获取stoken`、`#注册时间` 都依赖已绑 ck）",
+      "miao-plugin（更新器缺失时改写指令让它接手）",
+      "puppeteer（`#XX天气` 要起浏览器截腾讯天气页）",
+      "QQ 音乐 / 网易云（点歌 ck，`#提交音乐ck` 写入 `config/music/cookies`）",
+      "q.qq.com 与 h5.qzone.qq.com（`#我的违规记录` 的扫码授权）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助",
+        "插件更新与版本",
+        "文本设置台",
+        "地区天气",
+        "代发言",
+        "QQ 违规记录",
+        "游戏注册时间与纪念册",
+        "点歌与多选点歌",
+        "电台 / 每日推荐 / 收藏",
+        "音乐 ck 管理与提交",
+        "stoken 导出"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "xiaofei/help",
+      "command": "#小飞帮助",
+      "aliases": [
+        "#小飞插件帮助",
+        "小飞帮助"
+      ],
+      "title": "小飞插件帮助图",
+      "summary": "主人看得更多",
+      "what": "渲染帮助图，条目来自 `config/system/help_system.js`，带 `auth: master` 的分组只对主人显示。",
+      "returns": "一张帮助图。",
+      "returnsDetail": "渲染失败时没有文字兜底。",
+      "timing": "1~3 秒。",
+      "cost": "只渲染。",
+      "keywords": [
+        "小飞帮助",
+        "小飞插件帮助"
+      ],
+      "params": [],
+      "example": "#小飞帮助",
+      "moreExamples": [
+        "#小飞插件帮助",
+        "小飞帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`#` 可省**（`^#?小飞(插件)?帮助$`），但「小飞」和「帮助」之间不能插别的字",
+        "**非主人看到的条目更少** —— 分组带 `auth: 'master'` 的直接被跳过，所以「我朋友那里没有这条」通常是权限，不是版本",
+        "帮助是静态配置，可能落后于实际规则（比如 `#小飞设置` 的项名后来加过）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "渲染资源缺失（模板/字体）"
+        }
+      ],
+      "edgeCases": [
+        "`#小飞插件帮助` 与 `#小飞帮助` 完全等价"
+      ],
+      "scenarios": [
+        "装完插件想看看有哪些功能"
+      ],
+      "vs": [
+        {
+          "command": "#小飞版本",
+          "diff": "那个看版本号与更新日志，不是功能清单"
+        }
+      ],
+      "related": [
+        "#小飞版本",
+        "#小飞设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/update",
+      "command": "#小飞更新",
+      "aliases": [
+        "#小飞插件更新",
+        "#小飞强制更新",
+        "#小飞插件强制更新"
+      ],
+      "title": "更新插件本体（借 Yunzai 自带更新器）",
+      "summary": "成功后自动重启",
+      "what": "调用 `other/update.js` 的 `update` 类跑 `runUpdate('xiaofei-plugin')`；带「强制」时先 `git reset --hard`。",
+      "returns": "回复全部来自框架更新器（「更新成功 / 已经是最新 / 存在冲突」等）。",
+      "returnsDetail": "**拿不到 `other/update.js` 时**会把消息改写成 `#更新xiaofei-plugin` 然后 `return false`，交给别的插件（通常 miao）处理。",
+      "timing": "10~60 秒，有更新时 2 秒后重启。",
+      "cost": "**拉代码 + 重启整个 Yunzai**；强制模式丢本地改动。",
+      "keywords": [
+        "小飞更新",
+        "更新插件",
+        "强制更新"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "先 `git reset --hard` 再更新"
+        }
+      ],
+      "example": "#小飞更新",
+      "moreExamples": [
+        "#小飞强制更新",
+        "#小飞插件更新"
+      ],
+      "preconditions": [
+        "master",
+        "git 安装",
+        "插件是 git 拉下来的"
+      ],
+      "pitfalls": [
+        "**它是「转发器」**：真正干活的是框架的 `other/update.js`，本插件只负责把 `e` 和 `reply` 接过去",
+        "**`other/update.js` 不存在时**（老版本/精简版框架）会改写成 `#更新xiaofei-plugin` 放行 —— 这时回复来自 miao 的更新器，文案不一样",
+        "**强制更新会 `git reset --hard`**，本地改过的 `apps/` 全丢",
+        "**成功后 2 秒自动重启**（`setTimeout(() => Update_Plugin.restart(), 2000)`）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 没有 git / 不是 git 安装"
+        },
+        {
+          "symptom": "回的是「miao-plugin 更新」那种文案",
+          "cause": "走了改写放行的分支"
+        },
+        {
+          "symptom": "更新后掉线一会",
+          "cause": "设计如此：2 秒后重启"
+        }
+      ],
+      "edgeCases": [
+        "`#小飞插件更新` 与 `#小飞更新` 等价；「强制」可放在「插件」前后"
+      ],
+      "scenarios": [
+        "上游发了新版本"
+      ],
+      "vs": [
+        {
+          "command": "#小飞更新日志",
+          "diff": "那个只看不动"
+        }
+      ],
+      "related": [
+        "#小飞更新日志",
+        "#小飞版本"
+      ],
+      "risk": "a",
+      "permission": "master",
+      "implemented_in": "other/update.js（Yunzai 自带更新模块；缺失时改写成 #更新xiaofei-plugin 放行）"
+    },
+    {
+      "id": "xiaofei/version",
+      "command": "#小飞版本",
+      "aliases": [
+        "#小飞插件版本",
+        "小飞版本"
+      ],
+      "title": "插件版本图",
+      "summary": "谁都能看",
+      "what": "渲染 `help/version-info` 模板，显示 `Version.ver` 与内置 `Version.logs`。",
+      "returns": "一张版本信息图。",
+      "returnsDetail": "渲染失败时无兜底。",
+      "timing": "1~3 秒。",
+      "cost": "只渲染。",
+      "keywords": [
+        "小飞版本",
+        "插件版本"
+      ],
+      "params": [],
+      "example": "#小飞版本",
+      "moreExamples": [
+        "#小飞插件版本"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**版本号和更新日志都是代码里的静态文本**，不是 git 信息；真实提交记录要 `#小飞更新日志`",
+        "`#` 可省，但「小飞」与「版本」之间不能有空格"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "模板渲染失败"
+        }
+      ],
+      "edgeCases": [
+        "版本图会顺带显示当前 Yunzai 是 Miao 版还是 TRSS 版"
+      ],
+      "scenarios": [
+        "报 bug 前确认版本"
+      ],
+      "vs": [
+        {
+          "command": "#小飞更新日志",
+          "diff": "那个是真实 git 提交"
+        }
+      ],
+      "related": [
+        "#小飞更新日志",
+        "#小飞帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/update-log",
+      "command": "#小飞更新日志",
+      "aliases": [
+        "#小飞插件更新日志"
+      ],
+      "title": "看插件最近提交",
+      "summary": "只读",
+      "what": "同样借 `other/update.js` 的 `getLog('xiaofei-plugin')`，输出最近提交（合并转发）。",
+      "returns": "合并转发的提交列表。",
+      "returnsDetail": "拿不到 `other/update.js` 时改写成 `#更新日志xiaofei-plugin` 后 `return false` 放行。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "小飞更新日志",
+        "提交记录"
+      ],
+      "params": [],
+      "example": "#小飞更新日志",
+      "moreExamples": [
+        "#小飞插件更新日志"
+      ],
+      "preconditions": [
+        "git 安装且插件目录是 git 仓库"
+      ],
+      "pitfalls": [
+        "**不需要 master**（这条没有 `permission`）",
+        "**和 `#小飞更新` 一样是转发器**，实际输出格式取决于框架/miao 的更新器",
+        "zip 安装（没有 `.git`）时一般没反应"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 git 安装，或转发过去也没人处理"
+        }
+      ],
+      "edgeCases": [
+        "日志条数与格式由 `other/update.js` 决定，不是本插件控制"
+      ],
+      "scenarios": [
+        "更新前看看会带来什么变化"
+      ],
+      "vs": [
+        {
+          "command": "#小飞更新",
+          "diff": "那个会真拉代码并重启"
+        }
+      ],
+      "related": [
+        "#小飞更新"
+      ],
+      "risk": "q",
+      "permission": "",
+      "implemented_in": "other/update.js（Yunzai 自带更新模块；缺失时改写成 #更新日志xiaofei-plugin 放行）"
+    },
+    {
+      "id": "xiaofei/settings",
+      "command": "#小飞设置 点歌 开启",
+      "aliases": [
+        "#小飞插件设置",
+        "#小飞设置",
+        "#小飞设置默认音乐源 网易",
+        "#小飞设置天气 关闭"
+      ],
+      "title": "文本设置台（点歌/天气/戳一戳等）",
+      "summary": "改完会重载点歌",
+      "what": "改 `defSet/system` 里的开关类配置，并回一张设置面板图。项名固定 7 个：点歌、多选点歌、天气、默认音乐源、戳一戳、高品质点歌、卡片天气。",
+      "returns": "设置面板图（`admin/index` 模板），带每项当前状态。",
+      "returnsDetail": "「默认音乐源」写了不在 `QQ/网易/酷我/酷狗` 里的值 → 回「不支持的音乐源！」；其它项的值里不含「开启」也不含「关闭」→ **不保存**，只刷新面板。",
+      "timing": "1~3 秒；改「点歌」时还要动态重载点歌模块。",
+      "cost": "写 `defSet/system.yaml`；改「点歌」会重排 loader 优先级。",
+      "keywords": [
+        "小飞设置",
+        "点歌开关",
+        "默认音乐源",
+        "戳一戳"
+      ],
+      "params": [
+        {
+          "name": "项名",
+          "required": false,
+          "desc": "点歌 / 多选点歌 / 天气 / 默认音乐源 / 戳一戳 / 高品质点歌 / 卡片天气"
+        },
+        {
+          "name": "值",
+          "required": false,
+          "desc": "开关类写「开启」或「关闭」；音乐源写 QQ / 网易 / 酷我 / 酷狗"
+        }
+      ],
+      "example": "#小飞设置 点歌 开启",
+      "moreExamples": [
+        "#小飞设置默认音乐源 网易",
+        "#小飞设置天气 关闭",
+        "#小飞设置"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**值必须含「关闭」才是关**：写「关」「false」「0」都进不了 if 分支，**等于不保存**（这条比别的插件更严格，别的插件至少会当开启）",
+        "**改「点歌」会动态重载点歌模块**：`import('./点歌.js?${Date.now()}')` 绕缓存 + 改 `loader.priority` 里的 priority，然后重排优先级",
+        "**项名写错只是不匹配，不会报错** —— 正则里项名是可选的，写错就退化成「只看面板」",
+        "**「默认音乐源」只认 4 个词**，写「网易云」不行（要写「网易」）",
+        "写的是 `defSet/` 里的默认配置，不是用户覆盖配置"
+      ],
+      "failures": [
+        {
+          "symptom": "回「不支持的音乐源！」",
+          "cause": "写了 QQ/网易/酷我/酷狗 之外的值"
+        },
+        {
+          "symptom": "回了面板但状态没变",
+          "cause": "值里没有「开启」或「关闭」两个字"
+        },
+        {
+          "symptom": "不是 master 发了没反应",
+          "cause": "`permission: 'master'`"
+        }
+      ],
+      "edgeCases": [
+        "不写项名（`#小飞设置`）只渲染面板",
+        "「卡片天气」影响天气指令的出图形式，和「天气」开关是两回事"
+      ],
+      "scenarios": [
+        "不想开锅巴，想用指令开关点歌",
+        "把默认音乐源从 QQ 换成网易"
+      ],
+      "vs": [
+        {
+          "command": "#点歌ck检查",
+          "diff": "那个查音乐平台 ck 状态，这个只改开关"
+        }
+      ],
+      "related": [
+        "#点歌 晴天",
+        "#北京天气",
+        "#小飞帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaofei/weather",
+      "command": "#北京天气",
+      "aliases": [
+        "北京天气",
+        "#小飞上海天气",
+        "天气",
+        "#天气"
+      ],
+      "title": "地区天气（截腾讯天气网页）",
+      "summary": "正则极宽",
+      "what": "把「XX天气」里的地区名拿去腾讯 `wis.qq.com` 匹配 area_id，再用 puppeteer 截 `tianqi.qq.com` 的页面发回来。",
+      "returns": "一张天气截图。",
+      "returnsDetail": "没写地区时（只发 `#天气`）回「格式：#地区天气\\n例如：#北京天气」；地区匹配不到回「没有查询到该地区的天气！」；截图失败回「[小飞插件]天气截图失败！」。**这三个提示都只在消息里带 `#` 时才发**。",
+      "timing": "5~20 秒（要开浏览器截图）。",
+      "cost": "起 puppeteer，占内存。",
+      "keywords": [
+        "天气",
+        "北京天气",
+        "查天气"
+      ],
+      "params": [
+        {
+          "name": "地区",
+          "required": true,
+          "desc": "省/市/区任一粒度，可以带空格分多级"
+        }
+      ],
+      "example": "#北京天气",
+      "moreExamples": [
+        "北京天气",
+        "#上海浦东天气",
+        "#小飞广州天气"
+      ],
+      "preconditions": [
+        "能访问 `wis.qq.com` 与 `tianqi.qq.com`",
+        "puppeteer 可用"
+      ],
+      "pitfalls": [
+        "**正则 `^#?(小飞)?(.*)天气$` 极宽** —— 任何以「天气」结尾的消息都会进来（「今天天气」「明天天气」），没带 `#` 时**失败也不会有任何提示**",
+        "**不带 `#` 也能用**，但所有错误提示都要求 `msg.includes('#')`，所以「默默失败」是常态",
+        "**会误伤别的插件的天气指令**：priority 默认 2000（很靠后），但把 `setting.weather` 设成 true 后 **priority 变成 10**，就会抢在前面",
+        "**地区解析靠腾讯的匹配接口**，写得太细（小区名）会匹配不到",
+        "截图失败会 `return false`，把消息让给后面的插件 —— 但此时可能已经回过「截图失败」了"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "没带 `#`，错误提示被抑制"
+        },
+        {
+          "symptom": "回「没有查询到该地区的天气！」",
+          "cause": "地区名腾讯那边匹配不到"
+        },
+        {
+          "symptom": "回「天气截图失败！」",
+          "cause": "puppeteer 起不来 / 打不开 tianqi.qq.com"
+        }
+      ],
+      "edgeCases": [
+        "`#小飞设置...` 这类消息会先被排除（`/^#?小飞设置.*$/` 直接 `return false`）",
+        "同一个地区连续查没有缓存，每次都重新截图"
+      ],
+      "scenarios": [
+        "出门前看天气"
+      ],
+      "vs": [
+        {
+          "command": "#小飞设置天气 开启",
+          "diff": "那个是打开/关闭这个功能的开关与优先级"
+        }
+      ],
+      "related": [
+        "#小飞设置 天气 开启"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/impersonate",
+      "command": "#代12345678 大家好",
+      "aliases": [
+        "#代@某人 大家好",
+        "#代12345678",
+        "代12345678 测试"
+      ],
+      "title": "以指定 QQ 的身份发言（伪造消息）",
+      "summary": "只给 master",
+      "what": "构造一个假的 `e`（`user_id`/`sender`/`member` 都换成目标 QQ），再 `bot.em('message', ...)` 重新投递，让这条消息**以别人的身份**走完整个分发流程。",
+      "returns": "没有自己的回复；后续回复来自被触发的那些插件。",
+      "returnsDetail": "**没有 @ 也没有 `代<数字>` 时直接 `return`**，一句话都不回。",
+      "timing": "取决于被触发的插件。",
+      "cost": "**相当于替别人发消息**：会触发其它插件的全部逻辑（签到、点歌、绑定都算那个人的）。",
+      "keywords": [
+        "代发言",
+        "代替发言",
+        "代XX说话"
+      ],
+      "params": [
+        {
+          "name": "目标",
+          "required": true,
+          "desc": "`@某人` 或直接写 QQ 号（`#代12345678 内容`）"
+        },
+        {
+          "name": "内容",
+          "required": false,
+          "desc": "要替他说的话；后续消息段（图片等）会一起带过去"
+        }
+      ],
+      "example": "#代12345678 大家好",
+      "moreExamples": [
+        "#代@小明 晚安"
+      ],
+      "preconditions": [
+        "master（函数里 `if (!this.e.isMaster) return`）"
+      ],
+      "pitfalls": [
+        "**不是 master 时静默** —— 返回 undefined，没有任何提示",
+        "**它会清掉群 CD**（`delete loader.groupGlobalCD[group_id]`、`delete loader.groupCD[group_id]`），所以能绕过别的插件的冷却",
+        "**伪造事件里 `isMaster` 被强制设成 false**，但 `user_id` 是目标 QQ —— 所以被触发的插件会当成「那个普通用户」在处理",
+        "**正则 `^#?代(.*)` 极宽**，`#代码`、`#代办` 之类也会进来，只是没 @／没数字就退出",
+        "**等于替别人操作账号**：签到、绑定 ck、买东西都会记在对方头上"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 没 @ 又没写 QQ 号"
+        },
+        {
+          "symptom": "消息发出去了但没触发任何插件",
+          "cause": "内容本身不匹配任何规则"
+        }
+      ],
+      "edgeCases": [
+        "目标 QQ 不在群里时 `member` 为空，`sender` 退化成 `{card: qq, nickname: qq}`",
+        "`bot.em` 抛错时会 fallback 到 `loader.deal({...new_e})`"
+      ],
+      "scenarios": [
+        "测试某个插件对普通用户的响应",
+        "替群友补一条指令"
+      ],
+      "vs": [
+        {
+          "command": "#小飞更新",
+          "diff": "无关，只是提醒这条权限很高"
+        }
+      ],
+      "related": [
+        "#小飞帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaofei/bot-violation",
+      "command": "#机器人违规记录",
+      "aliases": [
+        "#bot违规记录",
+        "#机器人违规记录查询",
+        "#机器人违规记录10",
+        "#bot违规记录5"
+      ],
+      "title": "查本 Bot 的 QQ 违规记录",
+      "summary": "要 ICQQ",
+      "what": "用 Bot 自己的 uin 走腾讯的违规记录接口，把历史违规（含冻结原因、详情）做成合并转发。",
+      "returns": "合并转发「本账号存在N条历史违规记录」。",
+      "returnsDetail": "没有违规回「本账号没有违规记录！」；非 ICQQ 环境回「非 ICQQ 不支持，请使用 #我的违规记录 查询」；接口报错回「查询失败[retcode]！」。",
+      "timing": "3~10 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "机器人违规记录",
+        "bot违规",
+        "查违规"
+      ],
+      "params": [
+        {
+          "name": "条数",
+          "required": false,
+          "desc": "写在最后，纯数字，默认 20"
+        }
+      ],
+      "example": "#机器人违规记录",
+      "moreExamples": [
+        "#bot违规记录10",
+        "#机器人违规记录查询"
+      ],
+      "preconditions": [
+        "master",
+        "**ICQQ 协议**（非 ICQQ 直接提示不支持）"
+      ],
+      "pitfalls": [
+        "**只有 ICQQ 能查 Bot 自己**，其它协议（OneBot/NapCat 等）会回「非 ICQQ 不支持」",
+        "**「机器人/ bot / Bot / BOT」四种写法都认**（正则里逐个列出），但「机器人」以外的写法也要求带 `#`",
+        "**条数写在最末尾且是纯数字**才生效，默认 20",
+        "结果是「本账号」维度的，不是按群"
+      ],
+      "failures": [
+        {
+          "symptom": "回「非 ICQQ 不支持…」",
+          "cause": "协议不是 ICQQ"
+        },
+        {
+          "symptom": "回「本账号没有违规记录！」",
+          "cause": "确实没有（好事）"
+        },
+        {
+          "symptom": "回「查询失败[retcode]！」",
+          "cause": "接口风控 / 需要重新授权"
+        }
+      ],
+      "edgeCases": [
+        "`#我的违规记录` 与这条共用同一个函数，靠消息里有没有「我的」区分查谁"
+      ],
+      "scenarios": [
+        "Bot 突然被限制，想确认是不是有违规记录"
+      ],
+      "vs": [
+        {
+          "command": "#我的违规记录",
+          "diff": "那条查发起人自己的账号，需要扫码授权"
+        }
+      ],
+      "related": [
+        "#我的违规记录"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xiaofei/my-violation",
+      "command": "#我的违规记录",
+      "aliases": [
+        "#我的违规记录查询",
+        "#我的违规记录10"
+      ],
+      "title": "查自己的 QQ 违规记录（要扫码授权）",
+      "summary": "1 分钟内授权",
+      "what": "先向 `q.qq.com` 要一个登录 code，回一条 `h5.qzone.qq.com/qqq/code/...` 授权链接，用户点开确认后轮询扫码状态，拿到 ticket 再查违规记录。",
+      "returns": "先回「请在一分钟内通过以下链接授权登录！」+ 链接，再回合并转发「账号[QQ]存在N条历史违规记录」。",
+      "returnsDetail": "超时回「授权登录超时！」；code 拿不到回「获取code失败！」；换 ticket 失败回「code授权登录失败[retcode]，请重试！」；没违规回「账号[QQ]没有违规记录！」。",
+      "timing": "**最长 60 秒**（等授权），之后 3~10 秒查询。",
+      "cost": "只读；授权 code 会缓存 **10 分钟**，期间再查不用重新扫码。",
+      "keywords": [
+        "我的违规记录",
+        "查自己违规",
+        "QQ违规"
+      ],
+      "params": [
+        {
+          "name": "条数",
+          "required": false,
+          "desc": "纯数字，默认 20"
+        }
+      ],
+      "example": "#我的违规记录",
+      "moreExamples": [
+        "#我的违规记录10"
+      ],
+      "preconditions": [
+        "能打开 `h5.qzone.qq.com` 的授权页",
+        "**1 分钟内完成授权**"
+      ],
+      "pitfalls": [
+        "**必须在 1 分钟内点链接确认**，超时只能重发指令",
+        "**授权是「你的 QQ 账号」的授权**，不是 Bot 的 —— 链接要在手机 QQ 里打开",
+        "**code 缓存 10 分钟**（按 uin 存内存），期间重复查询不会重新弹链接；进程重启就没了",
+        "**同一时间只能有一个等待中的授权**：再发一次会 `clearInterval` 掉上一个（`login_list[uin] != time` 判定）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「授权登录超时！」",
+          "cause": "60 秒内没点链接"
+        },
+        {
+          "symptom": "回「获取code失败！」",
+          "cause": "腾讯接口异常/被风控"
+        },
+        {
+          "symptom": "回「code授权登录失败[x]」",
+          "cause": "授权已过期或被拒"
+        }
+      ],
+      "edgeCases": [
+        "群里发这条会把授权链接发到群里（链接本身是给发起人的）"
+      ],
+      "scenarios": [
+        "想确认自己账号有没有被记违规"
+      ],
+      "vs": [
+        {
+          "command": "#机器人违规记录",
+          "diff": "那个查 Bot 自己，不用授权但要 ICQQ"
+        }
+      ],
+      "related": [
+        "#机器人违规记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/register-time",
+      "command": "#注册时间",
+      "aliases": [
+        "*注册时间",
+        "%注册时间",
+        "#星铁注册时间",
+        "#绝区零注册时间",
+        "#刷新原神注册时间",
+        "#我的注册时间"
+      ],
+      "title": "查游戏账号注册时间（按符号分游戏）",
+      "summary": "符号区分游戏",
+      "what": "用已绑定的 ck 查该游戏的账号注册时间、UID、创建时间等信息，多账号逐条列出。",
+      "returns": "一段文本：`---原神注册时间---` + 每个账号一段 + 末尾提示「如需更新数据，请发送【#刷新原神注册时间】」。",
+      "returnsDetail": "没绑 ck 回「请先绑定Cookie！\\r\\n发送【ck帮助】查看配置教程」；取 ck 失败回「获取Cookie失败！」。",
+      "timing": "3~10 秒（多账号逐个查）。",
+      "cost": "打米游社接口；结果会写本地 json 缓存（按 QQ + 游戏）。",
+      "keywords": [
+        "注册时间",
+        "查注册时间",
+        "账号注册"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": true,
+          "desc": "**用符号区分**：`#`/无 = 原神，`*` = 星铁，`%` = 绝区零"
+        },
+        {
+          "name": "刷新",
+          "required": false,
+          "desc": "加「刷新」忽略缓存重新查"
+        }
+      ],
+      "example": "#注册时间",
+      "moreExamples": [
+        "*注册时间",
+        "%注册时间",
+        "#刷新原神注册时间",
+        "#星铁注册时间"
+      ],
+      "preconditions": [
+        "已绑定对应游戏的 ck"
+      ],
+      "pitfalls": [
+        "**游戏不是靠文字区分，而是靠符号**：`*` 星铁、`%` 绝区零，`#` 或不写是原神 —— 写 `#星铁注册时间` 也能过正则，但内部仍按符号判断，**可能查成原神**",
+        "**默认读缓存**，数据不会自动更新，要显式加「刷新」",
+        "**多账号会一次全列出来**，号多时消息很长",
+        "**正则里星铁/绝区零出现了两次**（`(星铁|绝区零)?...(原神|星铁|绝区零)?`），所以 `#星铁注册时间` 这种写法是能过的，只是判定仍看符号"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请先绑定Cookie！」",
+          "cause": "该游戏没绑 ck"
+        },
+        {
+          "symptom": "数据是旧的",
+          "cause": "读的是本地缓存，要加「刷新」"
+        },
+        {
+          "symptom": "查星铁却出了原神数据",
+          "cause": "没用 `*` 符号"
+        }
+      ],
+      "edgeCases": [
+        "`#我的注册时间` 里的「我的」不影响结果（都是查自己的绑定）",
+        "缓存文件按 `QQ + 游戏` 分，换号查不会串"
+      ],
+      "scenarios": [
+        "想知道自己号是哪天注册的"
+      ],
+      "vs": [
+        {
+          "command": "#星铁纪念册",
+          "diff": "那个查纪念册余量，不是注册时间"
+        }
+      ],
+      "related": [
+        "#星铁纪念册"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/art-set",
+      "command": "#星铁纪念册",
+      "aliases": [
+        "#纪念册"
+      ],
+      "title": "星铁纪念册余量（贺礼/抽奖/互助）",
+      "summary": "只返回第一个账号",
+      "what": "登录星铁纪念册活动页，查贺礼、抽奖、互助各自的剩余额度与截止时间。",
+      "returns": "一段文本：贺礼 x/220w、抽奖 x/(15+额外)w、互助 x/5w、时间。",
+      "returnsDetail": "拿不到数据回「获取数据失败」；没绑星铁 ck 回「请先绑定Cookie！」。",
+      "timing": "5~15 秒。",
+      "cost": "打星铁活动接口。",
+      "keywords": [
+        "纪念册",
+        "星铁纪念册",
+        "贺礼",
+        "互助"
+      ],
+      "params": [],
+      "example": "#星铁纪念册",
+      "moreExamples": [
+        "#纪念册"
+      ],
+      "preconditions": [
+        "已绑定星铁 ck"
+      ],
+      "pitfalls": [
+        "**只出第一个登录成功的账号**（循环里有 `break`），多号用户看不到其它号的数据",
+        "**登录失败会静默跳过**，全失败才回「获取数据失败」",
+        "**这是活动期接口**，活动结束后大概率失效"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取数据失败」",
+          "cause": "活动已结束 / ck 失效 / 接口改版"
+        },
+        {
+          "symptom": "回「请先绑定Cookie！」",
+          "cause": "没绑星铁 ck"
+        }
+      ],
+      "edgeCases": [
+        "`#纪念册` 不带「星铁」也认（`(星铁)?` 可选），查的仍然是星铁"
+      ],
+      "scenarios": [
+        "活动期间看还能领多少贺礼"
+      ],
+      "vs": [
+        {
+          "command": "#注册时间",
+          "diff": "那个查账号注册时间"
+        }
+      ],
+      "related": [
+        "#注册时间"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/music",
+      "command": "#点歌 晴天",
+      "aliases": [
+        "#QQ点歌 晴天",
+        "#网易云点歌 晴天",
+        "#酷我点歌 晴天",
+        "#酷狗点歌 晴天",
+        "#来一首 晴天",
+        "#播放 晴天",
+        "点歌 晴天"
+      ],
+      "title": "点歌（直接发第一首）",
+      "summary": "默认源可配",
+      "what": "按关键词搜歌，把结果做成音乐分享卡片发出；只取第一条。",
+      "returns": "一张音乐分享卡片（JSON 卡片消息）。",
+      "returnsDetail": "没写歌名时回一段说明「------点歌说明------\\r\\n格式：#点歌 #多选点歌\\r\\n支持：QQ、网易、酷我、酷狗\\r\\n例如：#QQ点歌 #多选QQ点歌」。",
+      "timing": "3~10 秒。",
+      "cost": "打对应音乐平台接口；QQ 音乐走 ck（失效要 `#提交音乐ck`）。",
+      "keywords": [
+        "点歌",
+        "点播",
+        "播放",
+        "来一首"
+      ],
+      "params": [
+        {
+          "name": "音乐源",
+          "required": false,
+          "desc": "哔哩哔哩/哔哩/网易云/网易/酷我/酷狗/QQ/qq，写在「点歌」前面；省略用 `setting.music_source`（默认 QQ）"
+        },
+        {
+          "name": "歌名",
+          "required": true,
+          "desc": "点歌后面跟着的内容"
+        }
+      ],
+      "example": "#点歌 晴天",
+      "moreExamples": [
+        "#网易云点歌 晴天",
+        "#QQ点歌 稻香",
+        "#来一首 晴天"
+      ],
+      "preconditions": [
+        "`setting.music` 开关（关了优先级降到 2000）；对应平台的 ck（QQ/网易）"
+      ],
+      "pitfalls": [
+        "**动作词很多**：点播音乐/点播/点歌/播放/放一首/来一首 都算，但**歌名不能省**",
+        "**音乐源写在动作词前面**才算指定源；写在后面会被当成歌名的一部分",
+        "**`setting.is_list` 打开后，这条会自动变成多选**（相当于强制 `#多选点歌`）",
+        "**QQ 音乐 ck 失效时要点歌失败**，先用 `#点歌ck检查` 看一眼",
+        "**戳一戳点歌**：`setting.poke` 打开后戳机器人会触发 `#小飞来首歌`（8 秒 CD）"
+      ],
+      "failures": [
+        {
+          "symptom": "回点歌说明",
+          "cause": "歌名没写"
+        },
+        {
+          "symptom": "点歌成功但没声音/卡片打不开",
+          "cause": "平台版权或 ck 失效"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "不匹配 `music_reg`（动作词不在词表里）"
+        }
+      ],
+      "edgeCases": [
+        "`#放首歌` / `#来首歌` 是特例：会走「推荐」而不是搜索（见另一条）",
+        "频道（guild）里走文字列表而不是卡片"
+      ],
+      "scenarios": [
+        "随便点一首歌"
+      ],
+      "vs": [
+        {
+          "command": "#多选点歌 晴天",
+          "diff": "那个出列表让你选，这条直接发第一首"
+        },
+        {
+          "command": "#个性电台",
+          "diff": "那个按你口味推荐，不是搜索"
+        }
+      ],
+      "related": [
+        "#多选点歌 晴天",
+        "#点歌ck检查",
+        "#提交音乐ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/music-list",
+      "command": "#多选点歌 晴天",
+      "aliases": [
+        "#多选网易云点歌 晴天",
+        "#多选QQ点歌 晴天",
+        "#下一页"
+      ],
+      "title": "多选点歌（列表图 + 序号选择）",
+      "summary": "3 分钟有效",
+      "what": "搜出 20 条/页的列表图，之后发序号（或带「语音/歌词/下载音乐」）来选；`#下一页` 翻页。",
+      "returns": "列表图（标题带「[第N页]」），选中后发对应歌曲。",
+      "returnsDetail": "列表缓存超过 3 分钟失效，此时发序号**没反应**；翻页时上一条列表会被撤回。",
+      "timing": "首次 5~15 秒；选歌 2~5 秒。",
+      "cost": "列表图渲染 + 每次选择都打一次接口。",
+      "keywords": [
+        "多选点歌",
+        "点歌列表",
+        "下一页"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": false,
+          "desc": "选第几首；序号从列表编号来（跨页连续）"
+        },
+        {
+          "name": "语音 / 歌词 / 下载音乐",
+          "required": false,
+          "desc": "写在序号前，改变输出形式"
+        }
+      ],
+      "example": "#多选点歌 晴天",
+      "moreExamples": [
+        "#多选网易云点歌 晴天",
+        "#下一页"
+      ],
+      "preconditions": [
+        "同 `#点歌`"
+      ],
+      "pitfalls": [
+        "**列表缓存只有 3 分钟**（`_music_timeout = 1000*60*3`），超时再发序号完全没反应",
+        "**`#下一页` 依赖上一次的列表**：没有缓存或已过 3 分钟时直接 `return false`",
+        "**翻页会撤回上一条列表图**（`recallMusicMsg`），聊天记录里只留最新一页",
+        "**`#语音` / `#歌词` / `#下载音乐` 不写序号**时默认取「当前选中的那首」",
+        "**`#高清语音` 会提示「PCQQ不要播放」**，因为高清语音在 PC 端会无声"
+      ],
+      "failures": [
+        {
+          "symptom": "发序号没反应",
+          "cause": "列表超过 3 分钟，或序号越界"
+        },
+        {
+          "symptom": "`#下一页` 没反应",
+          "cause": "没有可续的列表缓存"
+        },
+        {
+          "symptom": "回「获取下载地址失败！」",
+          "cause": "该平台没给直链（版权限制）"
+        }
+      ],
+      "edgeCases": [
+        "列表里只有一首歌时，直接发序号会被 `data.data.length < 2` 判掉（除非带语音/歌词指令）",
+        "`setting.is_list` 打开后不用写「多选」，`#点歌` 就是多选"
+      ],
+      "scenarios": [
+        "想先看看搜索结果再挑一首"
+      ],
+      "vs": [
+        {
+          "command": "#点歌 晴天",
+          "diff": "那条直接发第一首"
+        }
+      ],
+      "related": [
+        "#点歌 晴天",
+        "#个性电台"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/music-special",
+      "command": "#个性电台",
+      "aliases": [
+        "#每日推荐",
+        "#日推",
+        "#每日30首",
+        "#我的收藏",
+        "#我喜欢的歌",
+        "#我的收藏2",
+        "#来首歌",
+        "#放首歌"
+      ],
+      "title": "个性电台 / 每日推荐 / 我的收藏 / 随机一首",
+      "summary": "都走 QQ 音乐",
+      "what": "这几个不是搜索，而是按 QQ 音乐账号的数据出内容：个性电台按听歌口味推荐 5 首、每日推荐 30 首、我的收藏翻页、`来首歌` 随机一首。",
+      "returns": "多条音乐卡片 + （推荐/收藏时）一段标题，标题里带你的群昵称。",
+      "returnsDetail": "`我的收藏` 后面带非数字内容时**直接 `return true` 静默**；没绑 QQ 音乐 ck 时列表为空或报错。",
+      "timing": "5~20 秒（要拉 5~30 首并逐首转卡片）。",
+      "cost": "批量打 QQ 音乐接口，**最重的一条**。",
+      "keywords": [
+        "个性电台",
+        "每日推荐",
+        "日推",
+        "我的收藏",
+        "来首歌"
+      ],
+      "params": [
+        {
+          "name": "页码",
+          "required": false,
+          "desc": "只有「我的收藏 / 我喜欢的歌」支持页码，写在后面"
+        }
+      ],
+      "example": "#个性电台",
+      "moreExamples": [
+        "#每日推荐",
+        "#我的收藏",
+        "#来首歌"
+      ],
+      "preconditions": [
+        "**QQ 音乐 ck**（这几个功能全走 QQ 音乐，不认其它源）"
+      ],
+      "pitfalls": [
+        "**全部走 QQ 音乐**：写 `#网易云个性电台` 也还是 QQ 音乐的数据（源被代码写死）",
+        "**`#来首歌` / `#放首歌` 是特例**：会转成「推荐」且只要 1 首（`page_size = 1`），不是搜索「歌」这个字",
+        "**`#我的收藏` 带非数字会静默返回**（`if (search != '' && !page_reg) return true`），不报错",
+        "**`#每日推荐` 带歌名会静默返回**（`if (search != '') return true`）",
+        "会先回一句「请稍候。。。」（`#来首歌` 除外）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "带多余参数（如 `#每日推荐 周杰伦`）被静默吞掉，或 QQ 音乐 ck 失效"
+        },
+        {
+          "symptom": "列表是空的",
+          "cause": "QQ 音乐账号没有听歌记录 / 收藏为空"
+        }
+      ],
+      "edgeCases": [
+        "标题里会用你的群名片（`getGroupMemberInfo` 拿不到时退化成昵称/QQ）",
+        "收藏翻页没有 3 分钟限制（每次重新请求）"
+      ],
+      "scenarios": [
+        "不知道听什么，让 Bot 推荐",
+        "看看自己收藏了哪些歌"
+      ],
+      "vs": [
+        {
+          "command": "#点歌 晴天",
+          "diff": "那个是搜索指定歌名"
+        }
+      ],
+      "related": [
+        "#点歌 晴天",
+        "#多选点歌 晴天",
+        "#点歌ck检查"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaofei/music-ck-check",
+      "command": "#点歌ck检查",
+      "aliases": [
+        "#音乐ck检查",
+        "#点歌cookie检查",
+        "#点歌ck状态",
+        "#音乐ck状态"
+      ],
+      "title": "看 QQ 音乐 / 网易云 ck 状态",
+      "summary": "群里会打码",
+      "what": "分别用 QQ 音乐与网易云的 ck 换用户信息，回账号昵称、ID、是否 VIP、ck 是否失效。",
+      "returns": "合并转发「---音乐ck状态---」+ 两个平台各自的状态。",
+      "returnsDetail": "没设置 ck 回「状态：未设置ck」；换了信息失败回「状态：ck已失效」。",
+      "timing": "3~8 秒。",
+      "cost": "打两个平台的用户信息接口。",
+      "keywords": [
+        "点歌ck检查",
+        "音乐ck",
+        "ck 状态"
+      ],
+      "params": [],
+      "example": "#点歌ck检查",
+      "moreExamples": [
+        "#音乐ck检查",
+        "#点歌ck状态"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**群里发时账号 ID 会打码**（前 3 + `***` + 后 3），私聊才是完整 ID",
+        "**它不修 ck**，只报告状态；要换 ck 用 `#提交音乐ck`",
+        "**QQ 音乐 ck 会在后台自动刷新**（12 小时后尝试 refresh，失败 3 次判失效），所以「已失效」可能是刷新次数用完了"
+      ],
+      "failures": [
+        {
+          "symptom": "回「状态：未设置ck」",
+          "cause": "还没提交过该平台 ck"
+        },
+        {
+          "symptom": "回「状态：ck已失效」",
+          "cause": "ck 过期或 refresh 次数耗尽"
+        }
+      ],
+      "edgeCases": [
+        "网易云只要 `MUSIC_U` 一个字段就能用，QQ 音乐要 `wxunionid` 或 `psrf_qqunionid`"
+      ],
+      "scenarios": [
+        "点歌老是失败，先确认 ck"
+      ],
+      "vs": [
+        {
+          "command": "#提交音乐ck",
+          "diff": "那个是写入/更新 ck"
+        }
+      ],
+      "related": [
+        "#提交音乐ck",
+        "#点歌 晴天"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xiaofei/music-ck-submit",
+      "command": "#提交音乐ck MUSIC_U=xxx;",
+      "aliases": [
+        "#提交点歌ck MUSIC_U=xxx;",
+        "#提交音乐ck uin=xxx; qm_keyst=xxx;",
+        "#提交音乐ck"
+      ],
+      "title": "提交 QQ 音乐 / 网易云 ck",
+      "summary": "自动识别平台",
+      "what": "把 cookie 串粘在指令后面提交：含 `MUSIC_U` 走网易云，含 `wxunionid` / `psrf_qqunionid` 走 QQ 音乐，校验通过后写入 `config/music/cookies`。",
+      "returns": "「网易云音乐ck提交成功！\\n账号：xx[xx]\\n是否VIP：是/否」或「QQ音乐ck提交成功！…」。",
+      "returnsDetail": "校验失败回「xx ck不正确或已失效，请重新获取！」；解析异常回「ck解析出错，请检查输入是否正确！」；**不带 ck 时回一段格式说明**。",
+      "timing": "3~8 秒。",
+      "cost": "**写入音乐平台凭据**；QQ 音乐提交后会立刻触发一次 token 刷新。",
+      "keywords": [
+        "提交音乐ck",
+        "提交点歌ck",
+        "换ck",
+        "音乐cookie"
+      ],
+      "params": [
+        {
+          "name": "ck",
+          "required": true,
+          "desc": "完整 cookie 串，含引号会被自动去掉"
+        }
+      ],
+      "example": "#提交音乐ck MUSIC_U=abc123;",
+      "moreExamples": [
+        "#提交点歌ck uin=123; qm_keyst=xxx;"
+      ],
+      "preconditions": [
+        "master",
+        "对应平台的账号"
+      ],
+      "pitfalls": [
+        "**平台靠字段自动判断**：有 `MUSIC_U` 就是网易云；有 `wxunionid`/`psrf_qqunionid` 就是 QQ 音乐；两者都没有就落到「格式说明」分支",
+        "**会先校验再保存**，校验不过不会覆盖旧 ck",
+        "**QQ 音乐提交后把 `psrf_musickey_createtime` 重置成 0**，等于强制马上刷新一次 token",
+        "**ck 是明文存在 `config/music/cookies` 里**，注意别外传"
+      ],
+      "failures": [
+        {
+          "symptom": "回「ck不正确或已失效」",
+          "cause": "ck 过期，或复制不全"
+        },
+        {
+          "symptom": "回「ck解析出错…」",
+          "cause": "格式不是 `k=v; k=v` 这种"
+        },
+        {
+          "symptom": "回一大段格式说明",
+          "cause": "没带 ck，或字段认不出平台"
+        }
+      ],
+      "edgeCases": [
+        "cookie 串里的单双引号会被自动 strip 掉，直接粘带引号的也能用"
+      ],
+      "scenarios": [
+        "QQ 音乐 ck 过期，点歌失败"
+      ],
+      "vs": [
+        {
+          "command": "#点歌ck检查",
+          "diff": "那个只查状态"
+        }
+      ],
+      "related": [
+        "#点歌ck检查",
+        "#点歌 晴天"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaofei/get-stoken",
+      "command": "#获取stoken",
+      "aliases": [],
+      "title": "导出已绑账号的 stoken（私聊）",
+      "summary": "只认私聊",
+      "what": "把当前用户已绑定的每个账号的 `login_ticket` 拿去换 stoken，逐账号做成合并转发导出。",
+      "returns": "合并转发，每段「uid：xxx\\ncookie：<stoken串>」。",
+      "returnsDetail": "群里发回「请私聊发送该指令！」；没有可导出的账号回「未找到可导出stoken的账号」；单个账号失败会在正文里写「获取stoken失败，login_ticket已失效！」。",
+      "timing": "3~15 秒（每个账号探一次服务器）。",
+      "cost": "**导出的是账号凭据**，泄露等于交出账号。",
+      "keywords": [
+        "获取stoken",
+        "导出stoken",
+        "stoken"
+      ],
+      "params": [],
+      "example": "#获取stoken",
+      "moreExamples": [
+        "#获取stoken"
+      ],
+      "preconditions": [
+        "**私聊**",
+        "已绑定米哈游账号（有 `login_ticket`）"
+      ],
+      "pitfalls": [
+        "**只在私聊生效**，群里发只会回一句「请私聊发送该指令！」",
+        "**依赖 `login_ticket`**：只绑了 cookie_token 没有 login_ticket 的账号导不出来",
+        "**导出的 cookie 是账号凭据**，别贴到群里或公开仓库",
+        "**它只导出，不绑定**；要绑定是另一条路（把通行证 cookie 私聊发给 Bot 会自动转绑）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请私聊发送该指令！」",
+          "cause": "在群里发的"
+        },
+        {
+          "symptom": "回「未找到可导出stoken的账号」",
+          "cause": "一个 uid 都没有"
+        },
+        {
+          "symptom": "正文里写「login_ticket已失效」",
+          "cause": "通行证登录态过期，要重新登录取 cookie"
+        }
+      ],
+      "edgeCases": [
+        "私聊直接发**通行证 cookie**（含 `login_ticket`）时会自动走「探测服务器 → 换 stoken → 换 cookie_token → 触发官方绑定」流程，不需要这条指令",
+        "多账号会一次全导出"
+      ],
+      "scenarios": [
+        "想把账号迁移到别的 Bot"
+      ],
+      "vs": [
+        {
+          "command": "#提交音乐ck",
+          "diff": "那个是音乐平台 ck，这个是米哈游通行证"
+        }
+      ],
+      "related": [
+        "#注册时间"
+      ],
+      "risk": "a",
+      "permission": ""
+    }
+  ]
+}

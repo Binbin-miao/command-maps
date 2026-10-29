@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 36,
-  "updated": "2026-10-29T00:52:00.000Z",
+  "revision": 37,
+  "updated": "2026-10-29T00:52:30.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -254,6 +254,20 @@
       "sha256": "ff775c1d8923a01971528c0545d0d0cde7e55e369b418b0cfdaa2a46eeb5c71c",
       "bytes": 50625,
       "used": 0
+    },
+    "xiaofei-plugin": {
+      "file": "maps/xiaofei-plugin.json",
+      "display": "小飞插件（xiaofei）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 17,
+      "default_off_count": 0,
+      "delegated_count": 2,
+      "fingerprint": "53761647614b",
+      "sha256": "c6319b4fea5ea85a36fbea1c3e9ed66cf4218ede077e57a57040713f5c092bcd",
+      "bytes": 47820,
+      "used": 0
     }
   },
   "packages": {
@@ -416,6 +430,15 @@
       "command_count": 20,
       "units": [
         "ws-plugin"
+      ],
+      "used": 0
+    },
+    "xiaofei-plugin": {
+      "display": "小飞插件（xiaofei）",
+      "category": "工具",
+      "command_count": 17,
+      "units": [
+        "xiaofei-plugin"
       ],
       "used": 0
     }
