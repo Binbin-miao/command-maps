@@ -1,0 +1,2331 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "xiaoyao-cvs-plugin",
+    "display": "逍遥图鉴",
+    "category": "工具",
+    "summary": "米游社一站式：CK/stoken 绑定与刷新、米游社/云原神签到、体力与推送、原神/星铁图鉴、抽卡与充值记录、素材地图、扫码与账密登录、原神充值",
+    "homepage": "https://gitee.com/realhuhu/xiaoyao-cvs-plugin",
+    "notes": "主类注册了一条 `.+` 的 catch-all，所有消息先过它再按 `apps/index.js` 的 `rule` 对象分派，所有子规则默认 priority 50。**大量开关放在 `components/cfg.json`**：`sys.help`（帮助）、`sys.Note`（体力）、`Atlas.all`（图鉴）、`sr.Search`（星铁图鉴）、`mhy.qrcode`（扫码登录范围）。这些默认都是关的，用 `#图鉴设置` 打开。多条规则正则极其宽泛（`stoken=`、`login_ticket=`、`ct`、`账号…密码…`、`X在哪里`、`动态|幻影`），会接住任何含这些片段的消息。",
+    "interactsWith": [
+      "miao-plugin / genshin（#体力、#抽卡记录 同域，会互相抢）",
+      "StarRail-plugin（星铁图鉴与抽卡记录重叠）",
+      "TRSS-Yunzai 的 puppeteer 渲染"
+    ],
+    "batches": {
+      "covered": [
+        "总入口与分派",
+        "帮助与版本",
+        "原神图鉴",
+        "星铁图鉴",
+        "角色动态幻影",
+        "体力与推送",
+        "体力模板",
+        "CK/stoken 绑定与刷新",
+        "抽卡与充值记录",
+        "米游社/云原神签到",
+        "图鉴素材与插件更新",
+        "素材地图",
+        "扫码与账密登录",
+        "原神充值"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "xiaoyao/dispatch",
+      "command": "（任意消息）",
+      "aliases": [],
+      "title": "总入口：一条 `.` 吃掉所有消息再分派",
+      "summary": "插件内 34 条规则由它统一分发",
+      "what": "插件主类注册了一条 `.+` 的 catch-all 规则，所有消息先进这里，再按 `apps/index.js` 导出的 `rule` 对象逐条匹配、命中后调用对应函数。",
+      "returns": "由具体命中函数决定。",
+      "returnsDetail": "没命中任何子规则时什么都不回；命中但函数返回 `false` 时继续尝试后续规则。",
+      "timing": "视子规则而定。",
+      "cost": "每条消息都会进一次判断，等于常驻一条 `.+` 规则。",
+      "keywords": [
+        "xiaoyao",
+        "逍遥",
+        "图鉴插件",
+        "米游社"
+      ],
+      "params": [],
+      "example": "（无需主动输入）",
+      "moreExamples": [],
+      "preconditions": [
+        "插件已加载，且没有被群禁用"
+      ],
+      "pitfalls": [
+        "**这是一条 `.` 规则** —— 任何消息都会先经过本插件，命中与否取决于子规则；群消息量大时它每条都要跑一次正则",
+        "**子规则都是 `prehash: true`**，Yunzai 会按消息做一次 hash 缓存，重复消息能走上一次的结果",
+        "**函数返回 `false` 表示「我没处理」**，会继续让后面的规则（和其它插件）接手，所以宽泛规则不一定真的抢走消息",
+        "**所有子规则默认 priority 50**，与多数插件同级，谁先注册谁先跑"
+      ],
+      "failures": [
+        {
+          "symptom": "某条指令毫无反应",
+          "cause": "可能命中子规则后函数内部 `return false` 放行了（比如体力开关没开）"
+        }
+      ],
+      "edgeCases": [
+        "群被 `disable` 时整条 catch-all 都不执行"
+      ],
+      "scenarios": [
+        "排查「为什么这条指令像被吞了」时，先想到它"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴版本",
+          "diff": "那是一条正常的具名子规则"
+        }
+      ],
+      "related": [
+        "#图鉴版本",
+        "#帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/version",
+      "command": "#图鉴版本",
+      "aliases": [
+        "#图鉴版本"
+      ],
+      "title": "查看图鉴素材版本",
+      "summary": "查素材包版本号",
+      "what": "读 `components/Changelog.js` 里的版本与更新日志，渲染成版本卡片。",
+      "returns": "一张版本图。",
+      "returnsDetail": "含当前版本号与最近更新条目。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "图鉴版本",
+        "素材版本",
+        "xiaoyao版本"
+      ],
+      "params": [],
+      "example": "#图鉴版本",
+      "moreExamples": [],
+      "preconditions": [
+        "必须带 `#`（正则 `^#图鉴版本$`）"
+      ],
+      "pitfalls": [
+        "**`#` 不能省**，`图鉴版本` 不匹配",
+        "**这是「素材包」版本，不是插件版本** —— 插件版本要看 `#帮助` 或 CHANGELOG.md",
+        "和 `#图鉴更新` 是一对：更新完可以发这条确认"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "确认素材是不是最新"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴更新",
+          "diff": "那个是真去拉素材"
+        }
+      ],
+      "related": [
+        "#图鉴更新",
+        "#帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/help",
+      "command": "#帮助",
+      "aliases": [
+        "#菜单",
+        "#图鉴帮助",
+        "#功能",
+        "#指令",
+        "#使用说明"
+      ],
+      "title": "插件帮助（默认关）",
+      "summary": "含「图鉴」二字才会绕过开关",
+      "what": "渲染 `resources/help` 下的帮助配置成一张帮助图。",
+      "returns": "一张帮助图。",
+      "returnsDetail": "优先用 `help-cfg.js`，其次 `help-list.js`，都没有就用 `help-cfg_default.js`。",
+      "timing": "2~10 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "帮助",
+        "菜单",
+        "图鉴帮助",
+        "指令列表",
+        "xiaoyao帮助"
+      ],
+      "params": [],
+      "example": "#图鉴帮助",
+      "moreExamples": [
+        "#帮助",
+        "#菜单",
+        "#功能"
+      ],
+      "preconditions": [
+        "**`sys.help` 默认是 `false`** —— 除非消息里含「图鉴」二字，否则这条不响应"
+      ],
+      "pitfalls": [
+        "**默认关**：`Cfg.get(\"sys.help\", false)` 为 false 时，`#帮助` 直接 `return false`，看起来像插件没装",
+        "**含「图鉴」就能绕过开关**：`#图鉴帮助` 永远可用",
+        "**8 种叫法**：`命令/帮助/菜单/help/说明/功能/指令/使用说明`，`#` 可省",
+        "帮助内容是 `resources/help` 下的配置，不是从 code 自动生成的"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#帮助` 没反应",
+          "cause": "`sys.help` 没开，试试 `#图鉴帮助`"
+        }
+      ],
+      "edgeCases": [
+        "`#图鉴使用说明` 也能用（含「图鉴」且后缀合法）"
+      ],
+      "scenarios": [
+        "新装插件想确认能干嘛"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴版本",
+          "diff": "那个只看版本"
+        }
+      ],
+      "related": [
+        "#图鉴版本",
+        "#图鉴设置"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "xiaoyao/atlas-genshin",
+      "command": "#希儿",
+      "aliases": [
+        "#武器 剃草之稻光",
+        "食物图鉴",
+        "#圣遗物",
+        "#原魔",
+        "#秘境"
+      ],
+      "title": "原神图鉴（角色/武器/食物/怪物/圣遗物/秘境）",
+      "summary": "默认关，开了后 `#任意词` 都进",
+      "what": "按关键词在素材库里查角色、武器、食物、怪物、圣遗物、秘境，渲染对应图鉴卡。",
+      "returns": "一张图鉴图。",
+      "returnsDetail": "匹配不到时回「没有找到」类提示；`#武器`/`#食物`/`#原魔`/`#秘境`/`#圣遗物` 这类带分类词的会限定类别。",
+      "timing": "3~15 秒。",
+      "cost": "读本地素材 + 渲染。",
+      "keywords": [
+        "图鉴",
+        "角色图鉴",
+        "武器图鉴",
+        "圣遗物",
+        "原魔",
+        "秘境",
+        "食物"
+      ],
+      "params": [
+        {
+          "name": "名词",
+          "required": true,
+          "desc": "角色名 / 武器名 / 怪物名等，`#` 后可省略分类词"
+        }
+      ],
+      "example": "#希儿",
+      "moreExamples": [
+        "#武器 剃草之稻光",
+        "#圣遗物",
+        "#原魔"
+      ],
+      "preconditions": [
+        "**`Atlas.all` 默认没开** —— 没开这条直接 `return false`，整个图鉴功能不可用",
+        "素材要先 `#图鉴更新` 拉下来"
+      ],
+      "pitfalls": [
+        "**默认关**：`Cfg.get(\"Atlas.all\")` 为假时整条不工作",
+        "**开启后是 `^(#(.*)|.*图鉴)$` 的超宽匹配** —— 任何以 `#` 开头的消息、或以「图鉴」结尾的消息都会进这里，可能抢走别的插件指令",
+        "**`sys.Atlas` 决定匹配形态**：关时是 `#(.*)`（一切 `#` 开头），开时是 `#*(.*)图鉴`（必须带「图鉴」）",
+        "**素材没更新时会查到旧数据或直接查不到**"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#希儿` 完全没反应",
+          "cause": "`Atlas.all` 没开"
+        },
+        {
+          "symptom": "查什么都说不认识",
+          "cause": "素材没下载，先 `#图鉴更新`"
+        }
+      ],
+      "edgeCases": [
+        "`#七圣召唤`、`#原牌`、`#动态`、`#幻影` 走的是同一个函数里的特殊分支",
+        "开启后 `#任意词` 都可能被它吃掉，是典型的「抢指令」风险"
+      ],
+      "scenarios": [
+        "查角色属性/武器面板"
+      ],
+      "vs": [
+        {
+          "command": "#星铁图鉴",
+          "diff": "那条走星穹铁道素材库"
+        }
+      ],
+      "related": [
+        "#图鉴更新",
+        "#星铁图鉴"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "xiaoyao/atlas-starrail",
+      "command": "#星铁图鉴 希儿",
+      "aliases": [
+        "*星铁图鉴",
+        "希儿图鉴"
+      ],
+      "title": "星穹铁道图鉴",
+      "summary": "默认关，与米游社图鉴分开",
+      "what": "在星铁素材库里查武器/角色信息，渲染星铁风格图鉴。",
+      "returns": "一张星铁图鉴图。",
+      "returnsDetail": "`sr.Atlas` 开启时正则变成 `(#|\\*)?(.*)图鉴`，必须以「图鉴」结尾。",
+      "timing": "3~15 秒。",
+      "cost": "读本地素材 + 渲染。",
+      "keywords": [
+        "星铁图鉴",
+        "sr图鉴",
+        "星穹铁道图鉴",
+        "崩铁图鉴"
+      ],
+      "params": [
+        {
+          "name": "名词",
+          "required": true,
+          "desc": "角色或武器名"
+        }
+      ],
+      "example": "#星铁图鉴 希儿",
+      "moreExamples": [
+        "希儿图鉴",
+        "*星铁图鉴"
+      ],
+      "preconditions": [
+        "**`sr.Search` 默认没开** —— 没开直接 `return false`",
+        "`sr.Atlas` 控制匹配形态"
+      ],
+      "pitfalls": [
+        "**默认关**，且开关名是 `sr.Search` 不是 `Atlas` —— 两个图鉴是两套开关，容易只开一个",
+        "**`sr.Atlas` 开启后 `(.*)图鉴` 会吃掉所有以「图鉴」结尾的消息**，包括原神图鉴那条",
+        "**`*` 也能当前缀**（`^((#|\\*)(.*)|.*图鉴)$`）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "`sr.Search` 没开"
+        },
+        {
+          "symptom": "原神图鉴查不到了",
+          "cause": "`sr.Atlas` 开启后把「图鉴」结尾的消息都截走了"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "查星铁角色/光锥数值"
+      ],
+      "vs": [
+        {
+          "command": "#希儿",
+          "diff": "那条走原神素材库"
+        }
+      ],
+      "related": [
+        "#星铁图鉴",
+        "#图鉴更新"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "xiaoyao/dynamic",
+      "command": "#希儿动态",
+      "aliases": [
+        "希儿幻影",
+        "#动态"
+      ],
+      "title": "角色动态/幻影图",
+      "summary": "正则没锚定，含词就进",
+      "what": "在素材库里找该角色的「动态」「幻影」图并发出。",
+      "returns": "若干张图。",
+      "returnsDetail": "先查 `Basic_Event` 别名表，查不到退到武器表再查一次。",
+      "timing": "3~15 秒。",
+      "cost": "读本地素材 + 渲染。",
+      "keywords": [
+        "动态",
+        "幻影",
+        "角色动态",
+        "角色立绘"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「动态/幻影」前面"
+        }
+      ],
+      "example": "#希儿动态",
+      "moreExamples": [
+        "希儿幻影"
+      ],
+      "preconditions": [
+        "`Atlas.all` 开启（与图鉴同一套开关）"
+      ],
+      "pitfalls": [
+        "**正则是 `#?(动态|幻影)` 且没有 `^...$`** —— 消息里任何位置出现「动态」或「幻影」都会命中，误伤面很大",
+        "**它挂在 catch-all 之后**，所以其它更具体的规则会先命中",
+        "**默认关**（随 `Atlas.all`）"
+      ],
+      "failures": [
+        {
+          "symptom": "发「今天有什么动态」也没反应或被吞",
+          "cause": "这条会命中，但内部找不到角色名就 `return false` 放行"
+        }
+      ],
+      "edgeCases": [
+        "只写 `#动态` 不带角色名时，内部会拿空词去匹配，通常返回放行"
+      ],
+      "scenarios": [
+        "看角色动态立绘"
+      ],
+      "vs": [
+        {
+          "command": "#希儿",
+          "diff": "那个是常规图鉴"
+        }
+      ],
+      "related": [
+        "#希儿",
+        "#七圣召唤"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "xiaoyao/note",
+      "command": "#体力",
+      "aliases": [
+        "#树脂",
+        "#查询体力",
+        "#便笺",
+        "#便签",
+        "#全部体力"
+      ],
+      "title": "原神体力/便笺查询（默认关）",
+      "summary": "sys.Note 关着就不响应",
+      "what": "读绑定的 Cookie 查树脂与派遣便笺，渲染体力卡；带「多/全/全部」时遍历所有绑定账号。",
+      "returns": "一张体力图。",
+      "returnsDetail": "超过阈值会做醒目提示；多账号时逐个渲染后合并发送。",
+      "timing": "3~15 秒（多账号更久）。",
+      "cost": "走米游社接口 + 渲染。",
+      "keywords": [
+        "体力",
+        "树脂",
+        "便笺",
+        "便签",
+        "查体力",
+        "原神体力"
+      ],
+      "params": [],
+      "example": "#体力",
+      "moreExamples": [
+        "#全部体力",
+        "#便笺",
+        "#树脂"
+      ],
+      "preconditions": [
+        "**`sys.Note` 默认 `false`** —— 关着时函数开头就 `return false`，只有戳一戳才可能触发",
+        "已绑定 Cookie（否则回「请先【#绑定cookie】」）"
+      ],
+      "pitfalls": [
+        "**默认关**，这是很多「#体力 没反应」的根因（本机 cfg.json 里就是 `sys.Note: false`）",
+        "**六个词等价**：`体力` / `树脂` / `查询体力` / `便笺` / `便签`，前缀 `#*` 可多个也可没有",
+        "**「多/全/全部」是开关**：带这些字会遍历所有绑定账号，慢很多",
+        "**没绑 CK 时回「请先【#绑定cookie】」**，这句提示和 `#绑定ck` 的写法对不上（少个 ck），容易照着敲错"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#体力` 没反应",
+          "cause": "`sys.Note` 没开"
+        },
+        {
+          "symptom": "回「请先【#绑定cookie】」",
+          "cause": "没绑 CK，实际要用 `#绑定ck` 或 `#刷新ck`"
+        }
+      ],
+      "edgeCases": [
+        "戳一戳（poke）走的是另一个开关 `note.poke`，与 `sys.Note` 独立"
+      ],
+      "scenarios": [
+        "看树脂差多少满"
+      ],
+      "vs": [
+        {
+          "command": "#体力推送",
+          "diff": "那个是设置满体力提醒"
+        }
+      ],
+      "related": [
+        "#全部体力",
+        "#体力推送",
+        "#体力模板"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "xiaoyao/note-push",
+      "command": "#开启体力推送",
+      "aliases": [
+        "#关闭体力推送",
+        "#体力设置群推送开启",
+        "#体力设置群阈值100",
+        "#体力设置群上限100"
+      ],
+      "title": "个人/群体力推送设置",
+      "summary": "私聊不可用，默认仅主人",
+      "what": "`:个人` 开关自己账号的满体力提醒；`:群` 设置本群推送开关与阈值/上限。",
+      "returns": "一条设置结果。",
+      "returnsDetail": "私聊发直接 `return true`（什么都不回）；个人推送没绑 CK 时回「请先#绑定ck」。",
+      "timing": "1~5 秒。",
+      "cost": "写 `note` 配置 + redis。",
+      "keywords": [
+        "体力推送",
+        "满体力提醒",
+        "体力阈值",
+        "体力上限",
+        "群推送"
+      ],
+      "params": [
+        {
+          "name": "开启/关闭",
+          "required": true,
+          "desc": "`开启` 或 `关闭`"
+        },
+        {
+          "name": "阈值/上限",
+          "required": false,
+          "desc": "`#体力设置群阈值100` 这类写法，数字可省（省了就是查询）"
+        }
+      ],
+      "example": "#开启体力推送",
+      "moreExamples": [
+        "#关闭体力推送",
+        "#体力设置群阈值100",
+        "#体力设置群推送开启"
+      ],
+      "preconditions": [
+        "**必须在群里**，私聊直接忽略",
+        "**权限由 `noteSetAuth` 决定**：`1`=群管理员、`2`=仅主人（默认 2）"
+      ],
+      "pitfalls": [
+        "**私聊发完全没反应**（`if (e.isPrivate) return true`）",
+        "**默认 `noteSetAuth: 2`，只有主人能改**",
+        "**「推送」与「群」是两个维度**：`开启体力推送` 管个人，`体力设置群...` 管群",
+        "**阈值/上限后面不写数字就是查询当前值**，不会报错",
+        "定时检查是每 10 分钟一次（`noteTask` cron），但**12 小时才会真的提醒同一个人一次**（推送 CD）"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "在私聊，或权限不足"
+        },
+        {
+          "symptom": "回「请先#绑定ck」",
+          "cause": "开个人推送但没绑 CK"
+        },
+        {
+          "symptom": "开了但一直没提醒",
+          "cause": "体力没到阈值，或 12 小时 CD 还没过"
+        }
+      ],
+      "edgeCases": [
+        "`#体力设置群上限100` 与 `#体力设置群阈值100` 等价"
+      ],
+      "scenarios": [
+        "想让 bot 在体力快满时提醒我"
+      ],
+      "vs": [
+        {
+          "command": "#体力",
+          "diff": "那个是立刻查"
+        }
+      ],
+      "related": [
+        "#体力",
+        "#体力模板"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xiaoyao/note-template",
+      "command": "#体力模板列表",
+      "aliases": [
+        "#体力模板设置1",
+        "#体力模板移除",
+        "#我的体力模板列表"
+      ],
+      "title": "体力背景模板",
+      "summary": "换体力卡的底图",
+      "what": "列出可用模板图、按序号绑定、移除自己的模板。",
+      "returns": "模板列表图 / 设置结果。",
+      "returnsDetail": "列表每页 80 张，可翻页（`#体力模板列表2`）；支持「默认/随机/0」三个特殊值；序号越界回「没有N的索引序号哦~」。",
+      "timing": "2~10 秒。",
+      "cost": "读本地图片资源。",
+      "keywords": [
+        "体力模板",
+        "体力背景",
+        "换体力图",
+        "模板列表"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": true,
+          "desc": "列表里的编号；`默认` / `随机` / `0` 为特殊值"
+        }
+      ],
+      "example": "#体力模板列表",
+      "moreExamples": [
+        "#体力模板设置1",
+        "#我的体力模板列表",
+        "#体力模板移除"
+      ],
+      "preconditions": [
+        "需要先能查体力（`sys.Note` 开启 + 已绑 CK）"
+      ],
+      "pitfalls": [
+        "**四种写法**：`体力模板设置N` / `体力模板列表N` / `我的体力模板列表` / `体力模板移除X`",
+        "**`0` 是特殊值**（默认模板），但 `设置0` 与 `设置默认` 不等价 —— 代码里 `msg != 0` 才走序号分支",
+        "**列表每页 80 张**，翻页靠指令末尾的数字",
+        "**`我的体力模板列表` 只显示你设过的**，没设过回「未获取到您设置的模板信息哦~」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「没有N的索引序号哦~」",
+          "cause": "序号超出模板总数"
+        },
+        {
+          "symptom": "回「未获取到您设置的模板信息哦~」",
+          "cause": "还没设置过模板却查「我的」"
+        }
+      ],
+      "edgeCases": [
+        "模板图来自 `resources/BJT-Templet/`，删了资源就会缺图"
+      ],
+      "scenarios": [
+        "把体力卡换成喜欢的底图"
+      ],
+      "vs": [
+        {
+          "command": "#体力",
+          "diff": "那个是查体力本身"
+        }
+      ],
+      "related": [
+        "#体力",
+        "#体力推送"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/poke",
+      "command": "（戳一戳机器人）",
+      "aliases": [],
+      "title": "戳一戳查体力",
+      "summary": "独立开关 note.poke",
+      "what": "被戳时触发体力查询，走与 `#体力` 相同的渲染流程。",
+      "returns": "一张体力图。",
+      "returnsDetail": "`Cfg.get(\"note.poke\")` 为假时直接不响应。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口 + 渲染。",
+      "keywords": [
+        "戳一戳",
+        "poke",
+        "戳我"
+      ],
+      "params": [],
+      "example": "（对机器人戳一戳）",
+      "moreExamples": [],
+      "preconditions": [
+        "`note.poke` 开关打开",
+        "已绑定 CK"
+      ],
+      "pitfalls": [
+        "**`#poke#` 不是给用户输入的指令** —— 它是 Yunzai 的戳一戳事件标记，手动打 `#poke#` 没意义",
+        "**开关是 `note.poke`，与 `sys.Note` 相互独立** —— 可以出现「戳一戳能查、`#体力` 不能查」的状态",
+        "频繁戳会触发频繁接口请求，部分框架有频率限制"
+      ],
+      "failures": [
+        {
+          "symptom": "戳了没反应",
+          "cause": "`note.poke` 没开，或没绑 CK"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "懒得打字，戳一下看体力"
+      ],
+      "vs": [
+        {
+          "command": "#体力",
+          "diff": "那个要 `sys.Note` 开"
+        }
+      ],
+      "related": [
+        "#体力",
+        "#体力推送"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/user-info",
+      "command": "#ck查询",
+      "aliases": [
+        "#stoken查询",
+        "#cookie查询",
+        "#签到查询",
+        "#ck查询"
+      ],
+      "title": "查看绑定账号与角色信息",
+      "summary": "一张个人信息卡",
+      "what": "读绑定的 CK，拉各游戏角色信息，渲染成个人信息卡（含当前登录米游社账号与日期）。",
+      "returns": "一张信息卡。",
+      "returnsDetail": "取不到任何角色时回「未获取到角色信息~」；开头会先回一句「正在获取角色信息请稍等...」。",
+      "timing": "3~20 秒。",
+      "cost": "走米游社接口 + 渲染。",
+      "keywords": [
+        "ck查询",
+        "stoken查询",
+        "cookie查询",
+        "签到查询",
+        "我的账号"
+      ],
+      "params": [],
+      "example": "#ck查询",
+      "moreExamples": [
+        "#stoken查询",
+        "#cookie查询"
+      ],
+      "preconditions": [
+        "已绑定 CK 或 stoken"
+      ],
+      "pitfalls": [
+        "**四个词等价**：`ck` / `stoken` / `cookie` / `cookies` / `签到` × `查询`",
+        "**`#` 可有可无**（`^#*`）",
+        "**信息卡里的 ltuid 取自 Cookie**，没有 Cookie 时退回用 QQ 号显示",
+        "**没绑任何东西时不报错**，只回「未获取到角色信息~」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未获取到角色信息~」",
+          "cause": "没绑 CK，或 CK 全部失效"
+        }
+      ],
+      "edgeCases": [
+        "多账号时只显示当前绑定的那套"
+      ],
+      "scenarios": [
+        "确认 bot 现在用的是哪个米游社号"
+      ],
+      "vs": [
+        {
+          "command": "#我的stoken",
+          "diff": "那个只看 stoken 绑定情况"
+        }
+      ],
+      "related": [
+        "#我的stoken",
+        "#刷新ck",
+        "#签到查询"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/gacha-log",
+      "command": "#更新抽卡记录",
+      "aliases": [
+        "#获取抽卡记录",
+        "#导出抽卡记录"
+      ],
+      "title": "抓取/导出抽卡记录",
+      "summary": "有 5 分钟缓存",
+      "what": "用绑定的 CK 拉米游社抽卡记录并导出/渲染。",
+      "returns": "抽卡记录图或文件。",
+      "returnsDetail": "缓存时间由 `gclogEx` 控制（默认 5 分钟），短期内重复请求直接用缓存。",
+      "timing": "5~30 秒。",
+      "cost": "走米游社抽卡接口。",
+      "keywords": [
+        "抽卡记录",
+        "导出抽卡",
+        "更新抽卡",
+        "祈愿记录"
+      ],
+      "params": [],
+      "example": "#更新抽卡记录",
+      "moreExamples": [
+        "#导出抽卡记录",
+        "#获取抽卡记录"
+      ],
+      "preconditions": [
+        "已绑定有效 CK（抽卡接口需要登录态）"
+      ],
+      "pitfalls": [
+        "**三种写法等价**：`更新` / `获取` / `导出` + `抽卡记录`",
+        "**默认 5 分钟内不重复拉**（`gclogEx`），刚抽完立刻再发可能拿到旧数据",
+        "**需要 `authkey` 类有效 CK**，仅 stoken 可能不够",
+        "和 miao-plugin / StarRail-plugin 的抽卡指令是**不同实现**，数据不互通"
+      ],
+      "failures": [
+        {
+          "symptom": "数据没更新",
+          "cause": "命中 5 分钟缓存"
+        },
+        {
+          "symptom": "报错或空",
+          "cause": "CK 失效，先 `#刷新ck`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "导出抽卡记录做统计"
+      ],
+      "vs": [
+        {
+          "command": "#刷新充值记录",
+          "diff": "那个是充值不是抽卡"
+        }
+      ],
+      "related": [
+        "#刷新ck",
+        "#刷新充值记录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/pay-log",
+      "command": "#刷新充值记录",
+      "aliases": [
+        "#获取充值记录",
+        "#导出氪金记录",
+        "#刷新氪金记录"
+      ],
+      "title": "抓取充值/氪金记录",
+      "summary": "要完整 CK",
+      "what": "拉米游社账单记录并渲染。",
+      "returns": "充值记录图或文本。",
+      "returnsDetail": "结果会写进 redis 缓存，供后续快速读取。",
+      "timing": "5~30 秒。",
+      "cost": "走米游社账单接口。",
+      "keywords": [
+        "充值记录",
+        "氪金记录",
+        "账单",
+        "消费记录"
+      ],
+      "params": [],
+      "example": "#刷新充值记录",
+      "moreExamples": [
+        "#获取充值记录",
+        "#导出氪金记录"
+      ],
+      "preconditions": [
+        "已绑定有效 CK"
+      ],
+      "pitfalls": [
+        "**四种写法等价**：`刷新/获取/导出` × `充值/氪金` + `记录`",
+        "**和 `#更新抽卡记录` 是两个接口**，别混",
+        "账单接口对 CK 完整度要求更高，只有 stoken 常常拉不到"
+      ],
+      "failures": [
+        {
+          "symptom": "拉不到数据",
+          "cause": "CK 不完整或已失效"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "回顾这个月氪了多少"
+      ],
+      "vs": [
+        {
+          "command": "#更新抽卡记录",
+          "diff": "那个是抽卡不是充值"
+        }
+      ],
+      "related": [
+        "#更新抽卡记录",
+        "#刷新ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/my-token",
+      "command": "#我的stoken",
+      "aliases": [
+        "#我的云ck"
+      ],
+      "title": "查看已绑定的 stoken / 云原神 CK",
+      "summary": "只显示绑定状态",
+      "what": "读本地 yaml，列出已绑的 stoken 或云原神 token（脱敏）。",
+      "returns": "一段文本。",
+      "returnsDetail": "没绑时给对应提示（引导去 `stoken帮助` 或云原神教程）。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读。",
+      "keywords": [
+        "我的stoken",
+        "我的云ck",
+        "查stoken",
+        "云原神绑定"
+      ],
+      "params": [],
+      "example": "#我的stoken",
+      "moreExamples": [
+        "#我的云ck"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**两种叫法**：`我的stoken` / `我的云ck`，前者看米游社，后者看云原神",
+        "**不显示完整 token**，只是确认绑定状态",
+        "删除要用 `#删除我的stoken` / `#删除云原神`"
+      ],
+      "failures": [
+        {
+          "symptom": "显示未绑定",
+          "cause": "没发过 `stoken=...` 或 `ct...devId...`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "确认 stoken 还在不在"
+      ],
+      "vs": [
+        {
+          "command": "#ck查询",
+          "diff": "那个看角色信息"
+        }
+      ],
+      "related": [
+        "stoken=xxx",
+        "#删除我的stoken",
+        "#删除云原神"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/bind-stoken",
+      "command": "stoken=xxxxxx;stuid=123456789",
+      "aliases": [
+        "ltoken=xxx;stoken=yyy",
+        "（私聊粘贴整段 stoken 串）"
+      ],
+      "title": "绑定 stoken（必须私聊）",
+      "summary": "任何含 `stoken=` 的消息都进这条",
+      "what": "解析消息里的 Cookie 串，把 `stuid` 归一成 `uid`，调接口验证后写入本地 yaml。",
+      "returns": "绑定结果。",
+      "returnsDetail": "群聊发回「请私聊发送」；验证失败回「绑定Stoken失败，异常：… 请发送【stoken帮助】查看配置教程」。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口 + 写本地文件。",
+      "keywords": [
+        "绑定stoken",
+        "stoken",
+        "粘贴stoken",
+        "米游社token"
+      ],
+      "params": [
+        {
+          "name": "Cookie串",
+          "required": true,
+          "desc": "含 `stoken=`、`stuid=` 的整段文本，通常从浏览器直接复制"
+        }
+      ],
+      "example": "stoken=xxxxxx;stuid=123456789",
+      "moreExamples": [
+        "ltoken=xxx;stoken=yyy;stuid=123456789"
+      ],
+      "preconditions": [
+        "**必须在私聊里发** —— 群聊一律回「请私聊发送」",
+        "串里必须有 `stoken=`"
+      ],
+      "pitfalls": [
+        "**正则是 `^(.*)stoken=(.*)$`，没有前缀要求** —— 任何含 `stoken=` 的消息都会进这条，包括你不小心贴到群里的",
+        "**群聊必然被拒**，提示就四个字「请私聊发送」",
+        "**会把 `stuid` 自动改成 `uid`**，所以你贴原始串就行",
+        "**失败时提示里的 `【stoken帮助】` 是文案，实际指令是 `#stoken帮助`**",
+        "**这是敏感凭据**，绑完记得删聊天记录"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请私聊发送」",
+          "cause": "在群里发了"
+        },
+        {
+          "symptom": "回「绑定Stoken失败，异常：…」",
+          "cause": "串不完整或已失效"
+        }
+      ],
+      "edgeCases": [
+        "`;` 会被自动转成 `&` 再解析，两种分隔符都接受"
+      ],
+      "scenarios": [
+        "给 bot 挂上米游社登录态"
+      ],
+      "vs": [
+        {
+          "command": "login_ticket=xxx",
+          "diff": "那个是先用 login_ticket 换 stoken"
+        }
+      ],
+      "related": [
+        "#stoken帮助",
+        "#我的stoken",
+        "login_ticket=xxx"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/bind-login-ticket",
+      "command": "login_ticket=xxxxxx;stuid=123456789",
+      "aliases": [
+        "（私聊粘贴含 login_ticket 的 Cookie）"
+      ],
+      "title": "用 login_ticket 自动换 stoken",
+      "summary": "懒人绑定法",
+      "what": "拿 `login_ticket` 调接口换出 stoken 再绑定，省去手动找 stoken。",
+      "returns": "绑定结果。",
+      "returnsDetail": "成功后会提示已自动获取 sk；失败给接口报错。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口 + 写本地文件。",
+      "keywords": [
+        "login_ticket",
+        "自动获取stoken",
+        "换stoken",
+        "绑定cookie"
+      ],
+      "params": [
+        {
+          "name": "Cookie串",
+          "required": true,
+          "desc": "含 `login_ticket=`、`stuid=`"
+        }
+      ],
+      "example": "login_ticket=xxxxxx;stuid=123456789",
+      "moreExamples": [],
+      "preconditions": [
+        "**建议私聊**（凭据敏感）"
+      ],
+      "pitfalls": [
+        "**正则 `^(.*)login_ticket=(.*)$` 同样无前缀**，含这个词就会被捕获",
+        "**换出来的 stoken 有有效期**，过期要重新换",
+        "`login_ticket` 是一次性的，用过后可能失效"
+      ],
+      "failures": [
+        {
+          "symptom": "绑定失败",
+          "cause": "login_ticket 过期或已用过"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "懒得手动找 stoken"
+      ],
+      "vs": [
+        {
+          "command": "stoken=xxx",
+          "diff": "那个是直接绑现成的 stoken"
+        }
+      ],
+      "related": [
+        "stoken=xxx",
+        "#我的stoken"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/bind-cloud-token",
+      "command": "ai=xxx;ci=xxx;oi=xxx;ct=xxx;si=xxx;devId=xxx",
+      "aliases": [
+        "ct=xxx;devId=xxx",
+        "（私聊粘贴云原神 token 串）"
+      ],
+      "title": "绑定云原神 token（含 devId 才生效）",
+      "summary": "正则极宽，靠 devId 兜底",
+      "what": "从 `ct` 开头的串里切出 token 与 `devId`，验证通过后写入 `data/yunToken/`。",
+      "returns": "绑定结果。",
+      "returnsDetail": "只发 `ct`/`si`/`devId` 三个词时回格式示例；没有 `devId` 时**静默放行**（只写日志）。",
+      "timing": "3~15 秒。",
+      "cost": "走云原神接口 + 写本地文件。",
+      "keywords": [
+        "云原神",
+        "ct",
+        "devId",
+        "云原神token",
+        "绑定云原神"
+      ],
+      "params": [
+        {
+          "name": "token串",
+          "required": true,
+          "desc": "含 `ct=` 与 `devId=` 的整段；`devId` 大小写错也会被自动纠正"
+        }
+      ],
+      "example": "ai=xxx;ci=xxx;oi=xxx;ct=xxx;si=xxx;devId=xxx",
+      "moreExamples": [],
+      "preconditions": [
+        "串里必须含 `devId`"
+      ],
+      "pitfalls": [
+        "**正则是 `^(.*)ct(.*)$` —— 任何含字母 `ct` 的消息都会进这条**（`expect`、`connect` 也算），靠内部检查 `devId` 才放行",
+        "**没有 `devId` 时完全静默**，不打字也不报错，只在日志里写一行失败",
+        "**含 `ltoken` 或 `_MHYUUID` 会被显式放行**（避免抢米游社 Cookie）",
+        "**`dev` 后面的大小写 i/l/L/I 会被自动纠正**成 `devId`",
+        "只发 `ct`、`si`、`devId` 这三个裸词会回格式示例"
+      ],
+      "failures": [
+        {
+          "symptom": "发了一串但没反应",
+          "cause": "串里没有 `devId`，函数静默放行"
+        },
+        {
+          "symptom": "回了格式示例",
+          "cause": "只发了 `ct` 这类裸词"
+        }
+      ],
+      "edgeCases": [
+        "`devId` 用 `devld`（小写 L）也能被纠正"
+      ],
+      "scenarios": [
+        "绑定云原神账号做云签到"
+      ],
+      "vs": [
+        {
+          "command": "#云原神签到",
+          "diff": "那个是签到，要先用这条绑好"
+        }
+      ],
+      "related": [
+        "#云原神签到",
+        "#云原神查询",
+        "#删除云原神"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/delete-token",
+      "command": "#删除我的stoken",
+      "aliases": [
+        "#删除云原神",
+        "#删除云ck",
+        "#删除我的云ck"
+      ],
+      "title": "删除 stoken / 云原神绑定",
+      "summary": "按词分流两个目录",
+      "what": "看消息里是 `sk/stoken` 还是 `云原神/云ck`，分别删 `data/yaml` 或 `data/yunToken` 下的记录。",
+      "returns": "删除结果。",
+      "returnsDetail": "删除后对应功能立即失效。",
+      "timing": "1~3 秒。",
+      "cost": "**删本地凭据文件**。",
+      "keywords": [
+        "删除stoken",
+        "删除云原神",
+        "解绑云ck",
+        "删token"
+      ],
+      "params": [],
+      "example": "#删除我的stoken",
+      "moreExamples": [
+        "#删除云原神",
+        "#删除云ck"
+      ],
+      "preconditions": [
+        "对应绑定存在"
+      ],
+      "pitfalls": [
+        "**一条指令删两种东西**：含 `stoken/sk` 删米游社那套，含 `云原神/云ck` 删云原神那套",
+        "**「我的」两字可省**（`删除(我的)*`）",
+        "**删掉后签到/体力/云签到全部失效**，需要重新绑",
+        "删的是本地文件，**改不回**"
+      ],
+      "failures": [
+        {
+          "symptom": "删完签到报错",
+          "cause": "本来就是靠这个凭据，删了自然失效"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "换号前先清掉旧凭据"
+      ],
+      "vs": [
+        {
+          "command": "#删除账号",
+          "diff": "别的插件的同名指令，不是这个"
+        }
+      ],
+      "related": [
+        "#我的stoken",
+        "stoken=xxx"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/refresh-ck",
+      "command": "#刷新ck",
+      "aliases": [
+        "#更新cookie",
+        "#获取ck",
+        "#刷新cookie"
+      ],
+      "title": "用 stoken 刷新 Cookie",
+      "summary": "「获取」模式必须私聊",
+      "what": "拿已绑的 stoken 换一批新 Cookie（ck），写回本地配置。",
+      "returns": "刷新结果。",
+      "returnsDetail": "没绑 stoken 回「请先绑定stoken\\n发送【stoken帮助】查看配置教程」；群里用「获取」模式回「请私聊发送」。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口 + 写本地文件。",
+      "keywords": [
+        "刷新ck",
+        "更新cookie",
+        "获取ck",
+        "换cookie"
+      ],
+      "params": [],
+      "example": "#刷新ck",
+      "moreExamples": [
+        "#更新cookie",
+        "#获取ck"
+      ],
+      "preconditions": [
+        "**必须先绑 stoken**",
+        "**带「获取」二字时必须在私聊**，否则回「请私聊发送」"
+      ],
+      "pitfalls": [
+        "**`刷新`/`更新` 群里可用，`获取` 必须私聊** —— 同一个函数按关键字分支，容易踩",
+        "**没绑 stoken 时提示里的 `【stoken帮助】` 是文案**，实际指令是 `#stoken帮助`",
+        "**换出来的 ck 有时效**，过期要再刷",
+        "**CK 失效是很多查询失败的根因**，先刷一遍再排查别的"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请先绑定stoken」",
+          "cause": "没绑 stoken"
+        },
+        {
+          "symptom": "群里发 `#获取ck` 回「请私聊发送」",
+          "cause": "获取模式限私聊"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "签到突然全失败，先刷 ck 试试"
+      ],
+      "vs": [
+        {
+          "command": "stoken=xxx",
+          "diff": "那个是绑 stoken 本身"
+        }
+      ],
+      "related": [
+        "stoken=xxx",
+        "#ck查询",
+        "#签到查询"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/sign-forum",
+      "command": "#原神签到",
+      "aliases": [
+        "#崩坏3签到",
+        "#sr签到",
+        "#zzz签到",
+        "#游戏签到",
+        "#大别野签到"
+      ],
+      "title": "米游社各游戏论坛签到",
+      "summary": "18 种游戏名 + 「游戏」全签",
+      "what": "按消息里的游戏名找到对应论坛，逐个调用签到接口，回结果与耗时。",
+      "returns": "「开始尝试X签到\\n预计5-10秒~」+ 逐游戏结果。",
+      "returnsDetail": "结果末尾附「用时 N 秒」；`游戏` 或不写具体名时按 `signlist` 配置逐个签。",
+      "timing": "5~60 秒（签多个游戏更久）。",
+      "cost": "走米游社论坛签到接口，每个游戏一次请求。",
+      "keywords": [
+        "原神签到",
+        "崩坏3签到",
+        "星铁签到",
+        "绝区零签到",
+        "米游社签到",
+        "游戏签到"
+      ],
+      "params": [],
+      "example": "#原神签到",
+      "moreExamples": [
+        "#崩坏3签到",
+        "#sr签到",
+        "#zzz签到",
+        "#游戏签到"
+      ],
+      "preconditions": [
+        "已绑定有效 CK",
+        "对应游戏在米游社有角色"
+      ],
+      "pitfalls": [
+        "**游戏名有大量别名**：`bh3/崩崩崩/崩坏3`、`原神`、`bh2/崩崩/崩坏2`、`事件簿/未定事件簿/未定`、`大别野`、`sr/星铁/穹轨/崩坏星穹铁道`、`绝区零/zzz`，别名来自 `defSet/json/mys.json`",
+        "**`#游戏签到` 是「按配置签一批」**，不是「签到全部游戏」——签哪些由 `config.yaml` 的 `signlist` 决定",
+        "**`#` 可以有多个也可以没有**（`^#*`）",
+        "**签到只针对该游戏的米游社论坛**，不是游戏内签到",
+        "**结果带 @ 你**，群里会显眼"
+      ],
+      "failures": [
+        {
+          "symptom": "回登录失效类错误",
+          "cause": "CK 过期，先 `#刷新ck`"
+        },
+        {
+          "symptom": "某个游戏没签",
+          "cause": "该游戏没绑角色或不在 `signlist` 里"
+        }
+      ],
+      "edgeCases": [
+        "`#崩坏星穹铁道签到` 与 `#sr签到` 等价",
+        "`#zzz签到` 与 `#绝区零签到` 等价"
+      ],
+      "scenarios": [
+        "每天手动补签一次"
+      ],
+      "vs": [
+        {
+          "command": "#米游社原神签到",
+          "diff": "那个签的是米游币任务，不是论坛签到"
+        }
+      ],
+      "related": [
+        "#米游社全部签到",
+        "#米游币全部签到",
+        "#签到查询"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/sign-bbs",
+      "command": "#米游社原神签到",
+      "aliases": [
+        "#mys崩坏3签到",
+        "#社区原神签到",
+        "#米游社全部签到"
+      ],
+      "title": "米游币任务签到",
+      "summary": "带游戏名的米游社签到",
+      "what": "先查米游币状态，还有额度就逐个论坛做米游币任务签到，回结果与耗时。",
+      "returns": "「开始尝试X社区签到预计1-3分钟~」+ 结果。",
+      "returnsDetail": "米游币已领完（`can_get_points == 0`）时只回状态不重复签。",
+      "timing": "1~3 分钟。",
+      "cost": "走米游社米游币任务接口，比论坛签到慢得多。",
+      "keywords": [
+        "米游币签到",
+        "米游社签到",
+        "社区签到",
+        "mys签到"
+      ],
+      "params": [
+        {
+          "name": "游戏",
+          "required": true,
+          "desc": "`原神`/`崩坏3`/`崩坏2`/`未定事件簿`/`大别野`/`崩坏星穹铁道`/`绝区零`/`全部`"
+        }
+      ],
+      "example": "#米游社原神签到",
+      "moreExamples": [
+        "#mys崩坏3签到",
+        "#米游社全部签到"
+      ],
+      "preconditions": [
+        "已绑定有效 CK"
+      ],
+      "pitfalls": [
+        "**和 `#原神签到` 是两条不同规则** —— 这条带「米游社/社区/mys」前缀，走米游币任务；不带前缀的走论坛签到",
+        "**「全部」会签 10-20 分钟**，插件自己也会提示「预计10-20分钟」",
+        "**前缀三种**：`米游社` / `mys` / `社区`",
+        "**游戏名只认正则里那 7 个**，写「星铁」不匹配（要写 `崩坏星穹铁道`），这点和论坛签到不一样"
+      ],
+      "failures": [
+        {
+          "symptom": "回米游币状态但不签",
+          "cause": "今日米游币已领完"
+        },
+        {
+          "symptom": "发 `#米游社星铁签到` 没反应",
+          "cause": "这条只认「崩坏星穹铁道」，不认「星铁」"
+        }
+      ],
+      "edgeCases": [
+        "`#米游社全部签到` 与 `#米游币全部签到` 是不同规则（前者走 bbsSign，后者走 signTask）"
+      ],
+      "scenarios": [
+        "每天领米游币"
+      ],
+      "vs": [
+        {
+          "command": "#原神签到",
+          "diff": "那个是论坛签到，几秒完成"
+        }
+      ],
+      "related": [
+        "#原神签到",
+        "#米游币查询",
+        "#米游币全部签到"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/sign-cloud",
+      "command": "#云原神签到",
+      "aliases": [
+        "#云原神签到"
+      ],
+      "title": "云原神签到",
+      "summary": "要先用 ct 串绑定",
+      "what": "用已绑的云原神 token 调签到接口。",
+      "returns": "签到结果。",
+      "returnsDetail": "没绑回「尚未绑定云原神账号！」；结果末尾附用时。",
+      "timing": "3~15 秒。",
+      "cost": "走云原神接口。",
+      "keywords": [
+        "云原神签到",
+        "云游戏签到",
+        "云原神"
+      ],
+      "params": [],
+      "example": "#云原神签到",
+      "moreExamples": [],
+      "preconditions": [
+        "已用含 `devId` 的 token 串绑定云原神"
+      ],
+      "pitfalls": [
+        "**必须先绑 `ct...devId...` 串**，没绑只会回一句「尚未绑定云原神账号！」",
+        "**云原神 token 与米游社 CK 是两套**，互不通用",
+        "`#` 可有可无（`^#*`）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「尚未绑定云原神账号！」",
+          "cause": "没绑云原神 token"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "云游戏每日签到"
+      ],
+      "vs": [
+        {
+          "command": "#原神签到",
+          "diff": "那个是米游社论坛签到"
+        }
+      ],
+      "related": [
+        "ai=xxx;ci=xxx;oi=xxx;ct=xxx;si=xxx;devId=xxx",
+        "#云原神查询",
+        "#云原神全部签到"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/query-coin",
+      "command": "#米游币查询",
+      "aliases": [
+        "#米币查询",
+        "#云原神查询"
+      ],
+      "title": "查米游币 / 云原神时长",
+      "summary": "两个查询合一",
+      "what": "按消息里有没有「币」分流：有就查米游币余额，没有就查云原神剩余时长。",
+      "returns": "一段查询结果。",
+      "returnsDetail": "结果会带 @ 与用时。",
+      "timing": "3~15 秒。",
+      "cost": "走对应接口。",
+      "keywords": [
+        "米游币查询",
+        "米币查询",
+        "云原神查询",
+        "查米游币",
+        "云游戏时长"
+      ],
+      "params": [],
+      "example": "#米游币查询",
+      "moreExamples": [
+        "#云原神查询",
+        "#米币查询"
+      ],
+      "preconditions": [
+        "查米游币要 CK；查云原神要云 token"
+      ],
+      "pitfalls": [
+        "**一条函数两个功能**：看消息里有没有「币」字决定查哪个",
+        "**三个名字**：`米游币` / `米币` / `云原神`，都跟「查询」",
+        "**只查不签**，签到用 `#原神签到` 或 `#云原神签到`"
+      ],
+      "failures": [
+        {
+          "symptom": "查云原神报未绑定",
+          "cause": "没绑云 token"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看今天米游币领了多少"
+      ],
+      "vs": [
+        {
+          "command": "#签到查询",
+          "diff": "那个看账号整体信息"
+        }
+      ],
+      "related": [
+        "#米游社原神签到",
+        "#云原神签到",
+        "#签到查询"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/token-help",
+      "command": "#stoken帮助",
+      "aliases": [
+        "#米游社帮助",
+        "#cookies教程",
+        "#云原神帮助",
+        "#云绑定"
+      ],
+      "title": "CK / stoken / 云原神 获取教程",
+      "summary": "回一段文档链接",
+      "what": "按消息里的前缀词选对应教程，回「【X帮助】+ 文档地址」。",
+      "returns": "一条文本（含文档链接）。",
+      "returnsDetail": "格式「【{去掉帮助/教程/绑定后的词}帮助】{文档链接}」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读配置。",
+      "keywords": [
+        "stoken帮助",
+        "米游社帮助",
+        "cookies教程",
+        "云原神帮助",
+        "怎么绑定"
+      ],
+      "params": [],
+      "example": "#stoken帮助",
+      "moreExamples": [
+        "#cookies教程",
+        "#云原神帮助"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**七种前缀**：`米游社` / `cookies` / `米游币` / `stoken` / `Stoken` / `云原神` / `云` × `帮助/教程/绑定`",
+        "**教程地址来自 `config.yaml` 的 `cookiesDoc` / `cloudDoc`**，改配置能换成自己的文档",
+        "**回的是文档链接不是图片**，链接失效就只剩一句标题"
+      ],
+      "failures": [
+        {
+          "symptom": "回了个打不开的链接",
+          "cause": "配置里的文档地址过期"
+        }
+      ],
+      "edgeCases": [
+        "`#云绑定` 与 `#云原神帮助` 走同一分支，但回的是云原神文档"
+      ],
+      "scenarios": [
+        "第一次用不知道怎么拿 stoken"
+      ],
+      "vs": [
+        {
+          "command": "stoken=xxx",
+          "diff": "那个才是真绑定"
+        }
+      ],
+      "related": [
+        "stoken=xxx",
+        "#刷新ck"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/sign-all",
+      "command": "#米游币全部签到",
+      "aliases": [
+        "#云原神全部签到",
+        "#米社全部签到",
+        "#米社原神全部签到"
+      ],
+      "title": "批量全部签到（仅主人）",
+      "summary": "一条管三类签到的总开关",
+      "what": "按消息里的关键字决定签什么：含「米游币」走米游币任务、含「云原神」走云签到、含「米社」走论坛签到。",
+      "returns": "对应签到的结果。",
+      "returnsDetail": "非主人回「只有主人才能命令我哦~ (*/ω＼*)」。",
+      "timing": "10 秒~20 分钟（看签哪类）。",
+      "cost": "批量请求米游社接口。",
+      "keywords": [
+        "全部签到",
+        "米游币全部签到",
+        "云原神全部签到",
+        "米社全部签到",
+        "批量签到"
+      ],
+      "params": [
+        {
+          "name": "类别",
+          "required": true,
+          "desc": "消息里必须含 `米游币` / `云原神` / `米社` 之一，否则不签"
+        }
+      ],
+      "example": "#米游币全部签到",
+      "moreExamples": [
+        "#云原神全部签到",
+        "#米社全部签到"
+      ],
+      "preconditions": [
+        "**必须是主人**"
+      ],
+      "pitfalls": [
+        "**只有主人能用** —— 普通群员会收到「只有主人才能命令我哦~」",
+        "**类别靠关键字判断**，三个词都不含时不会执行任何签到",
+        "**`米社` 那条的前缀词是「米社」不是「米游社」** —— `#米游社全部签到` 走的是另一条规则（bbsSign）",
+        "**耗时长**：米游币全部 10-20 分钟，期间会占着会话"
+      ],
+      "failures": [
+        {
+          "symptom": "回「只有主人才能命令我哦~」",
+          "cause": "不是主人"
+        },
+        {
+          "symptom": "发 `#米游社全部签到` 行为不一样",
+          "cause": "那是 bbsSign 规则，不吃主人校验但也只签米游币"
+        }
+      ],
+      "edgeCases": [
+        "`#米社未定事件簿全部签到` 也匹配（`米社(原神|崩坏3|崩坏2|未定事件簿)*`）"
+      ],
+      "scenarios": [
+        "一次把三类签到全跑一遍"
+      ],
+      "vs": [
+        {
+          "command": "#米游社全部签到",
+          "diff": "那条不需要主人，但只签米游币"
+        }
+      ],
+      "related": [
+        "#米游社全部签到",
+        "#原神签到",
+        "#云原神签到"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xiaoyao/atlas-update",
+      "command": "#图鉴更新",
+      "aliases": [
+        "#图鉴强制更新"
+      ],
+      "title": "更新图鉴素材包",
+      "summary": "主人专用，拉 xiaoyao-plus",
+      "what": "在 `resources/xiaoyao-plus/` 目录执行 `git pull`，强制模式先 `git checkout .` 再拉。",
+      "returns": "多条进度文本。",
+      "returnsDetail": "成功回「更新成功」类提示；已最新回「目前已经是最新版…」；失败贴 error code 与堆栈。",
+      "timing": "10~120 秒。",
+      "cost": "走 git 网络 + 写素材目录。",
+      "keywords": [
+        "图鉴更新",
+        "更新素材",
+        "素材包",
+        "强制更新图鉴"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "写 `#图鉴强制更新` 先丢弃本地改动再拉"
+        }
+      ],
+      "example": "#图鉴更新",
+      "moreExamples": [
+        "#图鉴强制更新"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "`resources/xiaoyao-plus/` 目录存在（是独立 git 仓库）"
+      ],
+      "pitfalls": [
+        "**更新的是素材仓库不是插件本体** —— 插件本体用 `#图鉴插件更新`",
+        "**强制模式是 `git checkout .` 丢弃改动**，不是 reset --hard",
+        "**目录不存在时不会有任何动作**（`if (fs.existsSync(...))` 里才执行）",
+        "**更新完不会重启**，素材是热读的"
+      ],
+      "failures": [
+        {
+          "symptom": "回「目前已经是最新版…」",
+          "cause": "远端没新提交"
+        },
+        {
+          "symptom": "回「图鉴更新失败！…」",
+          "cause": "目录不是 git 仓库 / 网络不通"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "新角色上线后素材要更新"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴插件更新",
+          "diff": "那个更新插件代码并重启"
+        },
+        {
+          "command": "#图鉴模板更新",
+          "diff": "那个更新体力模板图"
+        }
+      ],
+      "related": [
+        "#图鉴插件更新",
+        "#图鉴模板更新",
+        "#图鉴版本"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaoyao/plugin-update",
+      "command": "#图鉴插件更新",
+      "aliases": [
+        "#图鉴插件强制更新"
+      ],
+      "title": "更新插件本体并自动重启",
+      "summary": "主人专用，会 process.exit",
+      "what": "在插件根目录 `git pull`，成功后 1 秒自动执行 `npm run start`（pm2 环境用 `npm run restart`）并退出进程。",
+      "returns": "多条进度文本。",
+      "returnsDetail": "已最新回「目前已经是最新版图鉴插件了~」；成功回「图鉴插件更新成功，尝试重新启动Yunzai以应用更新...」；失败贴 error code。",
+      "timing": "10~120 秒后重启。",
+      "cost": "走 git + **重启整个 Yunzai 进程**。",
+      "keywords": [
+        "图鉴插件更新",
+        "更新插件",
+        "强制更新插件"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "先 `git checkout .` 再拉"
+        }
+      ],
+      "example": "#图鉴插件更新",
+      "moreExamples": [
+        "#图鉴插件强制更新"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "插件目录是 git 仓库"
+      ],
+      "pitfalls": [
+        "**更新成功会自动重启整个 Bot**，不只是插件；重启前会往 redis 写一条「重启成功」的提示",
+        "**`npm run start` 走的是项目根目录**，如果你的启动方式不是 npm 脚本，自动重启会失败并提示手动重启",
+        "**强制模式只是 `git checkout .`**，不会清理未跟踪文件",
+        "**注意这条没有结尾 `$`**（正则 `^#图鉴插件(强制)?更新`），后面跟内容也算命中",
+        "**不是更新素材**，素材用 `#图鉴更新`"
+      ],
+      "failures": [
+        {
+          "symptom": "回「自动重启失败，请手动重启…」",
+          "cause": "启动命令不是 npm 脚本"
+        },
+        {
+          "symptom": "回「图鉴插件更新失败！…」",
+          "cause": "git 冲突或网络不通"
+        }
+      ],
+      "edgeCases": [
+        "pm2 环境下重启命令自动切到 `npm run restart`"
+      ],
+      "scenarios": [
+        "插件发新版了"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴更新",
+          "diff": "那个只更新素材，不重启"
+        }
+      ],
+      "related": [
+        "#图鉴更新",
+        "#图鉴模板更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaoyao/template-update",
+      "command": "#图鉴模板更新",
+      "aliases": [
+        "#图鉴模板强制更新"
+      ],
+      "title": "更新体力模板图包",
+      "summary": "主人专用，拉 BJT-Templet",
+      "what": "在 `resources/BJT-Templet/` 执行 `git pull`，强制模式先 checkout。",
+      "returns": "多条进度文本。",
+      "returnsDetail": "成功/已最新/失败三种提示，格式与其它更新一致。",
+      "timing": "10~90 秒。",
+      "cost": "走 git 网络 + 写图包目录。",
+      "keywords": [
+        "图鉴模板更新",
+        "体力模板更新",
+        "模板图包"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "先丢弃本地改动"
+        }
+      ],
+      "example": "#图鉴模板更新",
+      "moreExamples": [
+        "#图鉴模板强制更新"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "`resources/BJT-Templet/` 存在"
+      ],
+      "pitfalls": [
+        "**三个「图鉴更新」是三套东西**：`图鉴更新`=素材、`图鉴插件更新`=代码、`图鉴模板更新`=体力底图",
+        "**目录不存在时静默不动**",
+        "**更新完不重启**"
+      ],
+      "failures": [
+        {
+          "symptom": "没有任何反应",
+          "cause": "`BJT-Templet` 目录不存在"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "体力模板列表里想要更多底图"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴更新",
+          "diff": "那个是图鉴素材"
+        }
+      ],
+      "related": [
+        "#体力模板列表",
+        "#图鉴更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaoyao/sys-cfg",
+      "command": "#图鉴设置",
+      "aliases": [
+        "#图鉴设置 体力 开",
+        "#图鉴设置 列表"
+      ],
+      "title": "图鉴/体力/帮助等功能开关",
+      "summary": "主人专用，一个总控台",
+      "what": "按开关名改 `components/cfg.json`：体力（`sys.Note`）、帮助（`sys.help`）、匹配（`sys.Atlas`）、戳一戳（`note.poke`）、模板（`mb.len`）、获取sk（`ck.sk`）、目录（`Atlas.all`）、扫码绑定（`mhy.qrcode`）、星铁图鉴（`sr.Search`）、星铁匹配（`sr.Atlas`）。",
+      "returns": "一张设置面板图或文本。",
+      "returnsDetail": "不带参数时列出所有开关与当前状态。",
+      "timing": "2~8 秒。",
+      "cost": "写 `cfg.json`（部分开关需要重启或重新渲染才生效）。",
+      "keywords": [
+        "图鉴设置",
+        "插件设置",
+        "开关",
+        "体力开关",
+        "帮助开关"
+      ],
+      "params": [
+        {
+          "name": "开关名",
+          "required": false,
+          "desc": "`体力`/`帮助`/`匹配`/`戳一戳`/`模板`/`获取sk`/`目录`/`扫码绑定`/`星铁图鉴`/`星铁匹配`"
+        },
+        {
+          "name": "值",
+          "required": false,
+          "desc": "开/关，或对应数值"
+        }
+      ],
+      "example": "#图鉴设置",
+      "moreExamples": [
+        "#图鉴设置 体力 开",
+        "#图鉴设置 目录 开"
+      ],
+      "preconditions": [
+        "**必须是主人**"
+      ],
+      "pitfalls": [
+        "**这是整个插件的主开关台** —— `#体力` 没反应、`#帮助` 没反应，多半要来这里开",
+        "**开关名是中文且固定 10 个**，写错不生效",
+        "**「目录」对应 `Atlas.all`**，也就是整个图鉴功能的总闸",
+        "**「扫码绑定」对应 `mhy.qrcode`**，值是数字：`1` 仅群、`2` 仅私聊、`3` 关闭",
+        "**改完不一定立刻生效**，cfg.json 是运行时读取，但已注册的 function 已捕获旧值（体力那条就是构造时读的）"
+      ],
+      "failures": [
+        {
+          "symptom": "不是主人时发了没反应",
+          "cause": "`checkAuth` 先拦截并回「只有主人才能命令我哦~」"
+        }
+      ],
+      "edgeCases": [
+        "`#图鉴设置` 后面什么都不写就是查看当前所有开关"
+      ],
+      "scenarios": [
+        "把体力/图鉴功能打开"
+      ],
+      "vs": [
+        {
+          "command": "#图鉴更新",
+          "diff": "那个是更新素材不是开关"
+        }
+      ],
+      "related": [
+        "#体力",
+        "#帮助",
+        "#希儿"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xiaoyao/map-query",
+      "command": "#清心在哪里",
+      "aliases": [
+        "#琉璃袋在哪",
+        "#风车菊在哪里"
+      ],
+      "title": "原神素材地图资源点",
+      "summary": "任何「X在哪里」都进这条",
+      "what": "把「X」当素材名去 `map.minigg.cn` 拉地图点位图，缓存到 `data/map/` 后发出。",
+      "returns": "一张地图截图。",
+      "returnsDetail": "第二次问同一个素材直接读本地缓存；接口报错（retcode=-1）时回接口 message。",
+      "timing": "3~20 秒（首次要下载整张图）。",
+      "cost": "走第三方地图接口 + 本地缓存。",
+      "keywords": [
+        "在哪里",
+        "素材位置",
+        "地图",
+        "采集点",
+        "清心在哪"
+      ],
+      "params": [
+        {
+          "name": "素材名",
+          "required": true,
+          "desc": "写在「在哪里/在哪里」前面；可带「刷新/更新」强制重新拉"
+        }
+      ],
+      "example": "#清心在哪里",
+      "moreExamples": [
+        "#刷新清心在哪里",
+        "#琉璃袋在哪"
+      ],
+      "preconditions": [
+        "能访问 `map.minigg.cn`"
+      ],
+      "pitfalls": [
+        "**正则是 `^#(刷新|更新)?(.*)(在(哪|那)里*)$`，极其宽泛** —— 任何以「在哪里/在哪里/在哪」结尾的消息都会进这里，然后拿前面那截去请求地图接口",
+        "**「刷新/更新」是强制重拉**，不加就用本地缓存",
+        "**两个特例**：`渊下宫/渊下`、`璃月地下/层岩地下/层岩` 会额外带 `map_id` 参数",
+        "**缓存图存在 `data/map/`**，素材名就是文件名，改名后会重新下载"
+      ],
+      "failures": [
+        {
+          "symptom": "回一句接口错误信息",
+          "cause": "素材名不在接口库（retcode=-1）"
+        },
+        {
+          "symptom": "发「今天去哪玩在哪里」也被吃",
+          "cause": "宽泛正则，内部拿「今天去哪玩」去查当然查不到"
+        }
+      ],
+      "edgeCases": [
+        "接口返回非 JSON（直接是图片字节）时走下载分支"
+      ],
+      "scenarios": [
+        "找材料采集点"
+      ],
+      "vs": [
+        {
+          "command": "#清空地图数据",
+          "diff": "那个清缓存"
+        }
+      ],
+      "related": [
+        "#清空地图数据",
+        "#希儿"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/map-clear",
+      "command": "#清空地图数据",
+      "aliases": [
+        "#清除地图缓存数据",
+        "#清空地图缓存"
+      ],
+      "title": "清空地图图片缓存",
+      "summary": "删 data/map 下全部图片",
+      "what": "遍历 `data/map/` 逐文件删除，回删除个数。",
+      "returns": "「共清除N个地图数据~」",
+      "returnsDetail": "单个文件删失败时回「清空地图数据异常~」。",
+      "timing": "1~5 秒。",
+      "cost": "**删本地缓存文件**。",
+      "keywords": [
+        "清空地图",
+        "清地图缓存",
+        "删除地图数据"
+      ],
+      "params": [],
+      "example": "#清空地图数据",
+      "moreExamples": [
+        "#清除地图缓存数据"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**删除是逐文件 `unlinkSync`，没有回收站**",
+        "**只删缓存图，不删配置**，删完下次问会重新下载",
+        "**目录不存在时 `readdirSync` 会抛错**（初始化只在插件加载时建目录）",
+        "「缓存」两字可省"
+      ],
+      "failures": [
+        {
+          "symptom": "回「清空地图数据异常~」",
+          "cause": "某个文件被占用或权限不足"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "地图缓存占空间了"
+      ],
+      "vs": [
+        {
+          "command": "#清心在哪里",
+          "diff": "那个是查地图"
+        }
+      ],
+      "related": [
+        "#清心在哪里"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/qrcode-login",
+      "command": "#扫码登录",
+      "aliases": [
+        "#二维码绑定",
+        "#辅助登陆",
+        "#扫码绑定"
+      ],
+      "title": "扫码登录米游社",
+      "summary": "受 mhy.qrcode 开关限制",
+      "what": "先发免责声明，再取二维码让用户扫，扫码后自动把 sk/ck 绑定到账号。",
+      "returns": "免责声明 + 二维码图 + 结果。",
+      "returnsDetail": "已有未扫完的二维码时回「前置二维码未扫描，请勿重复触发指令」。",
+      "timing": "30~120 秒（等扫码）。",
+      "cost": "走米哈游登录接口 + 本地保存登录态。",
+      "keywords": [
+        "扫码登录",
+        "二维码登录",
+        "扫码绑定",
+        "米游社扫码"
+      ],
+      "params": [],
+      "example": "#扫码登录",
+      "moreExamples": [
+        "#二维码绑定",
+        "#扫码绑定"
+      ],
+      "preconditions": [
+        "**受 `mhy.qrcode` 开关限制**：`1` 仅群聊可用、`2` 仅私聊可用、`3` 关闭；不设置则不限制",
+        "手机装有米游社 App"
+      ],
+      "pitfalls": [
+        "**开关值是数字不是布尔**：`1` 群、`2` 私聊、`3` 关，写 `true/false` 无效",
+        "**限制不满足时不提示，直接 `return false` 放行** —— 表现为「发了没反应」",
+        "**同一时间只能有一个待扫二维码**，重复触发会被拒",
+        "**会先发一段免责声明**，不是错误信息",
+        "扫码拿到的是 **sk/ck**，不是 stoken；要 stoken 用 `stoken=...` 或 `login_ticket=...`"
+      ],
+      "failures": [
+        {
+          "symptom": "发了完全没反应",
+          "cause": "`mhy.qrcode` 设成 1/2 但当前场景不匹配，或设成 3"
+        },
+        {
+          "symptom": "回「前置二维码未扫描，请勿重复触发指令」",
+          "cause": "上一次二维码还没扫"
+        }
+      ],
+      "edgeCases": [
+        "`#辅助登陆` 这种错别字写法也在正则里（`(登录|绑定|登陆)`）"
+      ],
+      "scenarios": [
+        "不想手抄 Cookie，直接扫码"
+      ],
+      "vs": [
+        {
+          "command": "#账号登录",
+          "diff": "那个用账号密码，风险更高"
+        }
+      ],
+      "related": [
+        "#账号登录",
+        "#账号密码登录",
+        "#ck查询"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/pass-login-start",
+      "command": "#账号登录",
+      "aliases": [
+        "#密码绑定",
+        "#账号绑定",
+        "#密码登陆"
+      ],
+      "title": "账号密码登录（发免责声明那一步）",
+      "summary": "极高风险，不建议用",
+      "what": "先回一段免责声明，提示你把账号密码发给 bot 以换取 sk/ck。",
+      "returns": "免责声明文本。",
+      "returnsDetail": "「免责声明:您将通过密码完成获取米游社sk以及ck…害怕风险请勿发送账号密码~」。",
+      "timing": "1~3 秒。",
+      "cost": "纯文本；真正登录在下一步。",
+      "keywords": [
+        "账号登录",
+        "密码绑定",
+        "账号绑定",
+        "密码登录"
+      ],
+      "params": [],
+      "example": "#账号登录",
+      "moreExamples": [
+        "#密码绑定"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**这条只是发声明，真正登录要用下一条 `账号xxx密码yyy`**",
+        "**等于把米哈游账号密码交给 bot 所在的服务器**，一旦服务器被入侵就是账号失守",
+        "**官方风控会识别密码登录**，可能触发验证码甚至封号风险",
+        "**优先用扫码或 stoken**，除非你完全掌控这台机器"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "（不推荐）扫码和 stoken 都拿不到时的下策"
+      ],
+      "vs": [
+        {
+          "command": "#扫码登录",
+          "diff": "扫码不接触密码，风险低得多"
+        }
+      ],
+      "related": [
+        "#扫码登录",
+        "账号xxx密码yyy"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/pass-login-do",
+      "command": "账号13800138000密码xxxxxx",
+      "aliases": [
+        "账号xxx,密码yyy"
+      ],
+      "title": "用一条消息提交账号密码",
+      "summary": "正则极宽，会吃「账号…密码…」",
+      "what": "从消息里切出账号与密码，调米哈游密码登录接口换 sk/ck。",
+      "returns": "登录结果，可能需要过验证码。",
+      "returnsDetail": "格式不对（切不出两段）时静默 `return false`；触发风控（-3101）时进入验证流程。",
+      "timing": "5~30 秒。",
+      "cost": "**把明文密码发到服务器并调用官方登录接口**。",
+      "keywords": [
+        "账号密码登录",
+        "密码登录",
+        "提交账号密码"
+      ],
+      "params": [
+        {
+          "name": "账号",
+          "required": true,
+          "desc": "手机号或邮箱"
+        },
+        {
+          "name": "密码",
+          "required": true,
+          "desc": "明文密码，可用逗号分隔"
+        }
+      ],
+      "example": "账号13800138000密码xxxxxx",
+      "moreExamples": [
+        "账号xxx,密码yyy"
+      ],
+      "preconditions": [
+        "**强烈建议不要用** —— 除非你完全信任这台服务器"
+      ],
+      "pitfalls": [
+        "**正则是 `^账号(.*)密码(.*)$`，极其宽泛** —— 任何含「账号…密码…」的消息都会被它接住，比如你在群里聊「账号忘了密码也忘了」",
+        "**密码以明文进入消息记录、日志、redis**（代码注释说「不会保存」，但消息本身已经留在聊天记录里）",
+        "**账号密码之间用逗号分隔也能解析**（会把中文逗号转成英文）",
+        "**风控码 -3101 表示要过验证码**，流程会卡住",
+        "**这条不区分群聊私聊**，在群里发等于公开密码"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "格式切不出账号/密码两段"
+        },
+        {
+          "symptom": "卡住不动",
+          "cause": "触发风控需要验证码"
+        }
+      ],
+      "edgeCases": [
+        "`账号A密码B` 中 A/B 可以为任意字符串，不做格式校验"
+      ],
+      "scenarios": [
+        "（不推荐）"
+      ],
+      "vs": [
+        {
+          "command": "#扫码登录",
+          "diff": "那条不接触密码"
+        }
+      ],
+      "related": [
+        "#账号登录",
+        "#扫码登录"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "xiaoyao/topup",
+      "command": "#原神充值 6",
+      "aliases": [
+        "#商品列表",
+        "#充值列表",
+        "#订单查询 16347*****,100000000",
+        "#原神充值微信 6"
+      ],
+      "title": "原神充值 / 商品列表 / 订单查询",
+      "summary": "真实下单，涉及金钱",
+      "what": "按消息内容分流：`商品列表`/`充值列表` 出商品图；`订单查询`/`查询订单` 查订单；含「充值」则按商品 ID 生成支付码。",
+      "returns": "商品图 / 订单结果 / 支付二维码。",
+      "returnsDetail": "格式不对回「格式参考：#原神充值 6(商品ID) 可通过【#商品列表】获取可操作商品」；订单格式参考 `#订单查询16347*****(订单号),100000000(uid)`。",
+      "timing": "5~60 秒。",
+      "cost": "**真实支付流程**，会生成可付款的二维码。",
+      "keywords": [
+        "原神充值",
+        "充值",
+        "商品列表",
+        "订单查询",
+        "氪金",
+        "支付"
+      ],
+      "params": [
+        {
+          "name": "商品ID",
+          "required": true,
+          "desc": "先用 `#商品列表` 查到序号"
+        },
+        {
+          "name": "支付方式",
+          "required": false,
+          "desc": "前半段含「微信」走微信支付，否则走支付宝"
+        }
+      ],
+      "example": "#原神充值 6",
+      "moreExamples": [
+        "#商品列表",
+        "#订单查询16347*****,100000000",
+        "#原神充值微信 6"
+      ],
+      "preconditions": [
+        "已绑定米游社账号（充值要登录态）",
+        "**清楚这是真付钱**"
+      ],
+      "pitfalls": [
+        "**这是真实下单，不是模拟** —— 生成的支付码付了就是真扣款，金额不可撤销",
+        "**默认走支付宝**；要微信支付得把「微信」写在前半段（如 `#原神充值微信 6`）",
+        "**商品 ID 来自 `#商品列表`**，乱填会回用法提示",
+        "**订单查询要订单号 + uid 两段**，格式 `#订单查询订单号,uid`",
+        "**正则里 `订单|查询` 是重复的**（`((订单|查询)(订单|查询)(.*))`），所以 `#查询查询` 也算命中",
+        "**这条与 `#原神签到` 同属一个 catch-all 分派**，不涉及身份校验，任何能发消息的人都可能触发"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "商品 ID 缺失或不是单个字符"
+        },
+        {
+          "symptom": "订单查不到",
+          "cause": "订单号或 uid 写错"
+        }
+      ],
+      "edgeCases": [
+        "`#充值列表` 与 `#商品列表` 等价，都出商品图"
+      ],
+      "scenarios": [
+        "（高危）给原神充值"
+      ],
+      "vs": [
+        {
+          "command": "#刷新充值记录",
+          "diff": "那个只是查历史账单，不动钱"
+        }
+      ],
+      "related": [
+        "#商品列表",
+        "#刷新充值记录",
+        "#扫码登录"
+      ],
+      "risk": "a",
+      "permission": ""
+    }
+  ]
+}
