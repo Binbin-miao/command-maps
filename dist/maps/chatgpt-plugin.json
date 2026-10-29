@@ -1028,8 +1028,6 @@
       "id": "chatgpt/provider-switch",
       "command": "#chatgpt切换claude",
       "aliases": [
-        "#chatgpt切换gemini",
-        "#chatgpt切换api",
         "#chatgpt切换模型提供商"
       ],
       "title": "切换模型提供商",
@@ -1081,9 +1079,7 @@
       "id": "chatgpt/provider-edit",
       "command": "#chatgpt设置api key sk-xxx",
       "aliases": [
-        "#chatgpt设置claude模型 claude-3-5-sonnet",
-        "#chatgpt设置gemini地址 http://x",
-        "#chatgpt设置api反代 http://x"
+        "#chatgpt设置gemini地址 http://x"
       ],
       "title": "配置某提供商的 key / 模型 / 地址 / 设定",
       "summary": "仅 master",
@@ -1145,11 +1141,7 @@
     {
       "id": "chatgpt/provider-toggle",
       "command": "#chatgpt开启api流",
-      "aliases": [
-        "#chatgpt关闭api流",
-        "#chatgpt开启gemini搜索",
-        "#chatgpt关闭gemini代码执行"
-      ],
+      "aliases": [],
       "title": "开关流式输出 / gemini 搜索与代码执行",
       "summary": "仅 master",
       "what": "控制 `api流`（流式）、`gemini搜索`、`gemini代码执行` 三个开关。",
@@ -2664,9 +2656,7 @@
       "aliases": [
         "#最新词云",
         "#词云24h",
-        "#我的词云",
-        "#今日词云",
-        "#本周词云"
+        "#今日词云"
       ],
       "title": "词云图",
       "summary": "时间范围可选",
