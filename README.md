@@ -7,14 +7,42 @@ Yunzai 插件的**插件地图**仓库。一份地图完整描述一个插件的
 ## 结构
 
 ```
-index.json                 每份地图的 file / version / revision / sha256 / fingerprint
-maps/<pluginKey>.json      单插件地图；pluginKey 里的 / 压成 __
-schema/command-map.schema.json
-scripts/                   构建与校验脚本
-reports/usage.md           用量统计（由日志生成）
+maps-v2/                   手写地图，唯一的编辑入口
+  <pluginKey>.json         一个插件一份
+  _rule-counts.json        源码规则条数基线（覆盖率对账用，不是地图）
+dist/                      构建产物，跟地图一起提交
+  index.json               每份地图的 file / version / revision / sha256 / fingerprint
+  maps/<pluginKey>.json    地图的字节副本，下载方直接取这里
+scripts/                   构建、自检、探针脚本
+.github/workflows/maps.yml CI：重建索引 + 产物自检
+.githooks/pre-commit       提交前指令反查（需手动启用，见下）
 ```
 
 `index.json` 的键是**插件注册单位**（`pluginKey`），不是插件文件夹名——同一个插件包里可能有多个注册单位。
+
+`dist/maps/` 里的文件名由 key 决定，key 里的 `/` 压成 `__`。
+
+## 历史归档
+
+schema 1 那一套还留在仓库里，只为让老下载端仍能取到，**不再维护，不接受 PR**：
+
+| 路径 | 说明 |
+|---|---|
+| `maps/` | 旧地图目录，被 `maps-v2/` 取代 |
+| 根目录 `index.json` | 旧索引，被 `dist/index.json` 取代 |
+| `schema/command-map.schema.json` | 旧 schema 文件，字段约束现在写在 `build-index-v2.mjs` 里 |
+| `reports/usage.md` | 旧用量统计，由 `analyze-logs.mjs` 生成 |
+
+新改动一律进 `maps-v2/`，构建产物进 `dist/`。
+
+## 源码快照
+
+补地图要对着插件源码看，本机约定放在 `../_plugins_src/<插件名>/`（不进仓库）。
+两个容易踩的点：
+
+- **快照里没有插件运行时生成的 yaml 配置。** 开关初值、模型名、阈值这类默认值，很多是插件装好之后自己写出来的，
+  仓库里那份 `config_default.yaml` 往往不全。要确认「默认开还是默认关」，去上游仓库的 `defSet/` 目录取，别从快照猜。
+- 快照是浅克隆，只保留当前版本。要对比「以前是不是这样」，得重新拉全量。
 
 ## 地图结构（schema 2）
 
@@ -69,7 +97,7 @@ reports/usage.md           用量统计（由日志生成）
 - `command` 留空表示「没有确定写法」（如「任意含某词的消息都会触发」）。这类能力要收进来，`summary` 里写清触发条件，**不要编一个假写法**。
 - 同一插件内 `command` 不能重复。私聊版与群聊版指令（参数不同）要用完整写法区分，例如 `#禁言 123456 789012 30分钟`。
 - `vs` 用来写「和哪些指令像、差在哪」，跨插件也要写——这是模型最容易搞错的地方。
-- 地图里**不要写 `version`**：版本只存在于 `index.json`，两处并存必然打架（实测会导致每次同步都判「版本不同」而重复下载）。
+- 地图里**不要写 `version`**：版本只存在于 `dist/index.json`，两处并存必然打架（实测会导致每次同步都判「版本不同」而重复下载）。
 
 ### 两个可选字段
 
@@ -116,17 +144,38 @@ reports/usage.md           用量统计（由日志生成）
 ## 发布流程
 
 ```bash
-# 1. 改 maps/ 下的地图（或新增）
-# 2. 生成索引（校验 23 个字段、算哈希、升版本号）
+# 1. 改 maps-v2/ 下的地图（或新增）
+# 2. 生成索引（校验 23 个字段、算哈希、升版本号），产物写进 dist/
 node scripts/build-index-v2.mjs
 
-# 3. 端到端自检（假云端 + 真实拉取代码）
+# 3. 产物自检（结构层 + 有前端仓库时的端到端链路）
 node scripts/verify-pipeline.mjs
 
-# 4. 提 PR，人工审核后合并
+# 4. 提 PR，CI 与人工审核后合并
 ```
 
 构建脚本是**发布门禁**：缺字段、schema 不对、`id`/`command` 重复、`instructions` 为空——任何一项不过都直接退出，不产出索引。
+
+CI 跑三件事，任一步非 0 就红：
+
+| 步骤 | 命令 | 拦什么 |
+|---|---|---|
+| 展示名对账 | `node scripts/build-index-v2.mjs --check-display` | 改了地图的 `display` 却没重建索引 |
+| 重建索引 | `node scripts/build-index-v2.mjs` | 缺必填字段、`id`/`command` 重复、schema 不对 |
+| 产物自检 | `node scripts/verify-pipeline.mjs` | 落盘哈希 / 字节数 / 条数与索引对不上、`dist/maps` 有孤儿文件 |
+
+`--check-display` 只比对不写盘；它拦的是「地图改了、`dist/` 没跟上」这类半更新——这种问题只在合并后才暴露的话，修起来要回改 main。
+
+## 提交前钩子（可选）
+
+装了源码快照的机器上，可以让提交时自动反查指令写法：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+钩子只检查本次暂存的地图，且只在 `../_plugins_src/<插件名>/` 存在时才跑——没有快照就静默跳过，
+所以别人的机器和 CI 都不会被它挡住。想指到别处就设 `PLUGINS_SRC`。
 
 ## 下载方规则（chatgpt-plugin）
 
@@ -141,17 +190,23 @@ node scripts/verify-pipeline.mjs
 
 ## 脚本
 
+现行（schema 2）：
+
 | 脚本 | 用途 |
 | --- | --- |
-| `scripts/build-index-v2.mjs` | 由 `maps/` 生成 `index.json`，校验字段、算哈希、自动升版本号 |
-| `scripts/verify-pipeline.mjs` | 端到端自检：假云端 + 真实拉取代码，验证落盘与二次同步 |
-| `scripts/extract-sources.mjs` | 从插件源码粗提指令清单（人工撰写的输入，不直接发布） |
-| `scripts/probe-loader.mjs` | 在装有插件的机器上离线枚举真实规则（不启动 Bot、不连协议端） |
-| `scripts/analyze-logs.mjs` | 统计近一月指令用量（用于 `used` 与长文筛选） |
-| `scripts/bump-revision.mjs` | 旧版补丁流程遗留，schema 2 下由 `build-index-v2` 接管 |
+| `build-index-v2.mjs` | 由 `maps-v2/` 生成 `dist/index.json`，校验字段、算哈希、自动升版本号；`--check-display` 只对账不写盘 |
+| `verify-pipeline.mjs` | 产物自检：结构层逐条对账；有前端仓库时再跑一遍完整拉取链路 |
+| `rebase-index.mjs` | 按一组插件从最新索引裁出子集，单个 PR 只贴自己的条目，避免整份覆盖导致连环冲突 |
+| `check-map-commands.mjs` | 反查地图里的写法能否命中源码正则；`<地图名> <源码目录>` |
+| `rules-table.mjs` | 把一个插件的规则摊成 TSV（位置 / fnc / permission / reg），补地图时一次读完 |
+| `probe-loader.mjs` | 离线枚举单个插件的真实规则（不启动 Bot、不连协议端） |
+| `probe-all.mjs` | 批量跑 `probe-loader`，中间产物落在系统临时目录，退出即删 |
+| `analyze-logs.mjs` | 统计近一月指令用量（用于 `used` 与长文筛选） |
+
+历史（schema 1 遗留，别再用来发布）：`build-index.mjs`、`bump-revision.mjs`、`classify-index.mjs`、`expand-keys.mjs`、`extract-sources.mjs`。
 
 ## 贡献
 
 地图的质量标准只有一句：**不看源码也能判断**——按下去会发生什么、我会看到什么、什么情况下不该用。
 
-写 `keywords` 时多写用户真实说法（「帮我点个赞」比「赞」有用），不要写「指令」「插件」这类元词。改完请跑一次 `build-index-v2` 让版本号与哈希自动更新，**不要手改 `index.json`**。
+写 `keywords` 时多写用户真实说法（「帮我点个赞」比「赞」有用），不要写「指令」「插件」这类元词。改完请跑一次 `build-index-v2` 让版本号与哈希自动更新，**不要手改 `dist/index.json`**。

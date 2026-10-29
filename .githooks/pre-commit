@@ -1,0 +1,55 @@
+#!/bin/sh
+# 提交前反查指令写法：地图里写下的每条 command / alias，都必须能在插件源码里找到
+# 对应正则。写错一条（大小写、必填参数、前缀叠加）在这里就被拦下，不会走到 PR。
+#
+# 源码快照不是仓库的一部分，别人机器与 CI 上通常没有 —— 那就静默跳过，绝不阻塞。
+# 想跑就设 PLUGINS_SRC 指向快照根目录（默认 ../_plugins_src/<插件名>）。
+#
+# 启用：git config core.hooksPath .githooks
+
+set -u
+
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+cd "$ROOT" || exit 0
+
+# 只看本次暂存的地图；_ 开头的是辅助数据，不是地图
+CHANGED=$(git diff --cached --name-only --diff-filter=ACMR -- 'maps-v2/*.json' | grep -v '/_' || true)
+[ -z "$CHANGED" ] && exit 0
+
+SRC_ROOT=${PLUGINS_SRC:-../_plugins_src}
+if [ ! -d "$SRC_ROOT" ]; then
+  echo "跳过指令反查：没有源码快照（$SRC_ROOT）" >&2
+  exit 0
+fi
+
+OUT=''
+failed=0
+checked=0
+for file in $CHANGED; do
+  key=$(basename "$file" .json)
+  src="$SRC_ROOT/$key"
+  if [ ! -d "$src" ]; then
+    echo "跳过 $key：没有源码快照 $src" >&2
+    continue
+  fi
+  checked=$((checked + 1))
+  # 用变量接住输出，不落临时文件 —— Git Bash 下 /tmp 与 Windows 路径容易对不上
+  if OUT=$(node scripts/check-map-commands.mjs "$key" "$src" 2>&1); then
+    echo "$OUT" | tail -n 1
+  else
+    failed=$((failed + 1))
+    echo "✗ $key 指令反查未通过：" >&2
+    echo "$OUT" >&2
+  fi
+done
+
+[ "$checked" -eq 0 ] && exit 0
+
+if [ "$failed" -gt 0 ]; then
+  echo "" >&2
+  echo "有 $failed 个地图的指令写法和源码对不上，已拒绝提交。" >&2
+  echo "确认是源码里确实没有这条写法后，改 command/aliases；不要改源码去迁就地图。" >&2
+  exit 1
+fi
+
+exit 0

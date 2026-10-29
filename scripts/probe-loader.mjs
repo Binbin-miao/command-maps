@@ -239,7 +239,8 @@ function staticExtract(file) {
 for (const file of files) {
   let mod
   try {
-    mod = await import(file)
+    // 必须是 file:// URL —— 直接给路径在 Windows 上会被当成 c: 协议
+    mod = await import(pathToFileURL(file).href)
   } catch (err) {
     // import 就炸（模块级裸全局、版本检查），退到静态抽取
     const fallback = staticExtract(file)

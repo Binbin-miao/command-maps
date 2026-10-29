@@ -13,6 +13,10 @@ import crypto from 'node:crypto'
  *   - 内容没变 → 沿用上一版，不制造空版本
  *
  * 用法：node scripts/build-index-v2.mjs [--maps maps-v2] [--out dist] [--prev dist/index.json]
+ *       node scripts/build-index-v2.mjs --check-display [--index dist/index.json]
+ *
+ * `--check-display` 只做一件事：拿已提交的索引跟当前地图比展示名，不一致就非 0 退出。
+ * 拦的是「改了地图的 display、却没重建索引」这类半更新 —— 只重建索引本身发现不了它。
  */
 
 const args = process.argv.slice(2)
@@ -24,6 +28,9 @@ const valueOf = (name, fallback) => {
 const MAPS_DIR = valueOf('maps', 'maps-v2')
 const OUT_DIR = valueOf('out', 'dist')
 const PREV_INDEX = valueOf('prev', path.join(OUT_DIR, 'index.json'))
+/** 只比对不重建：拿这份索引的展示名去对地图 */
+const CHECK_DISPLAY = args.includes('--check-display')
+const INDEX_TO_CHECK = valueOf('index', PREV_INDEX)
 
 const INDEX_SCHEMA = 2
 const MAP_SCHEMA = 2
@@ -147,7 +154,8 @@ for (const file of files) {
   }
 
   const mapFile = `maps/${safeKey(key)}.json`
-  fs.writeFileSync(path.join(OUT_DIR, mapFile), raw, 'utf8')
+  // 只比对模式不动 dist，免得一次检查顺手改了发布目录
+  if (!CHECK_DISPLAY) fs.writeFileSync(path.join(OUT_DIR, mapFile), raw, 'utf8')
 
   const previous = prev.plugins?.[key]
   const digest = sha256(raw)
@@ -191,6 +199,38 @@ if (problems.length) {
   console.error(`发布门禁未通过（${problems.length} 处）：`)
   for (const line of problems) console.error(`  - ${line}`)
   process.exit(1)
+}
+
+/**
+ * 展示名对账：已提交索引里的 display 必须与当前地图一致。
+ * 不一致就意味着「地图改了、索引没重建」，照这样合并下去 main 上的展示名会一直是旧的。
+ * 只比双方都收录的插件 —— 这一版下线掉的插件谈不上漂移。
+ */
+if (CHECK_DISPLAY) {
+  let committed
+  try {
+    committed = JSON.parse(fs.readFileSync(INDEX_TO_CHECK, 'utf8'))
+  } catch (err) {
+    console.error(`读不到索引 ${INDEX_TO_CHECK}：${err.message}`)
+    process.exit(1)
+  }
+
+  const drift = []
+  for (const [key, old] of Object.entries(committed.plugins || {})) {
+    const fresh = plugins[key]
+    if (!fresh) continue
+    if (String(old.display || '').trim() !== String(fresh.display || '').trim()) {
+      drift.push(`${key}: 索引写「${old.display}」，地图写「${fresh.display}」`)
+    }
+  }
+
+  if (drift.length) {
+    console.error(`展示名与地图不一致（${drift.length} 处）—— 改完地图要重建索引：`)
+    for (const line of drift) console.error(`  - ${line}`)
+    process.exit(1)
+  }
+  console.log(`展示名一致：${Object.keys(plugins).length} 个插件`)
+  process.exit(0)
 }
 
 const index = {
