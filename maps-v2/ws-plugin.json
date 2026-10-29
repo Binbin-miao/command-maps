@@ -1,0 +1,1405 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "ws-plugin",
+    "display": "ws-plugin（WS/HTTP 连接与转发）",
+    "category": "系统",
+    "summary": "OneBot 连接管理（新增/删除/开关/重连/状态）、群黑白名单、文本设置台、真实 id 与虚拟 id 绑定、文字转图片与缓存回看、群成员列表补抓、插件自更新",
+    "homepage": "https://github.com/xiaoxi-66/ws-plugin",
+    "notes": "**结构**：`index.js` 扫 `apps/` 逐个 import 后 `export { apps }`，全是 `plugin` 子类，`priority` 统一 **1**，规则合计 15 条（地图 20 条：`wsReg` 按动作拆成 6 条、`groupReg` 合 1 条、`#ws查看连接` 与 `#ws状态` 分列）。**权限不统一**：`#ws状态` 的 `permission` 在源码里被注释掉（谁都能发），`#ws更新` 没有 `permission` 字段但函数内查 `isMaster`（非主人**静默**），`#ws帮助` 反而限 master。**两条上下文流程**（`#ws添加连接`、`#ws删除/打开/关闭/重新`）用 redis 或内存做状态，`#ws添加连接` 的暂存 key 是 `ws-plugin:addWs:<qq>`（**120 秒**过期），`#ws修改绑定` 的待确认记录则存在**内存对象 `bind`** 里，重启即丢。",
+    "interactsWith": [
+      "`lib/plugins/plugin.js`（上下文 setContext/finish）",
+      "redis（添加连接的暂存、`Yz:ws-plugin:setAll` 一键开关状态）",
+      "适配器（`#ws获取群成员列表` 依赖 `group/getMemberList`，这是 RED/Chronocat 那套 API；`#ws转图片` 依赖运行时 `ws.tool.toImg` handler）",
+      "sqlite（`model/red/memberList.js`、`model/db` 存成员与 id 映射）",
+      "other/restart.js（`#ws更新` 成功后重启）"
+    ],
+    "batches": {
+      "covered": [
+        "连接状态查看",
+        "连接增删开关重连",
+        "文本设置台与一键开关",
+        "群黑白名单",
+        "缓存清理",
+        "真实/虚拟 id 查询与绑定",
+        "版本与帮助",
+        "插件更新与日志",
+        "群成员列表补抓",
+        "文字转图片与消息缓存回看"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "ws/status",
+      "command": "#ws状态",
+      "aliases": [],
+      "title": "看所有 WS/HTTP 连接的状态",
+      "summary": "群发图，私聊发字",
+      "what": "遍历所有连接，输出「连接名字 / 连接类型 / 当前状态」；私聊且是 master 时额外给地址与 Bot 账号。",
+      "returns": "群里发**一张图**，私聊 master 发文本；没连接回「暂无连接」。",
+      "returnsDetail": "状态码：0 已关闭、1 正常、3 断线重连中（其它值也显示「已关闭」）。",
+      "timing": "1~3 秒（群里要渲染成图）。",
+      "cost": "只读，不改任何连接。",
+      "keywords": [
+        "ws状态",
+        "连接状态",
+        "ws 连上了吗"
+      ],
+      "params": [],
+      "example": "#ws状态",
+      "moreExamples": [
+        "#ws状态"
+      ],
+      "preconditions": [
+        "无（这条**没有** `permission`，谁都能查）"
+      ],
+      "pitfalls": [
+        "**这条是唯一不要求 master 的连接管理指令** —— 源码里 `// permission: 'master'` 被注释掉了",
+        "**群里的图和私聊的文字信息量不同**：群图不带连接地址与 Bot 账号（怕泄露），私聊 master 才有",
+        "**群里显示时按 uin 分组**：`uin` 是数组时归属显示成操作者自己",
+        "**状态值只认 0/1/3**，其它值一律显示「已关闭」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无连接」",
+          "cause": "一个连接都没有（配置没读到 / 还没建）"
+        },
+        {
+          "symptom": "群里图出不来",
+          "cause": "渲染失败，可试 `#ws清除缓存` 或私聊发"
+        }
+      ],
+      "edgeCases": [
+        "`#ws查看连接` 走的是同一个函数，输出完全一样"
+      ],
+      "scenarios": [
+        "Bot 掉线了想确认是哪个连接断了"
+      ],
+      "vs": [
+        {
+          "command": "#ws查看连接",
+          "diff": "同一条实现，只是另一种写法"
+        }
+      ],
+      "related": [
+        "#ws查看连接",
+        "#ws重新连接"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "ws/list-conn",
+      "command": "#ws查看连接",
+      "aliases": [
+        "#ws查看链接"
+      ],
+      "title": "查看连接（同 #ws状态）",
+      "summary": "别名入口",
+      "what": "`^#ws(添加|删除|打开|关闭|重新|查看)[连链]接(.*)$` 的「查看」分支，直接调 `view()`。",
+      "returns": "同 `#ws状态`。",
+      "returnsDetail": "同 `#ws状态`。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "查看连接",
+        "查看链接",
+        "ws查看"
+      ],
+      "params": [],
+      "example": "#ws查看连接",
+      "moreExamples": [
+        "#ws查看链接"
+      ],
+      "preconditions": [
+        "master（这条在主规则里带 `permission: 'master'`）"
+      ],
+      "pitfalls": [
+        "**「连接」和「链接」都认**（`[连链]接`），打错字也能用",
+        "**和 `#ws状态` 的区别只是权限**：这条要 master，那条谁都能发",
+        "后面跟的内容被忽略（`(.*)`），`#ws查看连接 xxx` 也是全量列表"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master，框架层直接拦掉"
+        }
+      ],
+      "edgeCases": [
+        "`#ws查看接` 少个字不匹配"
+      ],
+      "scenarios": [
+        "主人习惯用「查看连接」这个说法"
+      ],
+      "vs": [
+        {
+          "command": "#ws状态",
+          "diff": "那条不限权限"
+        }
+      ],
+      "related": [
+        "#ws状态"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "ws/add-conn",
+      "command": "#ws添加连接",
+      "aliases": [
+        "#ws添加链接"
+      ],
+      "title": "新增一个 WS/HTTP 连接（多轮问答）",
+      "summary": "两步上下文",
+      "what": "进入上下文，先让你发「连接名字,连接类型」，再按类型问地址/重连/Token，最后写进 `ws-config.yaml` 并让运行时新建连接。",
+      "returns": "第一轮回参数说明；后续每轮按类型给不同的参数清单；成功回「操作成功~请留意控制台输出~」。",
+      "returnsDetail": "格式错回「格式有误,请检查后重新发送#ws添加连接」；同名连接已存在时会**把当前 bot 的 uin 追加进去**而不是报错。",
+      "timing": "多轮，每轮之间靠 redis 缓存（`ws-plugin:addWs:<qq>`，**120 秒过期**）。",
+      "cost": "**改 `config/ws-config.yaml` 的 servers 数组**，直接影响连接与账号绑定。",
+      "keywords": [
+        "添加连接",
+        "新增ws",
+        "添加链接",
+        "反向ws"
+      ],
+      "params": [
+        {
+          "name": "连接名字",
+          "required": true,
+          "desc": "唯一标识，重名会走「给已有连接加 uin」分支"
+        },
+        {
+          "name": "连接类型",
+          "required": true,
+          "desc": "1 反向ws / 2 正向ws / 3 gscore / 4 red / 5 正向http / 6 反向http"
+        }
+      ],
+      "example": "#ws添加连接",
+      "moreExamples": [
+        "#ws添加链接"
+      ],
+      "preconditions": [
+        "master",
+        "**必须带 `#`**"
+      ],
+      "pitfalls": [
+        "**是多轮上下文，不是一句话搞定**：先发 `#ws添加连接`，再发「名字,类型」，再发地址等参数",
+        "**上下文 120 秒过期**（redis `setEx`），超时就要从头来",
+        "**类型编号要记**：1 反向ws、2 正向ws、3 gscore、4 red(Chronocat)、5 正向http、6 反向http；不同类型问的参数不同",
+        "**连接名重复不会报错**：会给已有连接追加当前 bot 的 uin，很容易以为「新建了」其实改的是旧连接",
+        "**写进去要等运行时生效**：提示是「请留意控制台输出~」，不是立刻可用",
+        "**非 master 在上下文里发消息会被忽略**（`checkAddWs` 里 `!e.isMaster` 直接 `return false`）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「格式有误,请检查后重新发送#ws添加连接」",
+          "cause": "参数不够（少于 2 项）或类型不是 1~6"
+        },
+        {
+          "symptom": "发了参数没反应",
+          "cause": "上下文已过期（120 秒）或不是 master"
+        },
+        {
+          "symptom": "回「已经有连接名为xx的连接并且已添加uin」",
+          "cause": "重名 + 该 uin 已在里面"
+        }
+      ],
+      "edgeCases": [
+        "类型 1/3 要「地址,重连间隔,最大重连次数,token」；类型 4 是「地址,Token,重连间隔,最大重连次数」——顺序不一样",
+        "`#ws添加连接` 后面直接跟内容目前被注释掉了，只能走两轮问答"
+      ],
+      "scenarios": [
+        "接入一个新的 OneBot 实现"
+      ],
+      "vs": [
+        {
+          "command": "#ws删除连接",
+          "diff": "那个删，这个加"
+        }
+      ],
+      "related": [
+        "#ws删除连接",
+        "#ws打开连接",
+        "#ws状态"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "ws/del-conn",
+      "command": "#ws删除连接",
+      "aliases": [
+        "#ws删除链接",
+        "#ws删除连接 NapCat"
+      ],
+      "title": "删除一个连接",
+      "summary": "按名字删",
+      "what": "按连接名字从 `ws-config.yaml` 的 servers 里删掉；不写名字则进入上下文等你发名字。",
+      "returns": "「操作成功~请留意控制台输出~」或「没有连接名字为xx的连接」。",
+      "returnsDetail": "不带名字时回「请继续发送需要删除的ws连接名字」，进入 `checkDelWs` 上下文。",
+      "timing": "1~3 秒。",
+      "cost": "**删配置项**，删错了要手动加回来。",
+      "keywords": [
+        "删除连接",
+        "删ws",
+        "删除链接"
+      ],
+      "params": [
+        {
+          "name": "连接名字",
+          "required": false,
+          "desc": "不写就进上下文再问"
+        }
+      ],
+      "example": "#ws删除连接 NapCat",
+      "moreExamples": [
+        "#ws删除链接 NapCat",
+        "#ws删除连接"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**名字必须完全一致**，没有模糊匹配",
+        "**不写名字会进上下文**，上下文的输入不做任何校验，发错一个字就回「没有连接名字为…」",
+        "**删除只改配置**，运行中的连接不一定会立刻断（看适配器实现），稳妥做法是删完重启",
+        "**上下文和 `#ws添加连接` 用的是不同 key**，不会互相干扰"
+      ],
+      "failures": [
+        {
+          "symptom": "回「没有连接名字为xx的连接」",
+          "cause": "名字打错或该连接本就不存在"
+        },
+        {
+          "symptom": "删了还在线",
+          "cause": "只删了配置，运行时连接没断"
+        }
+      ],
+      "edgeCases": [
+        "`#ws删除连接` 后面带空格再带名字也能过（`(.*)` 不过滤空格）"
+      ],
+      "scenarios": [
+        "换适配器了，把旧连接清掉"
+      ],
+      "vs": [
+        {
+          "command": "#ws关闭连接",
+          "diff": "那个只是标记关闭，配置还在"
+        }
+      ],
+      "related": [
+        "#ws关闭连接",
+        "#ws添加连接"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "ws/open-conn",
+      "command": "#ws打开连接 NapCat",
+      "aliases": [
+        "#ws打开链接 NapCat"
+      ],
+      "title": "启用一个已关闭的连接",
+      "summary": "改 closed 标志",
+      "what": "把配置里该连接的 `closed` 置 false 并 `delete close`，让运行时重新连。",
+      "returns": "「操作成功~请留意控制台输出~」或「没有连接名字为xx的连接」。",
+      "returnsDetail": "不带名字进 `checkOpenWs` 上下文。",
+      "timing": "1~3 秒（真正连上还要看控制台）。",
+      "cost": "改 `ws-config.yaml` 一项。",
+      "keywords": [
+        "打开连接",
+        "启用连接",
+        "开启ws"
+      ],
+      "params": [
+        {
+          "name": "连接名字",
+          "required": false,
+          "desc": "不写就进上下文"
+        }
+      ],
+      "example": "#ws打开连接 NapCat",
+      "moreExamples": [
+        "#ws打开链接 NapCat"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**只改配置，不重启进程** —— 提示永远是「请留意控制台输出~」，实际是否连上要去控制台看",
+        "**和 `#ws重新连接` 不是一回事**：这条是「让关着的连接允许连」，那条是「把正在跑的踢掉重连」",
+        "**「打开」和「重新」的选择**：连接已关闭用打开；连接卡在「断线重连中」用重新"
+      ],
+      "failures": [
+        {
+          "symptom": "回「没有连接名字为xx的连接」",
+          "cause": "名字错"
+        },
+        {
+          "symptom": "回了成功但状态还是已关闭",
+          "cause": "运行时没重新读配置，重启一次"
+        }
+      ],
+      "edgeCases": [
+        "对已经打开的连接执行也没问题（幂等）"
+      ],
+      "scenarios": [
+        "手滑关掉了一个连接"
+      ],
+      "vs": [
+        {
+          "command": "#ws关闭连接",
+          "diff": "反向操作"
+        },
+        {
+          "command": "#ws重新连接",
+          "diff": "那个会先 close 再 500ms 后重建"
+        }
+      ],
+      "related": [
+        "#ws关闭连接",
+        "#ws重新连接",
+        "#ws状态"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "ws/close-conn",
+      "command": "#ws关闭连接 NapCat",
+      "aliases": [
+        "#ws关闭链接 NapCat"
+      ],
+      "title": "关闭一个连接（保留配置）",
+      "summary": "标记 closed",
+      "what": "把该连接的 `closed` 置 true 并 `delete close`，运行时不再连它，但配置保留。",
+      "returns": "「操作成功~请留意控制台输出~」或「没有连接名字为xx的连接」。",
+      "returnsDetail": "不带名字进 `checkCloseWs` 上下文。",
+      "timing": "1~3 秒。",
+      "cost": "改配置；**如果那是唯一在线连接，关了 Bot 就掉线**。",
+      "keywords": [
+        "关闭连接",
+        "停用连接",
+        "断ws"
+      ],
+      "params": [
+        {
+          "name": "连接名字",
+          "required": false,
+          "desc": "不写就进上下文"
+        }
+      ],
+      "example": "#ws关闭连接 NapCat",
+      "moreExamples": [
+        "#ws关闭链接 NapCat"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**关掉唯一在线连接 = 自己把自己踢下线**，之后只能去控制台改回来",
+        "**是「配置层关闭」，不是「立刻断开」**，实际断开时机取决于运行时",
+        "**想彻底不要了用 `#ws删除连接`**，这条只是停用"
+      ],
+      "failures": [
+        {
+          "symptom": "回成功但还在线",
+          "cause": "运行时没重新读配置"
+        },
+        {
+          "symptom": "关完 Bot 联系不上了",
+          "cause": "关的是唯一连接"
+        }
+      ],
+      "edgeCases": [
+        "对已关闭的连接执行也返回成功（幂等）"
+      ],
+      "scenarios": [
+        "临时停掉一个有问题的适配器"
+      ],
+      "vs": [
+        {
+          "command": "#ws删除连接",
+          "diff": "那个连配置一起删"
+        }
+      ],
+      "related": [
+        "#ws打开连接",
+        "#ws删除连接"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "ws/reset-conn",
+      "command": "#ws重新连接 NapCat",
+      "aliases": [
+        "#ws重新链接 NapCat"
+      ],
+      "title": "踢掉重连（只对运行中的连接有效）",
+      "summary": "close 后 500ms 重建",
+      "what": "在运行时的 `sendSocketList` 里找到该名字的连接，`close()` 掉，500ms 后用原参数重新 `createWebSocket`。",
+      "returns": "「操作成功~请留意控制台输出~」或「没有连接名字为xx的连接或已关闭连接」。",
+      "returnsDetail": "不带名字进 `checkResetWs` 上下文。",
+      "timing": "约 0.5~3 秒重连。",
+      "cost": "**会短暂断开该连接**（约 0.5 秒起）。",
+      "keywords": [
+        "重新连接",
+        "重连",
+        "重启连接"
+      ],
+      "params": [
+        {
+          "name": "连接名字",
+          "required": false,
+          "desc": "不写就进上下文"
+        }
+      ],
+      "example": "#ws重新连接 NapCat",
+      "moreExamples": [
+        "#ws重新链接 NapCat"
+      ],
+      "preconditions": [
+        "master",
+        "**该连接当前在运行**（`sendSocketList` 里有）"
+      ],
+      "pitfalls": [
+        "**只认「正在运行」的连接**：已经被关闭/删掉的会回「没有连接名字为xx的连接或已关闭连接」",
+        "**先 close 再 500ms 重建**，这半秒里消息可能丢",
+        "**参数取自内存里的连接对象**，不是你刚改的配置文件 —— 改了配置要先重启再用这条"
+      ],
+      "failures": [
+        {
+          "symptom": "回「没有连接名字为xx的连接或已关闭连接」",
+          "cause": "连接没在跑（已关闭 / 名字错）"
+        },
+        {
+          "symptom": "重连后还是断",
+          "cause": "对端没起来，会按 `reconnectInterval` 继续重试"
+        }
+      ],
+      "edgeCases": [
+        "`#ws重新连接` 不带名字时进的上下文，输入后不做 trim，带空格会匹配失败"
+      ],
+      "scenarios": [
+        "连接卡在「断线重连中」想立刻重来一次"
+      ],
+      "vs": [
+        {
+          "command": "#ws打开连接",
+          "diff": "那个只改配置标志，不动运行时"
+        }
+      ],
+      "related": [
+        "#ws状态",
+        "#ws打开连接"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "ws/settings",
+      "command": "#ws设置 心跳 10",
+      "aliases": [
+        "#ws设置",
+        "#ws设置全部 关闭",
+        "#ws设置图片id 1"
+      ],
+      "title": "文本设置台（含一键全开/全关）",
+      "summary": "写 yaml + redis",
+      "what": "用文本改 `ws-config.yaml` / `msg-config.yaml` 里的配置项；不带项名只回设置总览图；项名写「全部」时批量开关所有布尔项。",
+      "returns": "设置总览图（`admin/index` 模板）。",
+      "returnsDetail": "「全部」分支把每个 boolean 项的 `key` 当开关写下去，并在 redis 里记 `Yz:ws-plugin:setAll`；值里含「关闭」写 false，其它写 true。",
+      "timing": "1~3 秒（改完重新渲染）。",
+      "cost": "**直接改配置文件**，没有二次确认。",
+      "keywords": [
+        "ws设置",
+        "ws配置",
+        "一键关闭",
+        "心跳",
+        "图片id"
+      ],
+      "params": [
+        {
+          "name": "项名",
+          "required": false,
+          "desc": "心跳/上报/端口/忽略艾特/断连通知/重连通知/首连通知/主人/禁言拦截/临时拦截/图片id/red转发/存储/渲染/同步/管理/群员减少/群员增加/禁言/好友添加/群撤回/好友撤回/戳一戳/好友申请/群邀请/群申请/全部"
+        },
+        {
+          "name": "值",
+          "required": false,
+          "desc": "布尔项写「开启」/「关闭」；数字项写数字"
+        }
+      ],
+      "example": "#ws设置 心跳 10",
+      "moreExamples": [
+        "#ws设置全部 关闭",
+        "#ws设置图片id 1",
+        "#ws设置"
+      ],
+      "preconditions": [
+        "master",
+        "**必须带 `#`**（`^#ws设置`）"
+      ],
+      "pitfalls": [
+        "**布尔项判定是 `!/关闭/.test(值)`** —— 写「关」「false」「0」都算**开启**，只有带「关闭」两字才是关",
+        "**「全部」只影响 boolean 项**，数字项（心跳/端口/存储…）不动",
+        "**「全部」的结果存在 redis**（`Yz:ws-plugin:setAll`），不是写进 yaml；重启 redis 清空就回默认",
+        "**`图片id` 的输入函数会把 0 变成 1**：`Math.min(2, Math.max(n*1||0, 1))`，想彻底关掉只能用默认值（默认就是 0，靠不设置来关）",
+        "**项名写错会抛异常**（`cfgSchemaMap[项名]` 是 undefined）"
+      ],
+      "failures": [
+        {
+          "symptom": "写「关闭」没生效",
+          "cause": "值里没有「关闭」两字，或者设的是数字项"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "在群里发但没带 `#`，或不是 master"
+        }
+      ],
+      "edgeCases": [
+        "`#ws设置` 不带项名 = 只看面板",
+        "数字项走 `cfgSchema.input(val)`，比如心跳会被限制成 ≥0，端口限制 1~65535"
+      ],
+      "scenarios": [
+        "不想开锅巴，想用指令改配置",
+        "一键把所有通知关掉"
+      ],
+      "vs": [
+        {
+          "command": "#锅巴配置",
+          "diff": "锅巴是图形界面，这条是文本入口"
+        }
+      ],
+      "related": [
+        "#ws状态",
+        "#ws帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "ws/group-whitelist",
+      "command": "#ws禁用群",
+      "aliases": [
+        "#ws启用群",
+        "#ws查看禁用群",
+        "#ws添加禁用群",
+        "#ws删除禁用群",
+        "#ws添加启用群123456",
+        "#ws查看启用群"
+      ],
+      "title": "群黑白名单（禁用群 / 启用群）",
+      "summary": "9 种组合一条正则",
+      "what": "改 `msg-config.yaml` 的 `noGroup`（黑名单）与 `yesGroup`（白名单）：不带动作是「加入对应名单」，带 查看/添加/删除 时对指定名单做增删查。",
+      "returns": "一段文本，含「操作成功~…当前xx列表:\\n<群号逐行>」。",
+      "returnsDetail": "重复添加回「操作失败~xx群中已经添加了[群号]\\n当前xx群列表:」；删除不存在的回「操作失败~在xx群中没有这个群聊…」。",
+      "timing": "1 秒内。",
+      "cost": "写 `msg-config.yaml`。",
+      "keywords": [
+        "禁用群",
+        "启用群",
+        "群黑名单",
+        "群白名单"
+      ],
+      "params": [
+        {
+          "name": "动作",
+          "required": false,
+          "desc": "查看 / 删除 / 添加，省略=直接加进对应名单"
+        },
+        {
+          "name": "目标",
+          "required": true,
+          "desc": "禁用（黑名单）或 启用（白名单）"
+        },
+        {
+          "name": "群号",
+          "required": false,
+          "desc": "省略=当前群"
+        }
+      ],
+      "example": "#ws禁用群",
+      "moreExamples": [
+        "#ws禁用群123456789",
+        "#ws查看禁用群",
+        "#ws查看启用群",
+        "#ws添加启用群123456789"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**「禁用」和「启用」是反义的名单**：禁用 → 加黑名单 `noGroup`；启用 → 加白名单 `yesGroup`",
+        "**不带动作时是「智能互斥」**：禁用一个已在白名单的群，会先把它从白名单删掉再加黑名单（反过来同理）",
+        "**群号正则是 `([0-9]*)`，可空**，空时用当前群号",
+        "**写名单不会立即影响已建立的会话**，下一次消息分发才按新名单过滤",
+        "**这条只控制「上报」，不是「踢人」** —— 别当成群管理指令"
+      ],
+      "failures": [
+        {
+          "symptom": "回「操作失败~黑名单中已经添加了[群号]」",
+          "cause": "重复添加"
+        },
+        {
+          "symptom": "回「暂无禁用群聊」",
+          "cause": "对应名单是空的"
+        },
+        {
+          "symptom": "私聊发 `#ws禁用群` 报错",
+          "cause": "没有 group_id，群号又没写"
+        }
+      ],
+      "edgeCases": [
+        "`#ws删除禁用群` 不带群号时删的是「当前群」，私聊场景删不了别的群",
+        "一条正则覆盖 3（动作）× 2（禁用/启用）= 9 种写法"
+      ],
+      "scenarios": [
+        "某个群不想让 Bot 响应",
+        "只允许白名单群使用"
+      ],
+      "vs": [
+        {
+          "command": "#ws设置",
+          "diff": "那个改功能开关，这个改群黑白名单"
+        }
+      ],
+      "related": [
+        "#ws设置",
+        "#ws状态"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "ws/clear-cache",
+      "command": "#ws清除缓存",
+      "aliases": [],
+      "title": "清空 Temp 渲染缓存",
+      "summary": "删文件，删完就回成功",
+      "what": "把 `plugins/ws-plugin/Temp` 目录下所有文件 `unlink` 掉（异步、不等结果），然后回「操作成功~」。",
+      "returns": "「操作成功~」。",
+      "returnsDetail": "**无论如何都回成功**：`try/catch` 把错误全吞了，删失败也不报。",
+      "timing": "1 秒内（不等待删除完成）。",
+      "cost": "删临时文件（头像缓存、渲染中间产物）。",
+      "keywords": [
+        "ws清除缓存",
+        "清缓存",
+        "temp"
+      ],
+      "params": [],
+      "example": "#ws清除缓存",
+      "moreExamples": [
+        "#ws清除缓存"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**它不等删除完成就回「操作成功~」** —— `fs.unlink(..., () => {})` 是异步回调，删失败也不会有提示",
+        "**只删 `Temp` 目录下的文件，不递归子目录**",
+        "**每天 0 点本来就会自动清一次**（`scheduleJob('0 0 0 * * ?')`），手动清多数时候没必要",
+        "**清完不影响配置**，只影响下次渲染要重新生成"
+      ],
+      "failures": [
+        {
+          "symptom": "回「操作成功~」但文件还在",
+          "cause": "删除是异步的，或者被占用（Windows 常见）"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [
+        "`Temp` 目录不存在时启动阶段会 `mkdirSync` 建回来"
+      ],
+      "scenarios": [
+        "渲染图一直出旧图 / 磁盘被临时文件占满"
+      ],
+      "vs": [
+        {
+          "command": "#ws设置",
+          "diff": "那个改配置，这个只清文件"
+        }
+      ],
+      "related": [
+        "#ws状态"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "ws/my-id",
+      "command": "#wsme",
+      "aliases": [
+        "#ws_me",
+        "#ws-id",
+        "#wsid",
+        "#wsID"
+      ],
+      "title": "查自己的真实/虚拟 ID（群里还带群 ID）",
+      "summary": "绑定前先看这个",
+      "what": "回当前用户的真实 QQ 与插件分配的虚拟 id；在群里还会带群的真实 id 与虚拟 id。",
+      "returns": "一段文本（带 `@`）：「用户真实id: / 用户虚拟id: / 群真实id: / 群虚拟id:」。",
+      "returnsDetail": "私聊时只有用户那两行；虚拟 id 每次都可能不同（依赖存储表）。",
+      "timing": "1 秒内。",
+      "cost": "读数据库。",
+      "keywords": [
+        "ws me",
+        "ws id",
+        "虚拟id",
+        "查id"
+      ],
+      "params": [],
+      "example": "#wsme",
+      "moreExamples": [
+        "#wsme",
+        "#wsID",
+        "#ws_id"
+      ],
+      "preconditions": [
+        "无（谁都能查自己）"
+      ],
+      "pitfalls": [
+        "**`#ws` 和 `me` 之间可以有 `_` 或 `-`**（`^#ws[_-]?(me|id|ID)$`），`#wsme`（有空格）**反而不匹配**",
+        "**虚拟 id 是插件自己维护的映射**，和真实 QQ 不同；别把虚拟 id 当 QQ 发给别人",
+        "**群里才有群 id 那两行**，私聊只有用户部分"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写了空格（`#wsme`）、或大小写不对（只认 me/id/ID）"
+        }
+      ],
+      "edgeCases": [
+        "`#wsID` 与 `#wsid` 都认，但 `#wsId` 不认"
+      ],
+      "scenarios": [
+        "要做 id 绑定前先确认自己的 id"
+      ],
+      "vs": [
+        {
+          "command": "#ws修改绑定 123",
+          "diff": "那个是改映射，这个是查"
+        }
+      ],
+      "related": [
+        "#ws绑定 12345",
+        "#ws接受群绑定"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "ws/bind-id",
+      "command": "#ws绑定 12345",
+      "aliases": [
+        "#wsbind 12345",
+        "#ws修改群id 12345",
+        "#ws绑定群id 12345"
+      ],
+      "title": "改自己的 / 某个群 / 某个人的虚拟 ID",
+      "summary": "主人直接改，其他人走两步",
+      "what": "把真实 id 与虚拟 id 的映射改掉。带「群」时改群映射，否则改用户映射；master 可以直接指定目标 id，非 master 只能改自己（且要走「接受绑定」二次确认）。",
+      "returns": "master：直接回修改结果；非 master：回「请用ID为[12345]的账号向Bot发送\\n\\n#ws接受绑定 <真实id>」。",
+      "returnsDetail": "非数字回「输入有误,ID应为纯数字」；群里没有真实 id 时回「修改失败,未包含群真实id」。",
+      "timing": "1 秒内。",
+      "cost": "**写 id 映射表**（sqlite）。",
+      "keywords": [
+        "修改绑定",
+        "绑定id",
+        "改虚拟id",
+        "ws bind"
+      ],
+      "params": [
+        {
+          "name": "目标 id",
+          "required": true,
+          "desc": "纯数字，紧跟在指令后面"
+        },
+        {
+          "name": "真实 id",
+          "required": false,
+          "desc": "**只有 master 能写第二个参数**（空格分隔）来指定改谁"
+        },
+        {
+          "name": "群",
+          "required": false,
+          "desc": "指令里带「群」就改群映射"
+        }
+      ],
+      "example": "#ws绑定 12345",
+      "moreExamples": [
+        "#ws绑定 12345",
+        "#ws修改群id 12345",
+        "#ws修改群id 12345"
+      ],
+      "preconditions": [
+        "无（非 master 也能发起，但要对方确认）"
+      ],
+      "pitfalls": [
+        "**非 master 一次改不完**：会回一段「请用 ID 为 [12345] 的账号发 `#ws接受绑定 <真实id>`」，必须**用那个虚拟 id 对应的账号**再发一次才生效",
+        "**`#ws修改绑定 12345` 是错的**：正则是 `^#ws(修改|绑定|bind)群?(id|ID)?\\s*(.+)$`，「修改」会先把「修改」吃掉，剩下的「绑定 12345」被当成 id 参数，`Number('绑定')` 是 NaN，于是回「输入有误,ID应为纯数字」。正确写法是 `#ws绑定 12345` 或 `#ws修改 12345`；群绑定写 `#ws修改群id 123` / `#ws绑定群 123`",
+        "**目标 id 必须是纯数字**，否则回「输入有误,ID应为纯数字」",
+        "**非 master 只能改到自己头上**（`where[type] = e[type]`），想改别人的会被忽略第二参数"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请用ID为[12345]的账号…」",
+          "cause": "非 master，需要第二步确认"
+        },
+        {
+          "symptom": "回「修改失败,未包含此真实id」",
+          "cause": "该真实 id 已经映射成别的虚拟 id"
+        },
+        {
+          "symptom": "回「修改失败,未包含群真实id」",
+          "cause": "私聊里发群绑定且没写群号"
+        }
+      ],
+      "edgeCases": [
+        "`bind` 缓存在内存对象里（`const bind = {}`），**进程重启就丢**，没确认的绑定全部作废",
+        "群绑定的二次确认要在**目标群**里发，不是私聊"
+      ],
+      "scenarios": [
+        "对接需要自定义 QQ 号的适配器",
+        "让某个群用固定虚拟群号"
+      ],
+      "vs": [
+        {
+          "command": "#ws接受群绑定",
+          "diff": "那个是第二步确认"
+        }
+      ],
+      "related": [
+        "#ws接受群绑定",
+        "#wsme"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "ws/accept-bind",
+      "command": "#ws接受群绑定 123456789",
+      "aliases": [
+        "#ws接受绑定 123456789",
+        "#ws接受绑定群 123456789"
+      ],
+      "title": "确认绑定（第二步）",
+      "summary": "内存态，重启失效",
+      "what": "校验「发起绑定时记下的真实 id」与本次带的 id 是否一致，一致就写入映射并 `@` 发起人。",
+      "returns": "`@发起人` + 写入结果（成功/失败文案来自数据层）。",
+      "returnsDetail": "**不一致或没有待确认记录时，一句话都不回**（函数里没有 else 分支）。",
+      "timing": "1 秒内。",
+      "cost": "写映射表。",
+      "keywords": [
+        "接受绑定",
+        "接受群绑定",
+        "确认绑定"
+      ],
+      "params": [
+        {
+          "name": "真实 id",
+          "required": true,
+          "desc": "就是上一步回复里让你带的那个真实 id"
+        }
+      ],
+      "example": "#ws接受群绑定 123456789",
+      "moreExamples": [
+        "#ws接受绑定 123456789"
+      ],
+      "preconditions": [
+        "上一步 `#ws修改绑定` 已经发起（内存里有 `bind` 记录）",
+        "**同一进程未重启**"
+      ],
+      "pitfalls": [
+        "**待确认记录存在内存里**（`const bind = {}`），重启 Bot 就全丢，表现为「发了没反应」",
+        "**不匹配时完全静默** —— 没有「id 不对」的提示",
+        "**群绑定要在目标群里发**，用户绑定要在对应账号下发",
+        "**`#ws接受群绑定` 与 `#ws接受绑定` 是两个分支**（靠消息里有没有「群」字区分）"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "没有待确认记录（重启过 / 上一步没做 / 发错群）"
+        },
+        {
+          "symptom": "没反应且 id 确定对",
+          "cause": "带的是虚拟 id 而不是真实 id"
+        }
+      ],
+      "edgeCases": [
+        "确认成功后 `delete bind[...]`，同一条只能确认一次"
+      ],
+      "scenarios": [
+        "上一步被要求「用另一个账号发接受绑定」"
+      ],
+      "vs": [
+        {
+          "command": "#ws绑定 12345",
+          "diff": "那个是发起，这个是确认"
+        }
+      ],
+      "related": [
+        "#ws绑定 12345",
+        "#wsme"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "ws/version",
+      "command": "#ws版本",
+      "aliases": [],
+      "title": "插件版本与更新日志图",
+      "summary": "所有人可看",
+      "what": "渲染 `help/version-info` 模板，展示当前版本号与内置 changelogs。",
+      "returns": "一张版本信息图。",
+      "returnsDetail": "渲染失败时可能只回文本或没反应（取决于 Render）。",
+      "timing": "1~3 秒。",
+      "cost": "只渲染。",
+      "keywords": [
+        "ws版本",
+        "插件版本"
+      ],
+      "params": [],
+      "example": "#ws版本",
+      "moreExamples": [
+        "#ws版本"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**必须正好是 `#ws版本`**，`#ws插件版本` 不匹配（对比 `#ws更新` 是认「插件」二字的）",
+        "**changelogs 是打包在代码里的静态文本**，不是 git log；想看去 `#ws更新日志`"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "模板渲染失败"
+        }
+      ],
+      "edgeCases": [
+        "版本图里会显示当前跑的是不是 Miao 版 Yunzai"
+      ],
+      "scenarios": [
+        "报 bug 前先确认版本"
+      ],
+      "vs": [
+        {
+          "command": "#ws更新日志",
+          "diff": "那个是真实 git 提交记录"
+        }
+      ],
+      "related": [
+        "#ws更新日志",
+        "#ws帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "ws/help",
+      "command": "#ws帮助",
+      "aliases": [],
+      "title": "插件帮助图（仅主人）",
+      "summary": "要 master",
+      "what": "渲染 `help/index` 帮助图，条目来自 `config/system/help_system.js`。",
+      "returns": "一张帮助图。",
+      "returnsDetail": "非 master **完全没反应**（`permission: 'master'` 在框架层拦截）。",
+      "timing": "1~3 秒。",
+      "cost": "只渲染。",
+      "keywords": [
+        "ws帮助",
+        "ws 怎么用"
+      ],
+      "params": [],
+      "example": "#ws帮助",
+      "moreExamples": [
+        "#ws帮助"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**只有主人能看帮助** —— 普通用户发 `#ws帮助` 一点反应都没有，很容易被误判成「插件没装」",
+        "**必须正好 `#ws帮助`**，`#ws指令`、`#ws菜单` 都不认",
+        "帮助里列的条目是静态配置，可能落后于实际规则"
+      ],
+      "failures": [
+        {
+          "symptom": "普通用户发没反应",
+          "cause": "这条限 master"
+        },
+        {
+          "symptom": "master 发也没反应",
+          "cause": "渲染失败"
+        }
+      ],
+      "edgeCases": [
+        "图标 `icon` 为 0 的条目会被 `display:none` 隐藏"
+      ],
+      "scenarios": [
+        "主人想回顾全部指令"
+      ],
+      "vs": [
+        {
+          "command": "#ws版本",
+          "diff": "那个谁都能看"
+        }
+      ],
+      "related": [
+        "#ws版本",
+        "#ws设置"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "ws/update",
+      "command": "#ws更新",
+      "aliases": [
+        "#ws插件更新",
+        "#ws强制更新",
+        "#ws插件强制更新"
+      ],
+      "title": "更新插件本体（git pull，成功后重启）",
+      "summary": "强制会丢改动",
+      "what": "在 `plugins/ws-plugin` 里 `git pull --no-rebase`；带「强制」先 `git reset --hard` 再 `pull --rebase --allow-unrelated-histories`。",
+      "returns": "「开始执行更新操作...」→「ws-plugin已经是最新…」或「ws-plugin更新成功」+ 最近提交（合并转发，含 remote url）。",
+      "returnsDetail": "冲突回「存在冲突…请…执行#ws强制更新，放弃本地修改」；连不上回「连接超时/连接失败：<remote>」；没 git 回「请先安装git」。",
+      "timing": "10~60 秒，成功后 2 秒重启。",
+      "cost": "**拉代码 + 自动重启整个 Bot**；强制模式丢本地改动。",
+      "keywords": [
+        "ws更新",
+        "更新插件",
+        "强制更新"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "`git reset --hard` 后强拉"
+        }
+      ],
+      "example": "#ws更新",
+      "moreExamples": [
+        "#ws插件更新",
+        "#ws强制更新"
+      ],
+      "preconditions": [
+        "master（**函数内 `if (!this.e.isMaster) return false`，非主人静默**）",
+        "git 安装"
+      ],
+      "pitfalls": [
+        "**这条的规则上没有 `permission` 字段**，权限判断在函数里 —— 所以非主人发是**静默**（不是「权限不足」提示）",
+        "**成功后 2 秒自动重启**（`setTimeout(() => this.restart(), 2000)`），群会短暂失联",
+        "**`uping` 全局互斥**：并发时回「已有命令更新中..请勿重复操作」",
+        "**更新日志最多列 100 条**，且 `Merge branch` 会被过滤",
+        "**「已经是最新」时不会重启**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请先安装git」",
+          "cause": "环境没有 git"
+        },
+        {
+          "symptom": "回「存在冲突…」",
+          "cause": "本地改过文件"
+        },
+        {
+          "symptom": "更新完掉线一会",
+          "cause": "设计如此：2 秒后重启"
+        },
+        {
+          "symptom": "非主人发了没反应",
+          "cause": "函数内检查 isMaster 后静默 return false"
+        }
+      ],
+      "edgeCases": [
+        "`#ws更新` 与 `#ws插件更新` 等价；「强制」位置在「插件」之后"
+      ],
+      "scenarios": [
+        "上游发了新版本"
+      ],
+      "vs": [
+        {
+          "command": "#ws更新日志",
+          "diff": "那个只看不动"
+        }
+      ],
+      "related": [
+        "#ws更新日志",
+        "#ws版本"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "ws/update-log",
+      "command": "#ws更新日志",
+      "aliases": [
+        "#ws插件更新日志"
+      ],
+      "title": "看插件 git 提交（合并转发）",
+      "summary": "谁都可看",
+      "what": "取 `plugins/ws-plugin` 最近 100 条提交 + 当前 remote url，做成合并转发。",
+      "returns": "合并转发「ws-plugin 更新日志，共N条」。",
+      "returnsDetail": "拿不到输出时不回复；`Merge branch` 会被跳过。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "ws更新日志",
+        "提交记录"
+      ],
+      "params": [],
+      "example": "#ws更新日志",
+      "moreExamples": [
+        "#ws插件更新日志"
+      ],
+      "preconditions": [
+        "git 安装且 `plugins/ws-plugin` 是 git 目录"
+      ],
+      "pitfalls": [
+        "**不需要 master**（这条没有权限限制）",
+        "**`oldCommitId` 只有在 `#ws更新` 里才会被赋值**，所以单独发这条永远是「最近 100 条」而不是「自上次以来的更新」",
+        "**zip 安装的插件没有 `.git`**，这条会完全没反应"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 git 安装"
+        }
+      ],
+      "edgeCases": [
+        "末尾会附上 remote url，从日志里能看出是不是镜像源"
+      ],
+      "scenarios": [
+        "更新前看看会带来什么变化"
+      ],
+      "vs": [
+        {
+          "command": "#ws更新",
+          "diff": "那个会真拉代码并重启"
+        }
+      ],
+      "related": [
+        "#ws更新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "ws/get-member-list",
+      "command": "#ws获取群成员列表",
+      "aliases": [
+        "#ws获取群成员列表 123456789"
+      ],
+      "title": "拉取并落地群成员列表（red 适配器专用）",
+      "summary": "一次性接口",
+      "what": "调适配器的 `group/getMemberList` 接口（size 9999）拿全量成员，写进 sqlite 的成员表（先删旧数据）。",
+      "returns": "先回一段注意事项（**只有本进程第一次**），再回「本次获取人数: N」或「未获取到任何群员」。",
+      "returnsDetail": "没带群号且不在群里时回「获取失败,未携带群号」；有旧数据会先回「已删除旧数据: N」。",
+      "timing": "2~10 秒（取决于群大小）。",
+      "cost": "**删旧成员表 + 写全量**，接口本身开销大。",
+      "keywords": [
+        "获取群成员列表",
+        "群成员",
+        "成员列表为空"
+      ],
+      "params": [
+        {
+          "name": "群号",
+          "required": false,
+          "desc": "紧跟在指令后，不写则用当前群"
+        }
+      ],
+      "example": "#ws获取群成员列表",
+      "moreExamples": [
+        "#ws获取群成员列表 123456789"
+      ],
+      "preconditions": [
+        "master",
+        "**适配器支持 `group/getMemberList` 这个 API**（RED/Chronocat 那套）"
+      ],
+      "pitfalls": [
+        "**注意事项只显示一次**：`tips` 是模块级变量，第一次发完就置 `null`，进程重启才恢复",
+        "**依赖特定适配器 API**：普通 OneBot11 没有 `group/getMemberList`，会拿到 undefined/报错",
+        "**按「先删后写」处理**：旧数据会被清空，接口失败就变成空表",
+        "**群号是 `e.msg.replace(/^#ws获取群成员列表/, '')` 取的**，所以名字里不能有别的数字混进去"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未获取到任何群员」",
+          "cause": "适配器不支持该 API，或没切到目标群页面"
+        },
+        {
+          "symptom": "回「获取失败,未携带群号」",
+          "cause": "私聊里发且没写群号"
+        },
+        {
+          "symptom": "成员列表少了很多人",
+          "cause": "适配器只返回当前缓存到的成员，按提示需要先点到别的群再点回来"
+        }
+      ],
+      "edgeCases": [
+        "写入时 `update_time` 是当前时间戳，可用于判断数据新鲜度",
+        "这个表主要给「成员列表为空」的场景兜底（比如 red 协议取不到成员）"
+      ],
+      "scenarios": [
+        "Bot 查群成员总是空的，手动补一次数据"
+      ],
+      "vs": [
+        {
+          "command": "#ws状态",
+          "diff": "那个看连接，这个抓成员"
+        }
+      ],
+      "related": [
+        "#ws状态"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "ws/to-image",
+      "command": "#ws转图片 你好",
+      "aliases": [
+        "#ws转图片",
+        "#ws转图片 <图片>"
+      ],
+      "title": "把文字/图片转成一张图",
+      "summary": "依赖运行时 handler",
+      "what": "把这条消息里的文本与图片段取出，交给运行时的 `ws.tool.toImg` handler 渲染成图片发回。",
+      "returns": "一张图（带 `@`）；没有可转内容时回「没有要转换的文字哦~」。",
+      "returnsDetail": "**运行时没有注册 `ws.tool.toImg` 时什么都不回**（代码里 `if (handler.has(...))` 没有 else）。",
+      "timing": "1~5 秒。",
+      "cost": "渲染。",
+      "keywords": [
+        "ws转图片",
+        "文字转图片",
+        "转图片"
+      ],
+      "params": [
+        {
+          "name": "内容",
+          "required": true,
+          "desc": "指令后面的文字，或附图"
+        }
+      ],
+      "example": "#ws转图片 你好",
+      "moreExamples": [
+        "#ws转图片"
+      ],
+      "preconditions": [
+        "运行时支持 handler（`e.runtime.handler`）",
+        "有 `user_id`"
+      ],
+      "pitfalls": [
+        "**正则没有首尾锚点**（`#ws转图片.*`），消息里出现这个词就会触发",
+        "**转图片用的是插件自己的 `toImg`**，和 `#ws状态` 的渲染是两套",
+        "**没有 handler 就彻底静默** —— 老版本 Yunzai / 非 TRSS 环境常见",
+        "**只取 text 与 image 段**，at/face 之类会被丢掉"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "运行时没有 `ws.tool.toImg` handler"
+        },
+        {
+          "symptom": "回「没有要转换的文字哦~」",
+          "cause": "指令后面啥也没有"
+        }
+      ],
+      "edgeCases": [
+        "`#ws转图片` 只发指令不跟内容，等于空内容"
+      ],
+      "scenarios": [
+        "想把自己写的一段话变成图发出去"
+      ],
+      "vs": [
+        {
+          "command": "#ws查看12",
+          "diff": "那个是按 id 取回缓存的转发消息"
+        }
+      ],
+      "related": [
+        "#ws查看12"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "ws/view-cached",
+      "command": "#ws查看12",
+      "aliases": [],
+      "title": "按 id 取回之前转过的转发消息",
+      "summary": "默认不缓存",
+      "what": "从内存 `htmlCache` 里按数字 id 取回原始转发消息并重发。",
+      "returns": "那条缓存的消息；id 不存在时**静默**。",
+      "returnsDetail": "`htmlCache` 是进程内对象，重启清空。",
+      "timing": "1 秒内。",
+      "cost": "只读内存。",
+      "keywords": [
+        "ws查看",
+        "查看消息",
+        "消息id"
+      ],
+      "params": [
+        {
+          "name": "id",
+          "required": true,
+          "desc": "纯数字，就是转图片时提示的那个 ID"
+        }
+      ],
+      "example": "#ws查看12",
+      "moreExamples": [
+        "#ws查看12"
+      ],
+      "preconditions": [
+        "**`msg-config.yaml` 的 `toImgID` 不为 0**（默认就是 0，等于不缓存）"
+      ],
+      "pitfalls": [
+        "**默认 `toImgID: 0`，`htmlCache` 根本不写入** —— 所以刚装好时 `#ws查看12` 永远没反应",
+        "**缓存只在内存里**，重启即失效；也没有过期清理",
+        "**id 从 1 开始自增**（`let id = 1`），跨越重启会重头",
+        "**`#ws查看` 和 `#ws查看连接` 是两条完全不同的规则**：前者要数字，后者是连接列表"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "`图片id` 是 0（默认），或 id 不存在，或重启过"
+        },
+        {
+          "symptom": "想看连接却回了消息",
+          "cause": "后面跟了数字，被这条规则抢先"
+        }
+      ],
+      "edgeCases": [
+        "正则其实是 `^#ws查看s*([0-9]+)$` —— 源码写的是字符串 `'\\s'`，JS 会把 `\\s` 当成字母 `s`，所以**数字前不能有空格**：`#ws查看 12` 不匹配，`#ws查看12` 才行"
+      ],
+      "scenarios": [
+        "转发消息转成图后想找回原文"
+      ],
+      "vs": [
+        {
+          "command": "#ws查看连接",
+          "diff": "那个看 WS 连接列表"
+        }
+      ],
+      "related": [
+        "#ws转图片 你好",
+        "#ws查看连接"
+      ],
+      "risk": "q",
+      "permission": ""
+    }
+  ]
+}
