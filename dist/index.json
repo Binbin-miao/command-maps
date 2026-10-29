@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 34,
-  "updated": "2026-10-29T00:51:16.000Z",
+  "revision": 35,
+  "updated": "2026-10-29T00:51:38.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -226,6 +226,20 @@
       "sha256": "34076dfe414861f9f652f34b632e6a79985f5779d9d25c666ccd46ad14c8d131",
       "bytes": 70168,
       "used": 0
+    },
+    "mora-plugin": {
+      "file": "maps/mora-plugin.json",
+      "display": "摩拉插件（mora）",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 21,
+      "default_off_count": 0,
+      "delegated_count": 2,
+      "fingerprint": "d100abc7b54f",
+      "sha256": "e71cceb4630dee6c5491b4494837bc5ecd6fd8e29443331464f2bd909dd3b185",
+      "bytes": 56609,
+      "used": 0
     }
   },
   "packages": {
@@ -370,6 +384,15 @@
       "command_count": 22,
       "units": [
         "bujidao"
+      ],
+      "used": 0
+    },
+    "mora-plugin": {
+      "display": "摩拉插件（mora）",
+      "category": "游戏",
+      "command_count": 21,
+      "units": [
+        "mora-plugin"
       ],
       "used": 0
     }
