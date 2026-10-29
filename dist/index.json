@@ -201,7 +201,7 @@
     },
     "xitian-plugin": {
       "file": "maps/xitian-plugin.json",
-      "display": "西天插件管理器",
+      "display": "戏天插件管理器",
       "category": "系统",
       "version": "0.0.1",
       "revision": 1,
@@ -440,7 +440,7 @@
       "used": 0
     },
     "xitian-plugin": {
-      "display": "西天插件管理器",
+      "display": "戏天插件管理器",
       "category": "系统",
       "command_count": 23,
       "units": [
