@@ -51,7 +51,9 @@ const PATTERNS = [
   'dist/maps/*.json',
   'scripts/*.mjs',
   '.github/workflows/*.yml',
-  '.githooks/*'
+  '.githooks/*',
+  '.gitattributes',
+  '.gitignore'
 ]
 
 /** 凭据：环境变量优先，其次文件；都没有就明确说清楚怎么给，不要抛栈 */

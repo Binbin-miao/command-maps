@@ -1,0 +1,24 @@
+fix: 按评审意见收口三处硬问题
+
+1. 覆盖率对账从 check() 里拿出来，改回「只提醒不阻断」
+   README 写的是「少于规则数 90% 就打一条提醒（不阻断发布）」，但上一版把它写成了
+   check()，会计入 failed 并 exit 1 —— CI 一接，提醒就成了合并门槛。现在覆盖率单独
+   打 `!` 提醒，不参与通过率。
+
+2. --check-display 升级为 --check-index，从只查展示名改为全字段对账
+   上一版只比 display，改 command 不改 display 的半更新三步全绿；新增地图漏建索引也
+   因为 `!fresh` 直接 continue 而检不出。现在按地图把索引算一遍，跟已提交的逐字段比
+   （display / file / sha256 / bytes / command_count / version / fingerprint / schema /
+   revision），不一致就点名「哪个插件的哪一项」。`updated` 不参与比较。
+   同时修掉两个副作用：检查模式下不再 mkdirSync、不再写 dist/maps。
+
+3. push-pr.mjs 的 PATTERNS 补上 .gitattributes 与 .gitignore
+   这两个文件本次新增，但收不进去，与注释「默认要提交的东西」不符。README 脚本表也
+   补上 push-pr.mjs 一行。
+
+另外两处顺带：
+- maps.yml 的 `push:` 去掉 branches 限制，特性分支没开 PR 时的 push 也会跑
+- verify-pipeline 去掉块外未使用的 `flat` 声明；覆盖率改为提醒后自检项从 245 变 244
+
+实测：--check-index 通过（29 个插件 / 修订号 43）；改一条 command 后退出 1 并列出
+5 处漂移（sha256 / bytes / version / fingerprint / revision）；连跑两次构建修订号稳定。
