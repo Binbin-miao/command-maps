@@ -1,0 +1,435 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "Daily-Attendance-plugin",
+    "display": "每日运势（Daily-Attendance）",
+    "category": "娱乐",
+    "summary": "每日运势签到：抽运势等级+一言+黄历并累计经验，以及本群/全局签到统计、排行榜、一言库统计",
+    "notes": "**7 条规则全在一个 controller 里**（`controllers/fortuneController.js`），`priority: 1000`。**`#今日运势` 是签到指令**：按 `QQ + 日期` 生成快照，当天第一次签到时加经验、连续天数 +1，之后同一天再发只是把快照重新渲染（**不会重复加经验**）。**所有指令的 `#` 都可省**，缩写是拼音首字母（`jrys` / `ystj` / `yssj` / `yszsj` / `ysphb` / `yytj` / `ysbz`）。**`#运势数据` 仅限群聊**，私聊回一句「该命令仅在群聊中使用」。运势值是「QQ + 日期」的确定性随机，特殊日期可被配置覆盖（整批人同一等级）。数据按 QQ 存 json，过期会被清理脚本移到备份目录、下次签到时自动恢复。",
+    "interactsWith": [
+      "本地 json 数据（用户数据 + 每日快照 + 过期备份目录）",
+      "一言库（主库 + 备用库，`#一言统计` 可查）",
+      "puppeteer（运势图渲染）"
+    ],
+    "batches": {
+      "covered": [
+        "今日运势（签到）",
+        "个人统计",
+        "本群今日数据",
+        "全局今日数据",
+        "排行榜",
+        "一言统计",
+        "帮助"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "daily/fortune",
+      "command": "#今日运势",
+      "aliases": [
+        "#jrys",
+        "#孑然一身",
+        "今日运势",
+        "jrys"
+      ],
+      "title": "今日运势（首次=签到，之后=回看）",
+      "summary": "一天只能签一次",
+      "what": "按 `QQ + 日期` 生成运势并出图；**当天第一次是签到**（加经验、连续天数 +1），之后同一天再发只是把当天快照重新渲染一遍。",
+      "returns": "一张运势图（含运势等级、一言、黄历、获得经验）。",
+      "returnsDetail": "图片生成失败回「图片生成失败，请稍后再试」；数据文件丢失时会先从「过期文件夹」恢复。",
+      "timing": "3~10 秒（要渲染图 + 读写数据文件）。",
+      "cost": "**写用户数据**（经验、签到天数、连续天数）+ 写当日快照。",
+      "keywords": [
+        "今日运势",
+        "运势",
+        "签到",
+        "jrys"
+      ],
+      "params": [],
+      "example": "#今日运势",
+      "moreExamples": [
+        "jrys",
+        "#孑然一身"
+      ],
+      "preconditions": [
+        "无（谁都能签）"
+      ],
+      "pitfalls": [
+        "**这是签到指令，不只是查运势** —— 每天一次，重复发不会加经验（走回看分支）",
+        "**`#` 可省**：`jrys`、`孑然一身` 直接发也能触发",
+        "**运势是「QQ + 日期」的确定性随机**，同一天同一个号永远同一结果（特殊日期可以被配置覆盖）",
+        "**连续签到有额外经验**：昨天签过则 `consecutiveDays + 1`，断了就从 1 重新算",
+        "**数据按 QQ 存 json 文件**，被清理脚本移走后下次签到会自动尝试恢复"
+      ],
+      "failures": [
+        {
+          "symptom": "回「图片生成失败，请稍后再试」",
+          "cause": "模板/字体缺失，或写文件失败"
+        },
+        {
+          "symptom": "同一天发两次，经验没变",
+          "cause": "设计如此：第二次是回看"
+        }
+      ],
+      "edgeCases": [
+        "特殊日期（节日）可以配置固定运势与文案，这时同一批人可能抽到同一个等级"
+      ],
+      "scenarios": [
+        "每天打卡"
+      ],
+      "vs": [
+        {
+          "command": "#运势统计",
+          "diff": "那个看累计数据，不签到"
+        }
+      ],
+      "related": [
+        "#运势统计",
+        "#运势排行榜",
+        "#运势帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "daily/stats",
+      "command": "#运势统计",
+      "aliases": [
+        "#ystj",
+        "运势统计"
+      ],
+      "title": "个人运势累计统计",
+      "summary": "文本",
+      "what": "统计自己的签到天数、连续天数、经验等累计数据。",
+      "returns": "一段文本统计。",
+      "returnsDetail": "没有数据时按空值统计（不报错）。",
+      "timing": "1~2 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "运势统计",
+        "ystj",
+        "签到统计"
+      ],
+      "params": [],
+      "example": "#运势统计",
+      "moreExamples": [
+        "ystj"
+      ],
+      "preconditions": [
+        "签过到才有数据"
+      ],
+      "pitfalls": [
+        "**只统计自己**，不带群维度",
+        "`#` 可省，`ystj` 四个字母直接发也行"
+      ],
+      "failures": [
+        {
+          "symptom": "数据全是 0",
+          "cause": "还没签过到"
+        }
+      ],
+      "edgeCases": [
+        "连续天数以「昨天是否签到」为准，跨天判断用本地时区"
+      ],
+      "scenarios": [
+        "看自己坚持了多少天"
+      ],
+      "vs": [
+        {
+          "command": "#今日运势",
+          "diff": "那个是签到 + 抽运势"
+        }
+      ],
+      "related": [
+        "#今日运势",
+        "#运势排行榜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "daily/group-today",
+      "command": "#运势数据",
+      "aliases": [
+        "#yssj",
+        "运势数据"
+      ],
+      "title": "本群今日签到情况",
+      "summary": "只认群聊",
+      "what": "统计本群今天有多少人签到、运势分布。",
+      "returns": "一段文本（含群名、日期、人数与分布）。",
+      "returnsDetail": "私聊发回「该命令仅在群聊中使用」；本群今天没人签回「今日暂无签到数据」并提示发 `今日运势`。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "运势数据",
+        "yssj",
+        "本群签到"
+      ],
+      "params": [],
+      "example": "#运势数据",
+      "moreExamples": [
+        "#yssj"
+      ],
+      "preconditions": [
+        "**必须在群里发**"
+      ],
+      "pitfalls": [
+        "**私聊完全不可用**（回一句「该命令仅在群聊中使用」）",
+        "**只统计本群**，看全量要用 `#运势总数据`",
+        "**只看当天**，没有日期参数"
+      ],
+      "failures": [
+        {
+          "symptom": "回「该命令仅在群聊中使用」",
+          "cause": "私聊发的"
+        },
+        {
+          "symptom": "回「今日暂无签到数据」",
+          "cause": "本群今天没人发过 `#今日运势`"
+        }
+      ],
+      "edgeCases": [
+        "群名取不到时标题会退化"
+      ],
+      "scenarios": [
+        "看群里今天有多少人打卡"
+      ],
+      "vs": [
+        {
+          "command": "#运势总数据",
+          "diff": "那个跨群统计"
+        }
+      ],
+      "related": [
+        "#运势总数据",
+        "#运势排行榜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "daily/all-today",
+      "command": "#运势总数据",
+      "aliases": [
+        "#yszsj",
+        "运势总数据"
+      ],
+      "title": "全部群的今日签到总量",
+      "summary": "全局",
+      "what": "把今天所有群的签到数据汇总成一段文本。",
+      "returns": "一段文本（总量 + 分布）。",
+      "returnsDetail": "没有数据回「今日暂无签到数据」。",
+      "timing": "2~5 秒（要扫所有群的数据）。",
+      "cost": "只读，但**遍历量大**。",
+      "keywords": [
+        "运势总数据",
+        "yszsj"
+      ],
+      "params": [],
+      "example": "#运势总数据",
+      "moreExamples": [
+        "#yszsj"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**没有任何权限限制**，普通群员也能看全局数据",
+        "数据量大时这条会明显变慢"
+      ],
+      "failures": [
+        {
+          "symptom": "回「今日暂无签到数据」",
+          "cause": "今天全 Bot 都没人签到"
+        }
+      ],
+      "edgeCases": [
+        "只统计「今天」，历史数据要看别处"
+      ],
+      "scenarios": [
+        "看 Bot 整体活跃度"
+      ],
+      "vs": [
+        {
+          "command": "#运势数据",
+          "diff": "那个只看本群"
+        }
+      ],
+      "related": [
+        "#运势数据",
+        "#运势排行榜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "daily/ranking",
+      "command": "#运势排行榜",
+      "aliases": [
+        "#ysphb",
+        "运势排行榜"
+      ],
+      "title": "今日运势排行",
+      "summary": "合并转发",
+      "what": "按今天的运势值排名（通常取前若干名），做成合并转发。",
+      "returns": "合并转发（排行榜内容）。",
+      "returnsDetail": "没有数据回「📊 运势排行榜\\n❌ 暂无排行榜数据」+ 提示去签到。",
+      "timing": "2~5 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "运势排行榜",
+        "ysphb",
+        "排行"
+      ],
+      "params": [],
+      "example": "#运势排行榜",
+      "moreExamples": [
+        "#ysphb"
+      ],
+      "preconditions": [
+        "今天有人签到"
+      ],
+      "pitfalls": [
+        "**只排今天**，不累计",
+        "榜单是合并转发，群里点开才能看全"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无排行榜数据」",
+          "cause": "今天还没人签"
+        }
+      ],
+      "edgeCases": [
+        "同运势值时的排序不保证稳定"
+      ],
+      "scenarios": [
+        "看今天谁运气最好"
+      ],
+      "vs": [
+        {
+          "command": "#运势统计",
+          "diff": "那个是自己的累计，不是排名"
+        }
+      ],
+      "related": [
+        "#运势统计",
+        "#今日运势"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "daily/hitokoto",
+      "command": "#一言统计",
+      "aliases": [
+        "#yytj",
+        "一言统计"
+      ],
+      "title": "一言库统计",
+      "summary": "看素材量",
+      "what": "统计一言（文案）库的使用情况/数量。",
+      "returns": "一段文本统计。",
+      "returnsDetail": "取不到回「❌ 获取一言统计信息失败，请稍后再试」。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "一言统计",
+        "yytj",
+        "文案库"
+      ],
+      "params": [],
+      "example": "#一言统计",
+      "moreExamples": [
+        "#yytj"
+      ],
+      "preconditions": [
+        "一言库文件在（`assets/hitokoto` 之类）"
+      ],
+      "pitfalls": [
+        "**纯运维向**的命令，普通用户基本用不到",
+        "库文件缺失时才会报错，其它情况都有数"
+      ],
+      "failures": [
+        {
+          "symptom": "回「获取一言统计信息失败」",
+          "cause": "一言库文件不存在或格式坏"
+        }
+      ],
+      "edgeCases": [
+        "有备用一言库，主库挂了会回落到备份"
+      ],
+      "scenarios": [
+        "确认文案素材够不够"
+      ],
+      "vs": [
+        {
+          "command": "#运势统计",
+          "diff": "那个统计签到，不是文案"
+        }
+      ],
+      "related": [
+        "#运势帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "daily/help",
+      "command": "#运势帮助",
+      "aliases": [
+        "#ysbz",
+        "运势帮助"
+      ],
+      "title": "运势插件帮助",
+      "summary": "文本",
+      "what": "回一段帮助文本，列出全部指令与缩写。",
+      "returns": "文本帮助。",
+      "returnsDetail": "固定文案，不依赖渲染。",
+      "timing": "1 秒内。",
+      "cost": "只读。",
+      "keywords": [
+        "运势帮助",
+        "ysbz"
+      ],
+      "params": [],
+      "example": "#运势帮助",
+      "moreExamples": [
+        "#ysbz"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**帮助是纯文本**，不会因为权限不同而变（不像别的插件的帮助图分主人/普通）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "几乎不会；除非插件没加载"
+        }
+      ],
+      "edgeCases": [
+        "缩写 `ysbz` = 运势帮助，其它指令的缩写都是拼音首字母"
+      ],
+      "scenarios": [
+        "忘了缩写是什么"
+      ],
+      "vs": [
+        {
+          "command": "#今日运势",
+          "diff": "那个是签到"
+        }
+      ],
+      "related": [
+        "#今日运势",
+        "#运势统计"
+      ],
+      "risk": "q",
+      "permission": ""
+    }
+  ]
+}

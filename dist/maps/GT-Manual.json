@@ -1,0 +1,221 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "GT-Manual",
+    "display": "GT 手动签到（GT-Manual）",
+    "category": "游戏",
+    "summary": "通过 GT 的 WebSocket 通道手动补签到、重连 ws、手动过米游社验证码；并把米游社报错钩子接进验证流程",
+    "notes": "**3 条规则** + **一个 handler 钩子**（`mys.req.err`）。`priority: -(9 ** 9)`（极低）。三个功能都围绕「米游社请求被风控」这件事：`#米游社验证` 是手动兜底，`#手动签到` 走 ws 通道补签，`#GT重连ws` 修通道。**`#手动签到` 没有任何权限检查**，而且支持 `@某人` 或写 QQ 号**替别人签**（`e.user_id = e.at || Number(msg) || e.user_id`）——这是这个插件最需要注意的一点。**游戏名只是装饰**：`#原神手动签到` 与 `#手动签到` 完全同一条路径。钩子部分：当米游社返回 `1034 / 5003 / 10035` 且配置了 `verifyAddr`、且该 QQ 不在黑名单时，会自动触发验证；同一次事件里只验证一次（`_gtVerifyCount >= 1` 直接带凭证重发）。",
+    "interactsWith": [
+      "GT 服务（WebSocket，`Tools.connectWebSocket()`；ws 挂了 `#手动签到` 就失败）",
+      "genshin / miao（`e.runtime.NoteUser`、`Tools.MysApi` 拿 ck 与 uid）",
+      "打码服务（`cfg.verifyAddr`，`#米游社验证` 与钩子都依赖它）"
+    ],
+    "batches": {
+      "covered": [
+        "手动签到（可代签）",
+        "重连 ws",
+        "手动过验证码"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "gtmanual/sign",
+      "command": "#手动签到",
+      "aliases": [
+        "#原神手动签到",
+        "#星铁手动签到",
+        "#米游社手动签到",
+        "##手动签到"
+      ],
+      "title": "手动触发米游社签到（可代签）",
+      "summary": "任何人可用",
+      "what": "走 GT 的 WebSocket 通道手动跑一次签到；可以用 `@某人` 或数字 QQ 号**替别人签**。",
+      "returns": "签到结果（由 WebSocket 返回，通常是图片或文本汇总）。",
+      "returnsDetail": "WebSocket 没连接时会先自动连（`Tools.connectWebSocket()`），连不上则走失败分支。",
+      "timing": "5~30 秒（要等 ws 返回）。",
+      "cost": "**消耗对方账号的签到次数**；ws 未连时会临时建连。",
+      "keywords": [
+        "手动签到",
+        "补签",
+        "GT 签到"
+      ],
+      "params": [
+        {
+          "name": "@某人 / QQ号",
+          "required": false,
+          "desc": "**可以指定别人**，不填就是自己"
+        },
+        {
+          "name": "游戏",
+          "required": false,
+          "desc": "原神 / 星铁 / 米游社，只是前缀装饰，不改变行为"
+        }
+      ],
+      "example": "#手动签到",
+      "moreExamples": [
+        "#手动签到@12345678",
+        "#手动签到 12345678"
+      ],
+      "preconditions": [
+        "GT WebSocket 服务可用",
+        "目标账号已绑 ck"
+      ],
+      "pitfalls": [
+        "**没有任何权限检查** —— 群里任何人都能 `#手动签到@别人` 替人签到",
+        "**游戏名只是装饰**：`#原神手动签到` 与 `#手动签到` 走同一条，实际签哪些游戏由账号配置决定",
+        "**`#` 是 `#*`（零个或多个）**，`##手动签到`、`手动签到` 都能触发",
+        "**代码会把 `#/原神/星铁/米游社/签到` 全替换掉**再解析，所以中间夹字会拼错",
+        "**签名靠 ws 通道**，ws 挂了这条就失败（不是打 HTTP）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应/长时间无返回",
+          "cause": "ws 连不上，或目标账号没绑 ck"
+        },
+        {
+          "symptom": "签了别人的号",
+          "cause": "带了 `@` 或数字，指令本身允许代签"
+        }
+      ],
+      "edgeCases": [
+        "`@` 优先于数字；两者都没有才用自己",
+        "数字 QQ 号必须能被 `Number()` 解析"
+      ],
+      "scenarios": [
+        "自动签到漏了，补一次"
+      ],
+      "vs": [
+        {
+          "command": "#米游社验证",
+          "diff": "那个是处理验证码，不是签到"
+        }
+      ],
+      "related": [
+        "#米游社验证",
+        "#GT重连ws"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "gtmanual/reconnect",
+      "command": "#GT重连ws",
+      "aliases": [],
+      "title": "重连 GT 的 WebSocket",
+      "summary": "仅 master",
+      "what": "断开并重新建立与 GT 服务的 ws 连接。",
+      "returns": "重连结果（成功/失败提示）。",
+      "returnsDetail": "连不上时日志里会有重连失败记录。",
+      "timing": "1~10 秒。",
+      "cost": "短暂中断正在进行的请求。",
+      "keywords": [
+        "GT重连ws",
+        "重连 ws",
+        "gt ws"
+      ],
+      "params": [],
+      "example": "#GT重连ws",
+      "moreExamples": [
+        "#GT重连ws"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**必须带 `#`**（`^#GT重连ws$`），大小写敏感（`GT` 不能写成 `gt`）",
+        "**重连期间发起的请求会失败**",
+        "**没配 GT 地址时重连也不会成功**，只是不报错"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        },
+        {
+          "symptom": "重连后仍然超时",
+          "cause": "GT 服务端没起来 / 地址配错"
+        }
+      ],
+      "edgeCases": [
+        "`#GT重连WS` 不匹配（大写 WS 不行）"
+      ],
+      "scenarios": [
+        "签到一直卡住，怀疑 ws 断了"
+      ],
+      "vs": [
+        {
+          "command": "#手动签到",
+          "diff": "那个会自动尝试连一次"
+        }
+      ],
+      "related": [
+        "#手动签到"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "gtmanual/verify",
+      "command": "#米游社验证",
+      "aliases": [],
+      "title": "手动过一次米游社验证码",
+      "summary": "要绑 ck",
+      "what": "对当前绑定的 uid 触发一次 bbs 验证（打码），成功后凭证会缓存下来供后续请求复用。",
+      "returns": "验证结果（成功/失败提示）。",
+      "returnsDetail": "没绑 ck 回「请先绑定cookie」；验证失败回「米游社验证失败!」并写日志 `[米游社验证失败][uid][qq]`。",
+      "timing": "5~30 秒（取决于打码服务）。",
+      "cost": "**消耗打码服务额度**。",
+      "keywords": [
+        "米游社验证",
+        "过验证码",
+        "bbs 验证"
+      ],
+      "params": [],
+      "example": "#米游社验证",
+      "moreExamples": [
+        "#米游社验证"
+      ],
+      "preconditions": [
+        "已绑 ck（`NoteUser` 拿得到）",
+        "配置里有验证地址（`cfg.verifyAddr`）"
+      ],
+      "pitfalls": [
+        "**必须先绑 ck**，否则只回「请先绑定cookie」",
+        "**它是「手动兜底」**：正常情况下 `mys.req.err` 钩子会在 retcode 1034/5003/10035 时自动触发验证，这条是给自动流程失败时手动补的",
+        "**只在配置允许时有效**（`cfg.verify` 决定米游社还是星铁走验证；`cfg.blackList` 里的 QQ 不触发）",
+        "**一次事件里只验证一次**（`_gtVerifyCount >= 1` 就不再发验证码）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请先绑定cookie」",
+          "cause": "没绑 ck"
+        },
+        {
+          "symptom": "回「米游社验证失败!」",
+          "cause": "打码服务不可用 / 配置的 verifyAddr 不通"
+        }
+      ],
+      "edgeCases": [
+        "验证成功后同一事件里的后续请求会带凭证重发，不会重复打码"
+      ],
+      "scenarios": [
+        "查询老报 1034，手动过一次验证"
+      ],
+      "vs": [
+        {
+          "command": "#手动签到",
+          "diff": "那个是签到，不处理验证码"
+        }
+      ],
+      "related": [
+        "#手动签到"
+      ],
+      "risk": "w",
+      "permission": ""
+    }
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "XingYue-plugin",
+    "display": "星月（XingYue）",
+    "category": "系统",
+    "summary": "极简插件：帮助菜单、手动/强制更新、定时自动更新，另外把每条消息镜像到自建 WebUI 供网页查看",
+    "notes": "**规则只有 3 条**（帮助 1 + 更新 2），但还有一个**空正则的消息镜像 app**：`apps/chat.js` 的 `reg: ''` + `priority: 10000` + `log: false`，**每条消息都会进它**，作用是连上 WebUI 的 WebSocket 把消息推过去——它不回复、不改消息，所以平时感觉不到，但**所有消息都会被镜像一份**。**`#xy` 必须小写且必须带 `#`**（`^#xy帮助$`、`^#xy更新$`）。插件自带定时自动更新（`task.cron` 取配置里的 `autoUpdateCron`，`log: false` 失败不打扰群）。",
+    "interactsWith": [
+      "WebUI 后端（WebSocket，环境变量里给地址；`Bot.on('online')` 时自动重连并上报 bot 列表）",
+      "puppeteer（`#xy帮助` 截图 `resources/html/help.html`）",
+      "框架更新器（`#xy更新` / `#xy强制更新`）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助菜单",
+        "更新与强制更新",
+        "消息镜像（无指令）"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "xingyue/help",
+      "command": "#xy帮助",
+      "aliases": [],
+      "title": "星月插件菜单（截图）",
+      "summary": "必须带 #",
+      "what": "用 puppeteer 渲染 `resources/html/help.html`，把指令清单截图发出来。",
+      "returns": "一张菜单图。",
+      "returnsDetail": "渲染失败时会走 catch（回错误或空）。",
+      "timing": "1~3 秒。",
+      "cost": "只渲染。",
+      "keywords": [
+        "xy帮助",
+        "星月帮助"
+      ],
+      "params": [],
+      "example": "#xy帮助",
+      "moreExamples": [
+        "#xy帮助"
+      ],
+      "preconditions": [
+        "`resources/html/help.html` 在"
+      ],
+      "pitfalls": [
+        "**`xy` 必须小写**（`^#xy帮助$`），`#XY帮助` 不匹配",
+        "**必须带 `#`**，`xy帮助` 不带井号不触发",
+        "**菜单里只有三条**：帮助、更新、强制更新（这个插件本身功能很少）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "模板/字体缺失，或没带 `#`"
+        }
+      ],
+      "edgeCases": [
+        "菜单图里会带 Bot 昵称（取 `Bot.pickBot().nickname`）"
+      ],
+      "scenarios": [
+        "看这插件有哪些指令"
+      ],
+      "vs": [
+        {
+          "command": "#xy更新",
+          "diff": "那个是更新"
+        }
+      ],
+      "related": [
+        "#xy更新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "xingyue/update",
+      "command": "#xy更新",
+      "aliases": [],
+      "title": "更新星月插件",
+      "summary": "仅 master",
+      "what": "走内置更新流程拉插件代码。",
+      "returns": "更新结果文本。",
+      "returnsDetail": "非 master 静默。",
+      "timing": "10~60 秒。",
+      "cost": "**拉代码 + 可能重启**。",
+      "keywords": [
+        "xy更新",
+        "星月更新"
+      ],
+      "params": [],
+      "example": "#xy更新",
+      "moreExamples": [
+        "#xy更新"
+      ],
+      "preconditions": [
+        "master",
+        "git 安装"
+      ],
+      "pitfalls": [
+        "**`xy` 小写**，且必须带 `#`",
+        "**插件本身还有定时自动更新**（`task.cron` = 配置的 `autoUpdateCron`），手动这条是补一次",
+        "**自动更新失败不会打扰群**（`log: false`）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 没带 `#`"
+        },
+        {
+          "symptom": "更新后掉线",
+          "cause": "更新流程可能重启"
+        }
+      ],
+      "edgeCases": [
+        "自动更新开着时，手动更新可能撞上正在跑的更新"
+      ],
+      "scenarios": [
+        "想立刻拉新版"
+      ],
+      "vs": [
+        {
+          "command": "#xy强制更新",
+          "diff": "那个会丢弃本地改动"
+        }
+      ],
+      "related": [
+        "#xy强制更新",
+        "#xy帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xingyue/force-update",
+      "command": "#xy强制更新",
+      "aliases": [],
+      "title": "强制更新（丢弃本地改动）",
+      "summary": "仅 master",
+      "what": "先丢弃本地修改再拉代码。",
+      "returns": "更新结果文本。",
+      "returnsDetail": "非 master 静默。",
+      "timing": "10~60 秒。",
+      "cost": "**丢弃本地改动 + 可能重启**。",
+      "keywords": [
+        "xy强制更新"
+      ],
+      "params": [],
+      "example": "#xy强制更新",
+      "moreExamples": [
+        "#xy强制更新"
+      ],
+      "preconditions": [
+        "master",
+        "git 安装"
+      ],
+      "pitfalls": [
+        "**会丢本地修改**（`git reset --hard` 一类），改过代码慎用",
+        "**和 `#xy更新` 只差「强制」两个字**，但后果不同"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [
+        "冲突状态下手动更新会失败，只能走这条"
+      ],
+      "scenarios": [
+        "更新一直报冲突"
+      ],
+      "vs": [
+        {
+          "command": "#xy更新",
+          "diff": "那个保留本地改动"
+        }
+      ],
+      "related": [
+        "#xy更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xingyue/mirror",
+      "command": "（任意消息）",
+      "aliases": [],
+      "title": "全量消息镜像到 WebUI（无指令）",
+      "summary": "reg 是空串",
+      "what": "这个 app 的规则 `reg: ''`（空正则）—— **每条消息都会进它**，作用是连上 WebUI 后端并把消息推过去，供网页端查看。",
+      "returns": "**不回复任何内容**（`log: false`，只在内部转发）。",
+      "returnsDetail": "WebSocket 没配时不做事；`Bot.on('online')` 时会自动重连并上报 bot 列表。",
+      "timing": "不影响响应速度（异步转发）。",
+      "cost": "**所有消息都会被镜像一份到外部服务**，这是隐私相关行为。",
+      "keywords": [
+        "消息镜像",
+        "WebUI",
+        "xy 聊天记录"
+      ],
+      "params": [],
+      "example": "（直接发任意消息即可，无指令）",
+      "moreExamples": [],
+      "preconditions": [
+        "配置了 WebUI 的 ws 地址"
+      ],
+      "pitfalls": [
+        "**它不是指令，是「每条消息都走一遍」的钩子** —— 所以你在群里说的每句话都可能被推到 WebUI",
+        "**priority 10000**（比多数插件高），但因为不回复、不改消息，正常使用感觉不到",
+        "**`reg: ''` 空正则对空消息/纯图片消息也成立**",
+        "**关掉它只能禁整个 app**，没有开关指令"
+      ],
+      "failures": [
+        {
+          "symptom": "WebUI 看不到消息",
+          "cause": "ws 地址没配，或后端没起"
+        }
+      ],
+      "edgeCases": [
+        "频道消息与私聊消息是否都被镜像，取决于 `event: 'message'` 的覆盖面"
+      ],
+      "scenarios": [
+        "想把聊天记录同步到自建 WebUI"
+      ],
+      "vs": [
+        {
+          "command": "#xy帮助",
+          "diff": "那个是唯一真正回复的指令之一"
+        }
+      ],
+      "related": [
+        "#xy帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    }
+  ]
+}
