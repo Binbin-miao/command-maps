@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 41,
-  "updated": "2026-10-29T01:08:24.041Z",
+  "revision": 42,
+  "updated": "2026-10-29T01:28:45.231Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -43,6 +43,20 @@
       "fingerprint": "a48757371227",
       "sha256": "34076dfe414861f9f652f34b632e6a79985f5779d9d25c666ccd46ad14c8d131",
       "bytes": 70168,
+      "used": 0
+    },
+    "chatgpt-plugin": {
+      "file": "maps/chatgpt-plugin.json",
+      "display": "ChatGPT 插件（chatgpt-plugin）",
+      "category": "AI",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 142,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "c5156e6f9ba6",
+      "sha256": "279c0dfef80a8662236e6431d2fb3b9004bb2797afd5b6bf74bd06d95d6f3cc5",
+      "bytes": 170238,
       "used": 0
     },
     "cyxz-plugin": {
@@ -421,6 +435,15 @@
       "command_count": 22,
       "units": [
         "bujidao"
+      ],
+      "used": 0
+    },
+    "chatgpt-plugin": {
+      "display": "ChatGPT 插件（chatgpt-plugin）",
+      "category": "AI",
+      "command_count": 142,
+      "units": [
+        "chatgpt-plugin"
       ],
       "used": 0
     },

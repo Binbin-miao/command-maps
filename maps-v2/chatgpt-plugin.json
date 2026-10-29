@@ -1,0 +1,5940 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "chatgpt-plugin",
+    "display": "ChatGPT 插件（chatgpt-plugin）",
+    "category": "AI",
+    "summary": "Yunzai 的 AI 对话中枢：多通道对话（OpenAI 兼容 / Claude / Gemini / Poe / 网页版）、文本/图片/语音三种模式、TTS 语音（vits / azure / fish / sf）、人物设定库、记忆系统（个人/群/定时提取）、工具箱与 Web 面板、翻译/识图/OCR/词云/打招呼/偷图等周边",
+    "homepage": "https://github.com/ikechan8370/chatgpt-plugin",
+    "notes": "**这是个「大杂烩」插件**：`apps/` 下 21 个 app、149 条规则，`management.js`（48 条）和 `tts_voice_help.js`（27 条）占了一半，绝大多数是**配置管理类**指令（设置 key / 切换通道 / 开关能力），结构高度同构。**三条「全匹配」规则**要特别注意：`apps/groupReply.js` 与 `apps/memoryGroupObserver.js` 各有一条 `^[\\s\\S]*$`，**每条消息都会进它们**（群聊自主回复判断、群记忆提取）；`apps/chat.js` 里还有一条 `Config.tts_First_person` 的**动态正则**，由 `#chatgpt设置第一人称` 决定，设得太宽会让所有含该词的消息都触发对话。**对话入口**是 `^#(图片)?chat(?!1|glm|gpt)`，也支持 `at` 模式（此时正则是 `^[^#][sS]*`，群里闲聊会直接烧额度）。**key/密码这类都是明文落盘**，`#chatgpt导出配置` 会把它们带出来。地图里只有「对话 / 记忆 / TTS / 表情 / 更新」这类真正会影响用户结果的条目写得细，纯配置项按「改哪个字段、什么时候生效、坑在哪」写。",
+    "interactsWith": [
+      "OpenAI 兼容接口 / Anthropic / Google Gemini / Poe（对话与模型列表）",
+      "TTS 服务（vits-uma-genshin-honkai / azure / fish / sf 语音模型）",
+      "redis（偷图撤销回执 `CHATGPT:EMOJI_UNDO:` 保留两周、会话与记忆缓存）",
+      "本地 json/yaml 配置与记忆库（`config/`、`data/`）",
+      "工具箱 Web 服务（`#chatgpt工具箱`、`#chatgpt开启后台服务`，占端口）",
+      "框架更新器（`#chatgpt更新`，别名极多）"
+    ],
+    "batches": {
+      "covered": [
+        "对话与模式",
+        "上下文与历史",
+        "清屏与闭嘴",
+        "人物设定库",
+        "记忆系统",
+        "TTS 语音",
+        "表情包与偷图",
+        "翻译/识图/词云/打招呼",
+        "多通道与 key 配置",
+        "工具箱与配置导入导出",
+        "更新"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "chatgpt/help",
+      "command": "#chatgpt帮助",
+      "aliases": [
+        "#ChatGPT帮助",
+        "#chatgpt菜单",
+        "#chatgpt指令",
+        "#chatgpt命令",
+        "#chatgpt使用说明"
+      ],
+      "title": "插件帮助与指令表",
+      "summary": "分流到五类指令表",
+      "what": "按 `#chatgpt帮助` 渲染帮助；带「对话/管理/娱乐/绘图/人物设定/聊天记录」前缀时只显示该类指令；带「搜索 关键词」时做指令搜索。",
+      "returns": "帮助图或指令表图。",
+      "returnsDetail": "搜索无结果时一般回空或提示未找到。",
+      "timing": "1~3 秒",
+      "cost": "只渲染",
+      "keywords": [
+        "chatgpt帮助"
+      ],
+      "params": [
+        {
+          "name": "分类",
+          "required": false,
+          "desc": "对话 / 管理 / 娱乐 / 绘图 / 人物设定 / 聊天记录"
+        },
+        {
+          "name": "搜索 关键词",
+          "required": false,
+          "desc": "如 `#chatgpt指令表搜索 语音`"
+        }
+      ],
+      "example": "#chatgpt帮助",
+      "moreExamples": [
+        "#ChatGPT帮助",
+        "#chatgpt菜单",
+        "#chatgpt指令"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`#` 可省**（`^#?(chatgpt)…`），但 `chatgpt` 不能省，`#帮助` 不归它管",
+        "**大写 `ChatGPT` 也认**，但 `ChatGpt` 这种混写不认",
+        "分类词必须紧跟在 chatgpt 后面，`#chatgpt 管理指令表` 中间有空格就不匹配"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "模板/字体缺失，或分类词写错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/chat",
+      "command": "#chat 你好",
+      "aliases": [
+        "#chatgpt 你好",
+        "#图片chat 描述这张图"
+      ],
+      "title": "与 AI 对话（主入口）",
+      "summary": "核心功能",
+      "what": "把消息内容发给当前配置的模型（OpenAI/Claude/Gemini/Poe 等），回模型答复；`#图片chat` 走图片/视觉模式。",
+      "returns": "文本、图片或语音，形式取决于当前模式（文本/图片/语音）与配置。",
+      "returnsDetail": "未配置 key 或余额不足时回错误提示；被禁用（`#chatgpt闭嘴`）时不响应。",
+      "timing": "3~30 秒（取决于模型）",
+      "cost": "**消耗 API 额度**",
+      "keywords": [
+        "chat",
+        "你好"
+      ],
+      "params": [
+        {
+          "name": "内容",
+          "required": true,
+          "desc": "`chat` 后面的全部内容都会发给模型"
+        }
+      ],
+      "example": "#chat 你好",
+      "moreExamples": [
+        "#chatgpt 你好",
+        "#图片chat 描述这张图"
+      ],
+      "preconditions": [
+        "已配置对应提供商的 key/token",
+        "本群未被 `#chatgpt闭嘴`",
+        "私聊需 `#chatgpt允许私聊`"
+      ],
+      "pitfalls": [
+        "**正则排除了一批前缀**：`^#(图片)?chat(?!1|glm|gpt)` —— `#chat1`、`#chatglm`、`#chatgpt` 都不会进这条（分别归别的插件/指令）",
+        "**有 `at` 模式**：配置成 `at` 后正则是 `^[^#][sS]*`，也就是**不带井号的任意消息**都算对话，此时群里闲聊会疯狂消耗额度",
+        "**图片模式/语音模式会改变答复形态**：`#chatgpt图片模式` 之后回复变成图片，`#chatgpt语音模式` 变成语音",
+        "**上下文是按会话存的**：续聊会带上历史，`#结束对话` 才清空"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "本群被闭嘴 / 未配置 key / 走了 at 模式但消息带 `#`"
+        },
+        {
+          "symptom": "回图片或语音而不是文字",
+          "cause": "当前处于图片/语音模式"
+        },
+        {
+          "symptom": "答复很慢或超时",
+          "cause": "模型侧排队或被限流"
+        }
+      ],
+      "edgeCases": [
+        "`#图片chat` 与 `#chat` 的分支相同，只是带上图片理解意图"
+      ],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/clear-last",
+      "command": "#gpt清除最近5条对话",
+      "aliases": [
+        "#chatgpt删除前面3条对话",
+        "#gpt清除最近10条对话"
+      ],
+      "title": "删除最近 N 条对话",
+      "summary": "按条数删",
+      "what": "从当前会话记录里删掉最近 N 条（一问一答算两条），只影响当前会话。",
+      "returns": "「已清除当前会话最近 X 条对话」。",
+      "returnsDetail": "没有记录可删时回「当前没有可清除的对话记录」。",
+      "timing": "1~2 秒",
+      "cost": "改会话记录文件",
+      "keywords": [
+        "gpt清除最近",
+        "条对话"
+      ],
+      "params": [
+        {
+          "name": "条数",
+          "required": true,
+          "desc": "阿拉伯数字，必须紧跟在「对话」前"
+        }
+      ],
+      "example": "#gpt清除最近5条对话",
+      "moreExamples": [
+        "#chatgpt删除前面3条对话",
+        "#gpt清除最近10条对话"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**「前面/最近」二选一**（`(前面?|最近的?)`），写「上次」不匹配",
+        "**条数是「消息条数」不是「轮次」**：一问一答占 2 条，删 3 条会删掉 1.5 轮",
+        "**只清当前会话**，跨群/跨用户互不影响"
+      ],
+      "failures": [
+        {
+          "symptom": "回「当前没有可清除的对话记录」",
+          "cause": "该会话还没有历史"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/list",
+      "command": "#对话列表",
+      "aliases": [
+        "#chatgpt对话列表"
+      ],
+      "title": "查看当前会话列表",
+      "summary": "看有谁在聊",
+      "what": "列出当前群/私聊里正在进行的会话（按用户或按话题）。",
+      "returns": "文本或图片列表。",
+      "returnsDetail": "没有会话时回「当前没有人正在与机器人对话」（在部分分支里）。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "对话列表"
+      ],
+      "params": [],
+      "example": "#对话列表",
+      "moreExamples": [
+        "#chatgpt对话列表"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`#` 可省**？不 —— 这条是 `^#(chatgpt)?对话列表$`，井号**必须带**",
+        "列表里显示的是会话标识，不是完整聊天内容"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "漏了 `#`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/end-chat",
+      "command": "#结束对话",
+      "aliases": [
+        "#新开对话",
+        "#摧毁对话",
+        "#毁灭对话",
+        "#完结对话",
+        "#chatgpt结束对话"
+      ],
+      "title": "结束当前对话（清上下文）",
+      "summary": "五个动词都认",
+      "what": "结束当前会话，下一次发言等于重新开始，不再带历史。",
+      "returns": "结束提示。",
+      "returnsDetail": "没有会话时可能静默。",
+      "timing": "1~2 秒",
+      "cost": "清会话记录",
+      "keywords": [
+        "结束对话"
+      ],
+      "params": [],
+      "example": "#结束对话",
+      "moreExamples": [
+        "#新开对话",
+        "#摧毁对话",
+        "#毁灭对话"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(结束|新开|摧毁|毁灭|完结)对话`** 五个动词等价，`#新开对话` 也是结束当前会话（不是「新建一个」）",
+        "**前面可以带预设词**（`(原神|星铁|…)` 这类 `originalValues`），带不带都指向同一动作",
+        "**结尾允许任意字符**（`([sS]*)$`），所以 `#结束对话吧` 也命中"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "没有进行中的会话"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/end-all",
+      "command": "#结束全部对话",
+      "aliases": [
+        "#清理全部对话",
+        "#结束全部模式对话",
+        "#chatgpt结束全部对话"
+      ],
+      "title": "清空全部会话",
+      "summary": "影响所有会话",
+      "what": "把当前作用域内所有会话一次性结束/清理。",
+      "returns": "清理结果提示。",
+      "returnsDetail": "无会话时静默。",
+      "timing": "1~3 秒",
+      "cost": "**清多个会话记录**",
+      "keywords": [
+        "结束全部对话"
+      ],
+      "params": [],
+      "example": "#结束全部对话",
+      "moreExamples": [
+        "#清理全部对话",
+        "#结束全部模式对话",
+        "#chatgpt结束全部对话"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**比 `#结束对话` 影响面大**：`(结束|新开|摧毁|毁灭|完结|清理)全部(模式|模型)?对话`，会把所有会话一起清",
+        "**「全部」和「模式/模型」两个词位置固定**：`#结束全部模型对话` 可以，`#结束模型全部对话` 不行"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "本来就没有会话"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/mode-image",
+      "command": "#chatgpt图片模式",
+      "aliases": [],
+      "title": "切换为图片回复",
+      "summary": "全局开关",
+      "what": "把回复渲染成图片（适合长文/公式）。",
+      "returns": "「ChatGPT回复已转换为图片模式」。",
+      "returnsDetail": "渲染失败时可能回落文本。",
+      "timing": "1 秒内",
+      "cost": "改配置",
+      "keywords": [
+        "chatgpt图片模式"
+      ],
+      "params": [],
+      "example": "#chatgpt图片模式",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**这是全局设置**，切了之后所有人看到的都是图片",
+        "**必须带 `#` 且写全 `chatgpt`**（`^#chatgpt图片模式$`），`#图片模式` 不认",
+        "图片模式下超长回复会被截断或渲染变慢"
+      ],
+      "failures": [
+        {
+          "symptom": "回的还是文字",
+          "cause": "被 `#chatgpt文本模式` 覆盖，或有更高优先级的设置"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/mode-text",
+      "command": "#chatgpt文本模式",
+      "aliases": [],
+      "title": "切换为文本回复",
+      "summary": "全局开关",
+      "what": "把回复恢复成纯文本。",
+      "returns": "「ChatGPT回复已转换为文本模式」。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "改配置",
+      "keywords": [
+        "chatgpt文本模式"
+      ],
+      "params": [],
+      "example": "#chatgpt文本模式",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "与图片/语音模式互斥，三者只能有一个生效",
+        "必须写全 `#chatgpt`"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/mode-voice",
+      "command": "#chatgpt语音模式",
+      "aliases": [],
+      "title": "切换为语音回复",
+      "summary": "要配 TTS",
+      "what": "把回复转成语音（vits / azure）。",
+      "returns": "「ChatGPT回复已转换为语音模式」。",
+      "returnsDetail": "未配置 VITS 回「您没有配置VITS API，请前往锅巴面板进行配置」；未配置 Azure 回「您没有配置Azure Key…」。",
+      "timing": "3~30 秒（合成慢）",
+      "cost": "**消耗 TTS 额度**",
+      "keywords": [
+        "chatgpt语音模式"
+      ],
+      "params": [],
+      "example": "#chatgpt语音模式",
+      "moreExamples": [],
+      "preconditions": [
+        "已配置 vits 或 azure"
+      ],
+      "pitfalls": [
+        "**没配 TTS 时只提示、不切换**，看起来像「切了没用」",
+        "语音模式下长回复会很长，容易刷屏"
+      ],
+      "failures": [
+        {
+          "symptom": "回「您没有配置VITS API…」",
+          "cause": "TTS 没配"
+        },
+        {
+          "symptom": "回了语音但没声音",
+          "cause": "部分客户端播不了 silk/音频格式"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/tts-source",
+      "command": "#chatgpt语音换源 1",
+      "aliases": [
+        "#chatgpt语音换源 2",
+        "#chatgpt语音换源"
+      ],
+      "title": "切换语音合成源",
+      "summary": "1=vits 2=azure",
+      "what": "在 vits-uma-genshin-honkai 与 azure 之间切换。",
+      "returns": "「语音转换源已切换为 xxx」。",
+      "returnsDetail": "不带数字时回「请使用#chatgpt语音换源+数字进行换源。1为vits-uma-genshin-honkai，2为微软azure」。",
+      "timing": "1 秒内",
+      "cost": "改配置",
+      "keywords": [
+        "chatgpt语音换源"
+      ],
+      "params": [
+        {
+          "name": "源编号",
+          "required": true,
+          "desc": "1 或 2"
+        }
+      ],
+      "example": "#chatgpt语音换源 1",
+      "moreExamples": [
+        "#chatgpt语音换源 2",
+        "#chatgpt语音换源"
+      ],
+      "preconditions": [
+        "目标源已配置"
+      ],
+      "pitfalls": [
+        "**不带数字只是提示用法**，不会切换",
+        "切到没配置的源时，语音模式会直接报「没有配置…」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请使用#chatgpt语音换源+数字…」",
+          "cause": "没带编号"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/voice-role",
+      "command": "#chatgpt设置角色 派蒙",
+      "aliases": [
+        "#chatgpt设置语音角色 派蒙",
+        "#chatgpt设置角色语音 派蒙"
+      ],
+      "title": "设置自己的默认语音角色",
+      "summary": "按用户存",
+      "what": "给当前用户设置默认 TTS 角色（vits 模型名或 azure voice）。",
+      "returns": "「您的默认语音角色已被设置为 \"xxx\"」。",
+      "returnsDetail": "角色不存在时按空处理。",
+      "timing": "1 秒内",
+      "cost": "改用户设置",
+      "keywords": [
+        "chatgpt设置角色",
+        "派蒙"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写指令后面，需与 TTS 侧的角色标识一致"
+        }
+      ],
+      "example": "#chatgpt设置角色 派蒙",
+      "moreExamples": [
+        "#chatgpt设置语音角色 派蒙",
+        "#chatgpt设置角色语音 派蒙"
+      ],
+      "preconditions": [
+        "在语音模式下才听得出效果"
+      ],
+      "pitfalls": [
+        "**三个词都认**：`设置语音角色`、`设置角色语音`、`设置角色`",
+        "**必须带 `#chatgpt` 前缀**（没有 `#?`）",
+        "角色名要写 TTS 侧的标识（vits 是模型名，azure 是 voice 短名），写中文昵称不一定认"
+      ],
+      "failures": [
+        {
+          "symptom": "设置成功但语音没变",
+          "cause": "当前不是语音模式，或角色名不匹配"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/openai-balance",
+      "command": "#OpenAI余额",
+      "aliases": [
+        "#openai额度",
+        "#OpenAI剩余余额"
+      ],
+      "title": "查 OpenAI 余额",
+      "summary": "要能查账单的 key",
+      "what": "调 OpenAI 的账单接口查剩余额度。",
+      "returns": "余额文本。",
+      "returnsDetail": "key 无权限或接口改版时报错。",
+      "timing": "2~10 秒",
+      "cost": "只读",
+      "keywords": [
+        "OpenAI余额"
+      ],
+      "params": [],
+      "example": "#OpenAI余额",
+      "moreExamples": [
+        "#openai额度",
+        "#OpenAI剩余余额"
+      ],
+      "preconditions": [
+        "配置了有账单权限的 OpenAI key"
+      ],
+      "pitfalls": [
+        "**正则没有 `^` 锚点**（`#(OpenAI|openai)(剩余)?(余额|额度)`），消息里出现这段就会触发",
+        "**大小写只认 `OpenAI`/`openai`**，`#OPENAI余额` 不匹配",
+        "新版 OpenAI 项目 key 通常查不了账单，会直接报错"
+      ],
+      "failures": [
+        {
+          "symptom": "报错/查询失败",
+          "cause": "key 没有账单权限，或被代理挡了"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/join",
+      "command": "#加入对话",
+      "aliases": [
+        "#chatgpt加入对话"
+      ],
+      "title": "加入正在进行的对话",
+      "summary": "多人同会话",
+      "what": "让当前用户加入本群正在进行的那个会话（共享上下文）。",
+      "returns": "加入结果提示。",
+      "returnsDetail": "没有进行中的会话时可能提示无。",
+      "timing": "1~2 秒",
+      "cost": "改会话成员",
+      "keywords": [
+        "加入对话"
+      ],
+      "params": [],
+      "example": "#加入对话",
+      "moreExamples": [
+        "#chatgpt加入对话"
+      ],
+      "preconditions": [
+        "群里已有会话"
+      ],
+      "pitfalls": [
+        "**`#` 可省**（`^#(chatgpt)?加入对话` 中 `#` 仍是必须的，但 `chatgpt` 可省）",
+        "加入后你的发言会带上前一个人的上下文，注意隐私"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "没有进行中的会话"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/avatar",
+      "command": "#chatgpt角色预览 猫娘",
+      "aliases": [
+        "#chatgpt角色开启 猫娘",
+        "#chatgpt角色关闭 猫娘",
+        "#chatgpt角色状态"
+      ],
+      "title": "角色（人物设定）预览与启停",
+      "summary": "仅 master",
+      "what": "预览/开启/关闭某个角色设定（`avatars` 目录里的角色文件），`#chatgpt角色状态` 看当前状态。",
+      "returns": "预览内容或启停结果。",
+      "returnsDetail": "角色不存在时提示；不带角色名时看状态。",
+      "timing": "1~3 秒",
+      "cost": "改角色开关",
+      "keywords": [
+        "chatgpt角色预览",
+        "猫娘"
+      ],
+      "params": [
+        {
+          "name": "动作",
+          "required": true,
+          "desc": "预览 / 开启 / 关闭 / 状态"
+        },
+        {
+          "name": "角色名",
+          "required": false,
+          "desc": "状态可省略"
+        }
+      ],
+      "example": "#chatgpt角色预览 猫娘",
+      "moreExamples": [
+        "#chatgpt角色开启 猫娘",
+        "#chatgpt角色关闭 猫娘",
+        "#chatgpt角色状态"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**必须带 `#chatgpt`**（`^#chatgpt角色…`），`#角色开启` 不认",
+        "**四个动作固定**，`#chatgpt角色切换` 不匹配",
+        "角色文件放在插件目录里，新增后要 `#chatgpt刷新角色文件夹`"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 动作词写错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/avatar-refresh",
+      "command": "#chatgpt刷新角色文件夹",
+      "aliases": [],
+      "title": "重扫角色文件夹",
+      "summary": "仅 master",
+      "what": "重新读取角色目录，让新增/删除的角色文件立刻生效。",
+      "returns": "刷新结果提示。",
+      "returnsDetail": "目录不存在时报错。",
+      "timing": "1~2 秒",
+      "cost": "重读目录",
+      "keywords": [
+        "chatgpt刷新角色文件夹"
+      ],
+      "params": [],
+      "example": "#chatgpt刷新角色文件夹",
+      "moreExamples": [],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**必须带 `#chatgpt`**，且是完整短语（`^#chatgpt刷新角色文件夹$`）",
+        "刷新后不需要重启，但正在进行的会话不会自动换角色"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/group-autoreply",
+      "command": "#群聊自主回复 开启",
+      "aliases": [
+        "#群聊自主回复 关闭",
+        "#群聊自主回复开启"
+      ],
+      "title": "群聊自主回复开关",
+      "summary": "仅 master",
+      "what": "打开后 Bot 会自己判断要不要插话（而不是只在被叫时回复）。",
+      "returns": "开关结果。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "改群设置",
+      "keywords": [
+        "群聊自主回复",
+        "开启"
+      ],
+      "params": [
+        {
+          "name": "状态",
+          "required": true,
+          "desc": "开启 / 关闭"
+        }
+      ],
+      "example": "#群聊自主回复 开启",
+      "moreExamples": [
+        "#群聊自主回复 关闭",
+        "#群聊自主回复开启"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**`\\s*` 允许空格**：`#群聊自主回复 开启` 与 `#群聊自主回复开启` 都行，但结尾不能用别的字（`\\s*$`）",
+        "**必须带 `#`**",
+        "**开了之后所有群消息都会被观察**（另一条 `^[\\s\\S]*$` 的 observe 规则），要注意额度与隐私"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 状态词不是「开启/关闭」"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/observe",
+      "command": "（任意群消息）",
+      "aliases": [],
+      "title": "群聊观察器（无指令，自动学习/自主回复）",
+      "summary": "reg 是全匹配",
+      "what": "`apps/groupReply.js` 与 `apps/memoryGroupObserver.js` 各有一条 `^[\\s\\S]*$` 的规则，**每条消息都会进**：前者判断要不要自主回复，后者把消息喂给群记忆。",
+      "returns": "通常不回复；命中自主回复时才会插话。",
+      "returnsDetail": "受 `#群聊自主回复` 开关与记忆开关控制。",
+      "timing": "异步，不影响正常响应",
+      "cost": "**每条消息都会过一遍逻辑**（可能触发模型调用）",
+      "keywords": [
+        "（任意群消息）"
+      ],
+      "params": [],
+      "example": "（任意群消息）",
+      "moreExamples": [],
+      "preconditions": [
+        "对应开关打开"
+      ],
+      "pitfalls": [
+        "**它不是指令**，是两条全匹配规则 —— 所以「为什么 Bot 突然插话」通常是这里",
+        "**优先级与开关决定它是否真的调用模型**，关掉 `#群聊自主回复` 后仍会做群记忆观察",
+        "两条全匹配规则会**叠加执行**"
+      ],
+      "failures": [
+        {
+          "symptom": "Bot 自说自话",
+          "cause": "`#群聊自主回复` 开着"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/history",
+      "command": "#chatgpt聊天记录",
+      "aliases": [
+        "#chatgpt导出聊天记录",
+        "#ChatGPT聊天记录"
+      ],
+      "title": "导出聊天记录",
+      "summary": "文本/文件",
+      "what": "把当前会话的历史记录导出（文本或文件）。",
+      "returns": "聊天记录内容或文件。",
+      "returnsDetail": "没有记录回「无聊天记录」。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "chatgpt聊天记录"
+      ],
+      "params": [],
+      "example": "#chatgpt聊天记录",
+      "moreExamples": [
+        "#chatgpt导出聊天记录",
+        "#ChatGPT聊天记录"
+      ],
+      "preconditions": [
+        "有历史"
+      ],
+      "pitfalls": [
+        "**`导出` 可省**（`(导出)?聊天记录`）",
+        "**只导当前会话**，不是全部",
+        "记录很长时会刷屏/超大"
+      ],
+      "failures": [
+        {
+          "symptom": "回「无聊天记录」",
+          "cause": "当前会话没有历史"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/update",
+      "command": "#chatgpt更新",
+      "aliases": [
+        "#chatgpt强制更新",
+        "#ChatGPT更新",
+        "#柴特寄批踢更新"
+      ],
+      "title": "更新插件本体",
+      "summary": "成功后重启",
+      "what": "拉插件代码（可选强制）。",
+      "returns": "更新器输出。",
+      "returnsDetail": "非 master 静默。",
+      "timing": "10~60 秒",
+      "cost": "**拉代码 + 重启**",
+      "keywords": [
+        "chatgpt更新"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "丢弃本地改动"
+        }
+      ],
+      "example": "#chatgpt更新",
+      "moreExamples": [
+        "#chatgpt强制更新",
+        "#ChatGPT更新",
+        "#柴特寄批踢更新"
+      ],
+      "preconditions": [
+        "master",
+        "git 安装"
+      ],
+      "pitfalls": [
+        "**别名极多**：chatgpt / 柴特寄批踢 / 柴特鸡批踢 / GPT / Chat / CHAT / ChatGPT-Plugin …… 全部是一个插件",
+        "**强制更新会丢本地改动**"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master 或不是 git 安装"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/at-graph",
+      "command": "#at图谱",
+      "aliases": [
+        "#艾特图谱",
+        "#at图谱 最近7天"
+      ],
+      "title": "群里 @ 关系图谱",
+      "summary": "社交图",
+      "what": "统计群内 @ 关系并生成图谱（谁 @ 谁最多）。",
+      "returns": "图片或文字图谱。",
+      "returnsDetail": "数据不足时提示。",
+      "timing": "2~10 秒",
+      "cost": "读本地统计",
+      "keywords": [
+        "at图谱"
+      ],
+      "params": [
+        {
+          "name": "范围",
+          "required": false,
+          "desc": "可选参数，跟在指令后面"
+        }
+      ],
+      "example": "#at图谱",
+      "moreExamples": [
+        "#艾特图谱",
+        "#at图谱 最近7天"
+      ],
+      "preconditions": [
+        "群里有 @ 记录"
+      ],
+      "pitfalls": [
+        "**`at` 大小写都认**（`[aA][tT]`），也认中文「艾特」",
+        "**后面可以跟任意参数**（`(?:\\s*[\\s\\S]*)?`），但参数怎么解析取决于实现",
+        "没数据时可能出空图"
+      ],
+      "failures": [
+        {
+          "symptom": "图是空的",
+          "cause": "群里还没有 @ 记录"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/music",
+      "command": "#创作歌曲 夏天的风",
+      "aliases": [
+        "#歌曲 夏天的风",
+        "#suno 夏天的风"
+      ],
+      "title": "AI 作曲（Suno）",
+      "summary": "要 Suno Token",
+      "what": "调 Suno 生成歌曲，完成后回合并转发（含音频）。",
+      "returns": "「正在生成，请稍后」→ 合并转发「音乐合成结果」。",
+      "returnsDetail": "没配 token 回「未配置Suno Token」；失败回「生成失败，可能是提示词太长或者违规，请检查日志」；额度用完回「所有账户余额不足」。",
+      "timing": "**30 秒到几分钟**",
+      "cost": "**消耗 Suno 额度**",
+      "keywords": [
+        "创作歌曲",
+        "夏天的风"
+      ],
+      "params": [
+        {
+          "name": "提示词",
+          "required": true,
+          "desc": "跟在指令后面，歌曲风格/歌词"
+        }
+      ],
+      "example": "#创作歌曲 夏天的风",
+      "moreExamples": [
+        "#歌曲 夏天的风",
+        "#suno 夏天的风"
+      ],
+      "preconditions": [
+        "配置了 Suno Token"
+      ],
+      "pitfalls": [
+        "**`#歌曲`/`#创作歌曲`/`#suno` 三种前缀**，后面必须跟内容",
+        "**异步生成**：先回「正在生成，请稍后」，结果晚些才到",
+        "**提示词太长或含敏感词会失败**",
+        "多账号时会轮询，全用完回「所有账户余额不足」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置Suno Token」",
+          "cause": "没配 token"
+        },
+        {
+          "symptom": "回「生成失败…」",
+          "cause": "提示词违规/过长，或接口变动"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/provider-switch",
+      "command": "#chatgpt切换claude",
+      "aliases": [
+        "#chatgpt切换gemini",
+        "#chatgpt切换api",
+        "#chatgpt切换模型提供商"
+      ],
+      "title": "切换模型提供商",
+      "summary": "仅 master",
+      "what": "在 api(OpenAI 兼容) / claude / gemini / responses 之间切换当前使用的提供商。",
+      "returns": "切换结果。",
+      "returnsDetail": "目标提供商未配置时可能提示或直接切过去（之后对话报错）。",
+      "timing": "1 秒内",
+      "cost": "改全局配置",
+      "keywords": [
+        "chatgpt切换claude"
+      ],
+      "params": [
+        {
+          "name": "提供商",
+          "required": true,
+          "desc": "api / claude / gemini / responses（大小写不敏感）"
+        }
+      ],
+      "example": "#chatgpt切换claude",
+      "moreExamples": [
+        "#chatgpt切换gemini",
+        "#chatgpt切换api",
+        "#chatgpt切换模型提供商"
+      ],
+      "preconditions": [
+        "master",
+        "目标提供商已配 key"
+      ],
+      "pitfalls": [
+        "**规则是 `/i` 大小写不敏感**，`#chatgpt切换Claude` 也能过",
+        "**切到没配 key 的提供商会让对话直接失败**，不会自动回退",
+        "**`api` 指 OpenAI 兼容接口**（含各类中转），不是「所有 API」"
+      ],
+      "failures": [
+        {
+          "symptom": "切换后对话报错",
+          "cause": "目标提供商没配 key/地址"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/provider-edit",
+      "command": "#chatgpt设置api key sk-xxx",
+      "aliases": [
+        "#chatgpt设置claude模型 claude-3-5-sonnet",
+        "#chatgpt设置gemini地址 http://x",
+        "#chatgpt设置api反代 http://x"
+      ],
+      "title": "配置某提供商的 key / 模型 / 地址 / 设定",
+      "summary": "仅 master",
+      "what": "按「提供商 + 字段」写配置：`key`、`模型`、`地址`、`反代`、`设定`。",
+      "returns": "保存结果。",
+      "returnsDetail": "字段或值不合法时提示。",
+      "timing": "1~2 秒",
+      "cost": "改配置（**明文存 key**）",
+      "keywords": [
+        "chatgpt设置api",
+        "key",
+        "sk",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "提供商",
+          "required": false,
+          "desc": "api / gemini / claude / responses，省略则按当前提供商"
+        },
+        {
+          "name": "字段",
+          "required": true,
+          "desc": "key / 模型 / 地址 / 反代 / 设定"
+        },
+        {
+          "name": "值",
+          "required": true,
+          "desc": "写指令后面"
+        }
+      ],
+      "example": "#chatgpt设置api key sk-xxx",
+      "moreExamples": [
+        "#chatgpt设置claude模型 claude-3-5-sonnet",
+        "#chatgpt设置gemini地址 http://x",
+        "#chatgpt设置api反代 http://x"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**这条写的是全局配置**，不是某个人某群的设置",
+        "**`key` 是明文落盘**，注意仓库/备份泄露",
+        "改了之后一般**不用重启**，但正在进行的会话仍用旧参数"
+      ],
+      "failures": [
+        {
+          "symptom": "保存了但对话还是报错",
+          "cause": "字段名/值不对，或当前提供商不是被改的那个"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/provider-toggle",
+      "command": "#chatgpt开启api流",
+      "aliases": [
+        "#chatgpt关闭api流",
+        "#chatgpt开启gemini搜索",
+        "#chatgpt关闭gemini代码执行"
+      ],
+      "title": "开关流式输出 / gemini 搜索与代码执行",
+      "summary": "仅 master",
+      "what": "控制 `api流`（流式）、`gemini搜索`、`gemini代码执行` 三个开关。",
+      "returns": "开关结果。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "改配置",
+      "keywords": [
+        "chatgpt开启api流"
+      ],
+      "params": [
+        {
+          "name": "状态",
+          "required": true,
+          "desc": "开启 / 关闭"
+        },
+        {
+          "name": "能力",
+          "required": true,
+          "desc": "api流 / gemini搜索 / gemini代码执行"
+        }
+      ],
+      "example": "#chatgpt开启api流",
+      "moreExamples": [
+        "#chatgpt关闭api流",
+        "#chatgpt开启gemini搜索",
+        "#chatgpt关闭gemini代码执行"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**语序固定**：`(开启|关闭)(api流|gemini搜索|gemini代码执行)`，`#chatgptapi流开启` 不匹配",
+        "**`api流` 的 `api` 大小写都行**（正则 `/i`）",
+        "gemini 的搜索/代码执行要在对应模型上才有意义"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 语序错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/trans-source",
+      "command": "#chatgpt设置翻译来源 百度翻译",
+      "aliases": [
+        "#chatgpt设置翻译来源 openai",
+        "#设置翻译来源 gemini"
+      ],
+      "title": "设置翻译使用的提供商",
+      "summary": "仅 master",
+      "what": "把翻译指令（`#翻…`）的后端固定到某个提供商。",
+      "returns": "保存结果。",
+      "returnsDetail": "来源不在白名单时提示。",
+      "timing": "1 秒内",
+      "cost": "改配置",
+      "keywords": [
+        "chatgpt设置翻译来源",
+        "百度翻译"
+      ],
+      "params": [
+        {
+          "name": "来源",
+          "required": true,
+          "desc": "openai / responses / gemini / baidu / 百度翻译"
+        }
+      ],
+      "example": "#chatgpt设置翻译来源 百度翻译",
+      "moreExamples": [
+        "#chatgpt设置翻译来源 openai",
+        "#设置翻译来源 gemini"
+      ],
+      "preconditions": [
+        "master",
+        "对应来源已配置"
+      ],
+      "pitfalls": [
+        "**`baidu` 与「百度翻译」等价**，但需要单独的百度翻译凭据",
+        "**`#设置翻译来源` 不带 chatgpt 前缀也认**（这条正则是 `^#chatgpt设置翻译来源.*$` 吗？—— 实际另一个 app 里还有 `^#(chatgpt)?(设置|修改)翻译来源…` 的版本，两处都能触发）"
+      ],
+      "failures": [
+        {
+          "symptom": "翻译还是走原来的源",
+          "cause": "改的是另一个 app 的配置项"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/available-models",
+      "command": "#chatgpt获取可用模型",
+      "aliases": [],
+      "title": "拉取可用模型列表",
+      "summary": "仅 master",
+      "what": "调用提供商的 models 接口，列出当前 key 可用的模型。",
+      "returns": "模型列表文本。",
+      "returnsDetail": "接口不支持时可能报错。",
+      "timing": "2~10 秒",
+      "cost": "只读",
+      "keywords": [
+        "chatgpt获取可用模型"
+      ],
+      "params": [],
+      "example": "#chatgpt获取可用模型",
+      "moreExamples": [],
+      "preconditions": [
+        "master",
+        "已配 key"
+      ],
+      "pitfalls": [
+        "**不同提供商支持程度不同**：claude/gemini 有对应接口，Poe 没有",
+        "列表只是「能列出来的」，不代表有权限调用"
+      ],
+      "failures": [
+        {
+          "symptom": "报错",
+          "cause": "当前提供商没有 models 接口"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/prompt-list",
+      "command": "#chatgpt设定列表",
+      "aliases": [
+        "#ChatGPT设定列表"
+      ],
+      "title": "列出所有人物设定",
+      "summary": "含在线库",
+      "what": "列出本地人物设定（prompt）名称与简要说明。",
+      "returns": "列表文本或图。",
+      "returnsDetail": "没有设定时提示空。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "chatgpt设定列表"
+      ],
+      "params": [],
+      "example": "#chatgpt设定列表",
+      "moreExamples": [
+        "#ChatGPT设定列表"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`chatgpt` 必须写**，`#设定列表` 不认",
+        "**列表只给名字**，看内容用 `#chatgpt查看设定 名字`"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-show",
+      "command": "#chatgpt查看设定 猫娘",
+      "aliases": [
+        "#ChatGPT查看设定 猫娘"
+      ],
+      "title": "看某个设定的内容",
+      "summary": "全文",
+      "what": "输出指定设定的提示词正文。",
+      "returns": "提示词文本。",
+      "returnsDetail": "名字不存在时提示未找到。",
+      "timing": "1~2 秒",
+      "cost": "只读",
+      "keywords": [
+        "chatgpt查看设定",
+        "猫娘"
+      ],
+      "params": [
+        {
+          "name": "设定名",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#chatgpt查看设定 猫娘",
+      "moreExamples": [
+        "#ChatGPT查看设定 猫娘"
+      ],
+      "preconditions": [
+        "设定存在"
+      ],
+      "pitfalls": [
+        "**设定名里不能有空格**（按词切分）",
+        "很长的设定会刷屏"
+      ],
+      "failures": [
+        {
+          "symptom": "提示未找到",
+          "cause": "名字不对，或设定在别的分类下"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-use",
+      "command": "#chatgpt使用设定 猫娘",
+      "aliases": [
+        "#ChatGPT使用设定 猫娘"
+      ],
+      "title": "启用某个设定",
+      "summary": "改当前会话人格",
+      "what": "把指定设定设为当前会话（或当前用户）的人设提示词。",
+      "returns": "切换结果。",
+      "returnsDetail": "没找到设定时提示。",
+      "timing": "1~2 秒",
+      "cost": "改会话人设",
+      "keywords": [
+        "chatgpt使用设定",
+        "猫娘"
+      ],
+      "params": [
+        {
+          "name": "设定名",
+          "required": true,
+          "desc": "设定名称"
+        }
+      ],
+      "example": "#chatgpt使用设定 猫娘",
+      "moreExamples": [
+        "#ChatGPT使用设定 猫娘"
+      ],
+      "preconditions": [
+        "设定存在"
+      ],
+      "pitfalls": [
+        "**切换后之前的上下文会保留**，想彻底换人格先 `#结束对话`",
+        "设定越具体，模型越容易「出戏」到别的话题"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-add",
+      "command": "#chatgpt添加设定 猫娘 你是一只猫娘",
+      "aliases": [
+        "#ChatGPT添加设定 名字 内容"
+      ],
+      "title": "新增一个设定",
+      "summary": "名字 + 内容",
+      "what": "按「名字 + 提示词正文」写入本地设定库。",
+      "returns": "添加结果。",
+      "returnsDetail": "名字重复时提示或覆盖（取决于实现）。",
+      "timing": "1~2 秒",
+      "cost": "写本地文件",
+      "keywords": [
+        "chatgpt添加设定",
+        "猫娘",
+        "你是一只猫娘"
+      ],
+      "params": [
+        {
+          "name": "名字",
+          "required": true,
+          "desc": "第一个词"
+        },
+        {
+          "name": "内容",
+          "required": true,
+          "desc": "后面的全部文字"
+        }
+      ],
+      "example": "#chatgpt添加设定 猫娘 你是一只猫娘",
+      "moreExamples": [
+        "#ChatGPT添加设定 名字 内容"
+      ],
+      "preconditions": [
+        "无（一般人都能加，注意别被刷库）"
+      ],
+      "pitfalls": [
+        "**名字是第一个空格前的词**，所以名字里不能有空格",
+        "**内容包含换行时可能被截断**（按空白切分实现）",
+        "没有内置审核，任何人都能加任意内容"
+      ],
+      "failures": [
+        {
+          "symptom": "添加后列表里没有",
+          "cause": "名字/内容格式不对，写到了别的分类"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-del",
+      "command": "#chatgpt删除设定 猫娘",
+      "aliases": [
+        "#ChatGPT移除设定 猫娘"
+      ],
+      "title": "删除设定",
+      "summary": "不可恢复",
+      "what": "从本地设定库里删掉指定名字的设定。",
+      "returns": "删除结果。",
+      "returnsDetail": "不存在时提示。",
+      "timing": "1~2 秒",
+      "cost": "**删文件，不可恢复**",
+      "keywords": [
+        "chatgpt删除设定",
+        "猫娘"
+      ],
+      "params": [
+        {
+          "name": "设定名",
+          "required": true,
+          "desc": "设定名称"
+        }
+      ],
+      "example": "#chatgpt删除设定 猫娘",
+      "moreExamples": [
+        "#ChatGPT移除设定 猫娘"
+      ],
+      "preconditions": [
+        "设定存在"
+      ],
+      "pitfalls": [
+        "**没有二次确认**，删了就是删了",
+        "**`删除` 与 `移除` 等价**"
+      ],
+      "failures": [
+        {
+          "symptom": "提示未找到",
+          "cause": "名字不对"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-share",
+      "command": "#chatgpt上传设定 猫娘",
+      "aliases": [
+        "#chatgpt分享设定 猫娘",
+        "#chatgpt共享设定 猫娘"
+      ],
+      "title": "把设定上传/分享出去",
+      "summary": "走在线库",
+      "what": "把本地设定推到在线设定库，供别人浏览。",
+      "returns": "上传结果（含编号/链接）。",
+      "returnsDetail": "未配置在线库时提示。",
+      "timing": "2~10 秒",
+      "cost": "**内容公开**",
+      "keywords": [
+        "chatgpt上传设定",
+        "猫娘"
+      ],
+      "params": [
+        {
+          "name": "设定名",
+          "required": true,
+          "desc": "要分享的本地设定"
+        }
+      ],
+      "example": "#chatgpt上传设定 猫娘",
+      "moreExamples": [
+        "#chatgpt分享设定 猫娘",
+        "#chatgpt共享设定 猫娘"
+      ],
+      "preconditions": [
+        "配置了在线设定库"
+      ],
+      "pitfalls": [
+        "**上传即公开**，注意设定内容里别带隐私",
+        "**三个同义词**：上传/分享/共享"
+      ],
+      "failures": [
+        {
+          "symptom": "失败",
+          "cause": "在线库不可用或未配置"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-unshare",
+      "command": "#chatgpt取消共享设定 猫娘",
+      "aliases": [
+        "#chatgpt删除共享设定 猫娘",
+        "#chatgpt撤销共享设定 猫娘"
+      ],
+      "title": "撤下已分享的设定",
+      "summary": "从在线库移除",
+      "what": "把之前上传的设定从在线库撤下。",
+      "returns": "撤销结果。",
+      "returnsDetail": "找不到时提示。",
+      "timing": "2~10 秒",
+      "cost": "改在线库",
+      "keywords": [
+        "chatgpt取消共享设定",
+        "猫娘"
+      ],
+      "params": [
+        {
+          "name": "设定名/编号",
+          "required": true,
+          "desc": "已分享的设定"
+        }
+      ],
+      "example": "#chatgpt取消共享设定 猫娘",
+      "moreExamples": [
+        "#chatgpt删除共享设定 猫娘",
+        "#chatgpt撤销共享设定 猫娘"
+      ],
+      "preconditions": [
+        "之前分享过"
+      ],
+      "pitfalls": [
+        "**`删除/取消/撤销` 三个词都认**",
+        "撤下后别人的本地副本不受影响"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-import",
+      "command": "#chatgpt导入设定",
+      "aliases": [
+        "#ChatGPT导入设定"
+      ],
+      "title": "从文本/链接导入设定",
+      "summary": "批量导入",
+      "what": "把一段设定文本（或分享链接）解析后写进本地库。",
+      "returns": "导入结果（成功条数）。",
+      "returnsDetail": "格式不对时提示。",
+      "timing": "2~5 秒",
+      "cost": "写本地文件",
+      "keywords": [
+        "chatgpt导入设定"
+      ],
+      "params": [
+        {
+          "name": "内容/链接",
+          "required": true,
+          "desc": "设定文本或分享链接"
+        }
+      ],
+      "example": "#chatgpt导入设定",
+      "moreExamples": [
+        "#ChatGPT导入设定"
+      ],
+      "preconditions": [
+        "格式符合插件约定"
+      ],
+      "pitfalls": [
+        "**格式很挑**：字段要对得上（名字/内容/分类），否则只导入一部分",
+        "导入的内容同样没有审核"
+      ],
+      "failures": [
+        {
+          "symptom": "导入 0 条",
+          "cause": "格式不匹配"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-browse",
+      "command": "#chatgpt浏览设定",
+      "aliases": [
+        "#chatgpt在线查找设定",
+        "#chatgpt查找设定 猫娘"
+      ],
+      "title": "浏览/搜索在线设定",
+      "summary": "要在线库",
+      "what": "分页列出在线设定库，或按关键词搜索。",
+      "returns": "列表或搜索结果。",
+      "returnsDetail": "在线库不可用时提示。",
+      "timing": "2~10 秒",
+      "cost": "打在线库",
+      "keywords": [
+        "chatgpt浏览设定"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": false,
+          "desc": "省略=浏览全部"
+        }
+      ],
+      "example": "#chatgpt浏览设定",
+      "moreExamples": [
+        "#chatgpt在线查找设定",
+        "#chatgpt查找设定 猫娘"
+      ],
+      "preconditions": [
+        "在线库可用"
+      ],
+      "pitfalls": [
+        "**`在线` 可省**（`(在线)?(浏览|查找)设定`）",
+        "在线内容由第三方上传，**内容质量与安全性无法保证**"
+      ],
+      "failures": [
+        {
+          "symptom": "列表是空的",
+          "cause": "在线库挂了或被墙"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-preview",
+      "command": "#chatgpt预览设定详情 12",
+      "aliases": [
+        "#chatgpt在线预览设定详情 12"
+      ],
+      "title": "看在线设定的详情",
+      "summary": "按编号",
+      "what": "按在线库编号查看某条设定的完整内容。",
+      "returns": "设定全文。",
+      "returnsDetail": "编号不存在时提示。",
+      "timing": "2~5 秒",
+      "cost": "打在线库",
+      "keywords": [
+        "chatgpt预览设定详情"
+      ],
+      "params": [
+        {
+          "name": "编号",
+          "required": true,
+          "desc": "在线库里的编号"
+        }
+      ],
+      "example": "#chatgpt预览设定详情 12",
+      "moreExamples": [
+        "#chatgpt在线预览设定详情 12"
+      ],
+      "preconditions": [
+        "在线库可用"
+      ],
+      "pitfalls": [
+        "**编号是在线库的，不是本地列表的序号**",
+        "**`在线` 可省**"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/prompt-help",
+      "command": "#chatgpt设定帮助",
+      "aliases": [
+        "#ChatGPT设定帮助"
+      ],
+      "title": "设定功能帮助",
+      "summary": "文本",
+      "what": "回一段关于设定的用法说明。",
+      "returns": "文本帮助。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "只读",
+      "keywords": [
+        "chatgpt设定帮助"
+      ],
+      "params": [],
+      "example": "#chatgpt设定帮助",
+      "moreExamples": [
+        "#ChatGPT设定帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**必须带 `#` 且写 `chatgpt`**（`^#(chatgpt|ChatGPT)设定帮助$`）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/meme-list",
+      "command": "#meme列表",
+      "aliases": [
+        "#表情包列表",
+        "#memes列表"
+      ],
+      "title": "派蒙表情包列表",
+      "summary": "关键词表",
+      "what": "列出可用表情包关键词。",
+      "returns": "列表（图或文本）。",
+      "returnsDetail": "库空时提示。",
+      "timing": "1~5 秒",
+      "cost": "只读",
+      "keywords": [
+        "meme列表"
+      ],
+      "params": [],
+      "example": "#meme列表",
+      "moreExamples": [
+        "#表情包列表",
+        "#memes列表"
+      ],
+      "preconditions": [
+        "表情库已更新"
+      ],
+      "pitfalls": [
+        "**`meme` 和 `meme(s)` 都认**，中文「表情包」也行",
+        "必须带 `#`（`cmdReg` 里已包含）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/meme-random",
+      "command": "#随机meme",
+      "aliases": [
+        "#随机表情包",
+        "#随机memes"
+      ],
+      "title": "随机来一张派蒙表情",
+      "summary": "随机",
+      "what": "从表情库里随机挑一张发出。",
+      "returns": "一张表情图。",
+      "returnsDetail": "库空时报错。",
+      "timing": "1~5 秒",
+      "cost": "只读",
+      "keywords": [
+        "随机meme"
+      ],
+      "params": [],
+      "example": "#随机meme",
+      "moreExamples": [
+        "#随机表情包",
+        "#随机memes"
+      ],
+      "preconditions": [
+        "表情库已更新"
+      ],
+      "pitfalls": [
+        "**「随机」在前**（`随机(meme(s)?|表情包)`），`#meme随机` 不匹配"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/meme-help",
+      "command": "#meme帮助",
+      "aliases": [
+        "#表情包帮助"
+      ],
+      "title": "表情包功能帮助",
+      "summary": "文本",
+      "what": "说明怎么用表情包关键词生成。",
+      "returns": "文本帮助。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "只读",
+      "keywords": [
+        "meme帮助"
+      ],
+      "params": [],
+      "example": "#meme帮助",
+      "moreExamples": [
+        "#表情包帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**「帮助」在最后**（`(meme(s)?|表情包)帮助`）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/meme-search",
+      "command": "#meme搜索 摸头",
+      "aliases": [
+        "#表情包搜索 摸头"
+      ],
+      "title": "搜表情关键词",
+      "summary": "模糊",
+      "what": "按关键词搜索可用表情。",
+      "returns": "搜索结果。",
+      "returnsDetail": "无结果时提示。",
+      "timing": "1~5 秒",
+      "cost": "只读",
+      "keywords": [
+        "meme搜索",
+        "摸头"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#meme搜索 摸头",
+      "moreExamples": [
+        "#表情包搜索 摸头"
+      ],
+      "preconditions": [
+        "表情库已更新"
+      ],
+      "pitfalls": [
+        "**「搜索」在最后**，关键词跟在后面",
+        "搜不到时容易以为插件坏了"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/meme-update",
+      "command": "#meme更新",
+      "aliases": [
+        "#表情包更新"
+      ],
+      "title": "更新表情库",
+      "summary": "仅 master",
+      "what": "拉取最新表情包清单。",
+      "returns": "更新结果。",
+      "returnsDetail": "网络失败时报错。",
+      "timing": "10 秒到几分钟",
+      "cost": "写本地库",
+      "keywords": [
+        "meme更新"
+      ],
+      "params": [],
+      "example": "#meme更新",
+      "moreExamples": [
+        "#表情包更新"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**新装插件第一件事就是这个**，不更新则关键词都不存在",
+        "**只有这条要 master**"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "chatgpt/meme-keyword",
+      "command": "#<表情关键词>",
+      "aliases": [
+        "#猫猫",
+        "#贴贴"
+      ],
+      "title": "按关键词出派蒙表情",
+      "summary": "动态关键词",
+      "what": "规则是 `cmdReg(_.escapeRegExp(key))` —— **表情库里的每个关键词都会注册成一条规则**，发 `#关键词` 就出对应的表情包。",
+      "returns": "表情图。",
+      "returnsDetail": "关键词不存在则不匹配（没反应）。",
+      "timing": "1~5 秒",
+      "cost": "只读",
+      "keywords": [
+        "表情关键词"
+      ],
+      "params": [],
+      "example": "#<表情关键词>",
+      "moreExamples": [
+        "#猫猫",
+        "#贴贴"
+      ],
+      "preconditions": [
+        "表情库已更新",
+        "关键词在库里"
+      ],
+      "pitfalls": [
+        "**关键词是数据不是代码**，库没更新就没有这些规则",
+        "**关键词会注册成独立正则**，可能与其它插件的短指令冲突",
+        "数量随库变化，地图里无法枚全，用 `#meme列表` 查"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "关键词不在库里"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-mine",
+      "command": "#我的记忆",
+      "aliases": [],
+      "title": "看 Bot 记住了我什么",
+      "summary": "个人记忆",
+      "what": "列出与当前用户相关的记忆条目（长期记忆）。",
+      "returns": "文本列表。",
+      "returnsDetail": "没有记忆时提示空。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "我的记忆"
+      ],
+      "params": [],
+      "example": "#我的记忆",
+      "moreExamples": [],
+      "preconditions": [
+        "有记忆记录"
+      ],
+      "pitfalls": [
+        "**必须带 `#`**",
+        "记忆是按用户/群维度存的，跨群不一定共享"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-group",
+      "command": "#群记忆",
+      "aliases": [],
+      "title": "看本群被记住的内容",
+      "summary": "群维度",
+      "what": "列出本群的记忆条目。",
+      "returns": "文本列表。",
+      "returnsDetail": "空时提示。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "群记忆"
+      ],
+      "params": [],
+      "example": "#群记忆",
+      "moreExamples": [],
+      "preconditions": [
+        "群记忆开启且有内容"
+      ],
+      "pitfalls": [
+        "**群记忆需要先开启**（`#群记忆开启`），否则这条是空的"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-group-on",
+      "command": "#群记忆开启",
+      "aliases": [],
+      "title": "开启群记忆",
+      "summary": "每条消息都会被喂",
+      "what": "打开本群的记忆提取（观察器会把消息喂给记忆系统）。",
+      "returns": "开启结果。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "**之后每条消息都会参与记忆提取**",
+      "keywords": [
+        "群记忆开启"
+      ],
+      "params": [],
+      "example": "#群记忆开启",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**这是隐私相关开关**：开了之后群里聊天内容会被用来提炼记忆",
+        "开启不等于立即有记忆，要等提取任务跑"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-group-off",
+      "command": "#群记忆关闭",
+      "aliases": [],
+      "title": "关闭群记忆",
+      "summary": "停止提取",
+      "what": "停止本群的记忆提取（已有记忆不会自动删除）。",
+      "returns": "关闭结果。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "改开关",
+      "keywords": [
+        "群记忆关闭"
+      ],
+      "params": [],
+      "example": "#群记忆关闭",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**只停提取，不清数据**；要清用 `#清空所有记忆`"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-status",
+      "command": "#群记忆状态",
+      "aliases": [],
+      "title": "群记忆状态",
+      "summary": "开关 + 条数",
+      "what": "显示本群记忆是否开启、有多少条、上次提取时间等。",
+      "returns": "状态文本。",
+      "returnsDetail": "无。",
+      "timing": "1~2 秒",
+      "cost": "只读",
+      "keywords": [
+        "群记忆状态"
+      ],
+      "params": [],
+      "example": "#群记忆状态",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`#群记忆` 是看内容，`#群记忆状态` 是看开关**，别混"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-extract-now",
+      "command": "#立即提取群记忆",
+      "aliases": [],
+      "title": "立刻跑一次记忆提取",
+      "summary": "手动触发",
+      "what": "不等定时任务，马上把最近的群聊内容提炼成记忆。",
+      "returns": "提取结果（新增条数）。",
+      "returnsDetail": "内容不足时提示。",
+      "timing": "5~60 秒（要调模型）",
+      "cost": "**消耗模型额度**",
+      "keywords": [
+        "立即提取群记忆"
+      ],
+      "params": [],
+      "example": "#立即提取群记忆",
+      "moreExamples": [],
+      "preconditions": [
+        "群记忆开启"
+      ],
+      "pitfalls": [
+        "**会调模型**，频繁触发很费钱",
+        "提取结果取决于最近的消息量，太少会提示不足"
+      ],
+      "failures": [
+        {
+          "symptom": "提示内容不足",
+          "cause": "最近没什么聊天记录"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-task",
+      "command": "#记忆任务运行",
+      "aliases": [],
+      "title": "手动跑记忆定时任务",
+      "summary": "运维用",
+      "what": "触发一次完整的记忆任务（提取 + 清理等）。",
+      "returns": "任务执行结果。",
+      "returnsDetail": "无。",
+      "timing": "10~120 秒",
+      "cost": "**批量调模型**",
+      "keywords": [
+        "记忆任务运行"
+      ],
+      "params": [],
+      "example": "#记忆任务运行",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**比「立即提取群记忆」更重**，会把该跑的步骤全跑一遍",
+        "可能和定时任务撞车"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-other",
+      "command": "#他的记忆",
+      "aliases": [
+        "#她的记忆",
+        "#TA的记忆",
+        "#ta的记忆"
+      ],
+      "title": "看别人的记忆",
+      "summary": "要 @ 或名字",
+      "what": "查看指定用户（@ 或写名字）的记忆条目。",
+      "returns": "文本列表。",
+      "returnsDetail": "找不到用户时提示。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "他的记忆"
+      ],
+      "params": [
+        {
+          "name": "对象",
+          "required": true,
+          "desc": "`@某人` 或名字"
+        }
+      ],
+      "example": "#他的记忆",
+      "moreExamples": [
+        "#她的记忆",
+        "#TA的记忆",
+        "#ta的记忆"
+      ],
+      "preconditions": [
+        "对方有记忆"
+      ],
+      "pitfalls": [
+        "**四个写法**：他/她/TA/ta",
+        "**这是隐私相关操作**，注意场合"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-clear-other",
+      "command": "#清空他的记忆",
+      "aliases": [
+        "#清空她的记忆",
+        "#清空TA的记忆"
+      ],
+      "title": "清空某人的记忆",
+      "summary": "不可恢复",
+      "what": "删掉指定用户的全部记忆。",
+      "returns": "清理结果。",
+      "returnsDetail": "无。",
+      "timing": "1~3 秒",
+      "cost": "**删数据，不可恢复**",
+      "keywords": [
+        "清空他的记忆"
+      ],
+      "params": [
+        {
+          "name": "对象",
+          "required": true,
+          "desc": "`@某人` 或名字"
+        }
+      ],
+      "example": "#清空他的记忆",
+      "moreExamples": [
+        "#清空她的记忆",
+        "#清空TA的记忆"
+      ],
+      "preconditions": [
+        "目标有记忆"
+      ],
+      "pitfalls": [
+        "**没有二次确认**",
+        "**不区分群**：删的是这个人所有记忆（取决于实现）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-clear-mine",
+      "command": "#清空我的记忆",
+      "aliases": [],
+      "title": "清空自己的记忆",
+      "summary": "不可恢复",
+      "what": "删掉当前用户的全部记忆。",
+      "returns": "清理结果。",
+      "returnsDetail": "无。",
+      "timing": "1~3 秒",
+      "cost": "**删数据**",
+      "keywords": [
+        "清空我的记忆"
+      ],
+      "params": [],
+      "example": "#清空我的记忆",
+      "moreExamples": [],
+      "preconditions": [
+        "自己有记忆"
+      ],
+      "pitfalls": [
+        "**没有二次确认**，删了只能靠模型重新学"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-delete",
+      "command": "#删除记忆",
+      "aliases": [],
+      "title": "按条删除记忆",
+      "summary": "要参数",
+      "what": "按条目编号（或内容）删掉指定记忆。",
+      "returns": "删除结果。",
+      "returnsDetail": "编号不存在时提示。",
+      "timing": "1~2 秒",
+      "cost": "删单条",
+      "keywords": [
+        "删除记忆"
+      ],
+      "params": [
+        {
+          "name": "编号",
+          "required": true,
+          "desc": "记忆列表里的序号"
+        }
+      ],
+      "example": "#删除记忆",
+      "moreExamples": [],
+      "preconditions": [
+        "有记忆"
+      ],
+      "pitfalls": [
+        "**必须先 `#我的记忆`/`#群记忆` 看编号**，编号会随删除变化",
+        "**没有二次确认**"
+      ],
+      "failures": [
+        {
+          "symptom": "提示不存在",
+          "cause": "编号越界或已删"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-clear-all",
+      "command": "#清空所有记忆",
+      "aliases": [],
+      "title": "清空全部记忆",
+      "summary": "影响所有人",
+      "what": "把记忆库里所有用户/群的记忆一次清空。",
+      "returns": "清理结果。",
+      "returnsDetail": "无。",
+      "timing": "2~5 秒",
+      "cost": "**清全库，不可恢复**",
+      "keywords": [
+        "清空所有记忆"
+      ],
+      "params": [],
+      "example": "#清空所有记忆",
+      "moreExamples": [],
+      "preconditions": [
+        "无（注意权限）"
+      ],
+      "pitfalls": [
+        "**这是最危险的一条记忆指令**，清的是所有人的",
+        "**没有二次确认**"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-stats",
+      "command": "#记忆统计",
+      "aliases": [],
+      "title": "记忆库统计",
+      "summary": "条数/人数",
+      "what": "统计记忆总量、涉及人数、最近更新时间。",
+      "returns": "统计文本。",
+      "returnsDetail": "无。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "记忆统计"
+      ],
+      "params": [],
+      "example": "#记忆统计",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**统计是全局的**，不按群过滤"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/memory-help",
+      "command": "#记忆帮助",
+      "aliases": [],
+      "title": "记忆功能帮助",
+      "summary": "文本",
+      "what": "说明记忆系统的开关与用法。",
+      "returns": "文本帮助。",
+      "returnsDetail": "无。",
+      "timing": "1 秒内",
+      "cost": "只读",
+      "keywords": [
+        "记忆帮助"
+      ],
+      "params": [],
+      "example": "#记忆帮助",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**必须写全 `#记忆帮助`**"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/greet",
+      "command": "#chatgpt打招呼",
+      "aliases": [
+        "#chatgpt打招呼帮助"
+      ],
+      "title": "招呼语（进群问候）",
+      "summary": "含帮助",
+      "what": "查看/演示打招呼功能；带「帮助」时给用法。",
+      "returns": "招呼语文本或帮助。",
+      "returnsDetail": "未配置招呼语时提示。",
+      "timing": "1~2 秒",
+      "cost": "只读",
+      "keywords": [
+        "chatgpt打招呼"
+      ],
+      "params": [],
+      "example": "#chatgpt打招呼",
+      "moreExamples": [
+        "#chatgpt打招呼帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(帮助)?` 可选**，带不带帮助都进同一条规则"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/greet-manage",
+      "command": "#chatgpt设置打招呼 你好呀",
+      "aliases": [
+        "#chatgpt查看打招呼",
+        "#chatgpt删除打招呼"
+      ],
+      "title": "管理招呼语",
+      "summary": "增删查",
+      "what": "设置/查看/删除进群或首次对话时的招呼语。",
+      "returns": "操作结果。",
+      "returnsDetail": "无。",
+      "timing": "1~2 秒",
+      "cost": "改配置",
+      "keywords": [
+        "chatgpt设置打招呼",
+        "你好呀"
+      ],
+      "params": [
+        {
+          "name": "动作",
+          "required": true,
+          "desc": "查看 / 设置 / 删除"
+        },
+        {
+          "name": "内容",
+          "required": false,
+          "desc": "设置时要写"
+        }
+      ],
+      "example": "#chatgpt设置打招呼 你好呀",
+      "moreExamples": [
+        "#chatgpt查看打招呼",
+        "#chatgpt删除打招呼"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(查看|设置|删除)打招呼`** 顺序固定，`#chatgpt打招呼设置` 不匹配",
+        "内容里可以有空格（后面的全部算内容）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/emoji-echo",
+      "command": "（两个相同表情）",
+      "aliases": [],
+      "title": "表情回应（发两个相同 emoji）",
+      "summary": "reg 是 emoji 正则",
+      "what": "`^(${emojiRegex()}){2}$` —— 消息**只有两个相同表情**时触发，通常用来「附和/回应」或触发表情互动。",
+      "returns": "可能的互动结果。",
+      "returnsDetail": "取决于实现。",
+      "timing": "1~2 秒",
+      "cost": "无",
+      "keywords": [
+        "（两个相同表情）"
+      ],
+      "params": [],
+      "example": "（两个相同表情）",
+      "moreExamples": [],
+      "preconditions": [
+        "消息里只有两个相同 emoji"
+      ],
+      "pitfalls": [
+        "**必须是两个且相同**，三个或两个不同都不匹配",
+        "**不能掺文字**（`^…$` 全匹配）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/group-topic",
+      "command": "#群友在聊什么",
+      "aliases": [],
+      "title": "总结群里最近在聊什么",
+      "summary": "要模型",
+      "what": "取最近的群聊记录让模型总结话题。",
+      "returns": "话题总结文本。",
+      "returnsDetail": "记录不足时提示。",
+      "timing": "5~30 秒",
+      "cost": "**消耗模型额度**",
+      "keywords": [
+        "群友在聊什么"
+      ],
+      "params": [],
+      "example": "#群友在聊什么",
+      "moreExamples": [],
+      "preconditions": [
+        "有群聊记录"
+      ],
+      "pitfalls": [
+        "**必须带 `#`**",
+        "记录太少时总结会很空泛"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/wordcloud",
+      "command": "#词云",
+      "aliases": [
+        "#最新词云",
+        "#词云24h",
+        "#我的词云",
+        "#今日词云",
+        "#本周词云"
+      ],
+      "title": "词云图",
+      "summary": "时间范围可选",
+      "what": "统计消息词频并出词云图；`#词云24h` 指定小时范围，`#我的词云`/`#今日词云` 限定范围。",
+      "returns": "词云图片。",
+      "returnsDetail": "数据不足时提示。",
+      "timing": "3~15 秒",
+      "cost": "读本地记录 + 渲染",
+      "keywords": [
+        "词云"
+      ],
+      "params": [
+        {
+          "name": "范围",
+          "required": false,
+          "desc": "`1~24h`（写 `24h` 或 `24`）"
+        }
+      ],
+      "example": "#词云",
+      "moreExamples": [
+        "#最新词云",
+        "#词云24h",
+        "#我的词云"
+      ],
+      "preconditions": [
+        "有消息记录"
+      ],
+      "pitfalls": [
+        "**小时数只到两位**（`\\d{1,2}h?`），写 `100h` 不匹配",
+        "**`#我的词云` 与 `#今日词云` 是另一条规则**（`#(我|他|她|它)?的?(本月|本周|今日)?词云`）",
+        "`最新` 前缀可有可无"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/wordcloud-personal",
+      "command": "#我的词云",
+      "aliases": [
+        "#他的词云",
+        "#本月词云",
+        "#本周词云"
+      ],
+      "title": "按人/时间范围的词云",
+      "summary": "第二组规则",
+      "what": "`#(我|他|她|它)?的?(本月|本周|今日)?词云` —— 按人称与时间范围出词云。",
+      "returns": "词云图。",
+      "returnsDetail": "数据不足时提示。",
+      "timing": "3~15 秒",
+      "cost": "读记录 + 渲染",
+      "keywords": [
+        "我的词云"
+      ],
+      "params": [],
+      "example": "#我的词云",
+      "moreExamples": [
+        "#他的词云",
+        "#本月词云",
+        "#本周词云"
+      ],
+      "preconditions": [
+        "有对应范围的消息记录"
+      ],
+      "pitfalls": [
+        "**和 `#词云` 是两条不同规则**，这条支持人称与「本月/本周/今日」",
+        "人称与时间都可省略，但都写时要按顺序（`#我的本月的词云` → 「的」位置固定）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/translate",
+      "command": "#翻 hello world",
+      "aliases": [
+        "#GPT翻 你好",
+        "#chatgpt翻译帮助"
+      ],
+      "title": "翻译",
+      "summary": "走配置的来源",
+      "what": "把后面的内容翻译（源语言自动判断，目标默认中文）。",
+      "returns": "译文。",
+      "returnsDetail": "`#chatgpt翻译帮助` 回用法说明。",
+      "timing": "2~15 秒",
+      "cost": "**消耗对应来源额度**",
+      "keywords": [
+        "hello",
+        "world",
+        "翻"
+      ],
+      "params": [
+        {
+          "name": "内容",
+          "required": true,
+          "desc": "要翻译的文本"
+        }
+      ],
+      "example": "#翻 hello world",
+      "moreExamples": [
+        "#GPT翻 你好",
+        "#chatgpt翻译帮助"
+      ],
+      "preconditions": [
+        "配置了翻译来源"
+      ],
+      "pitfalls": [
+        "**前缀写法很怪**：`#((寄批踢|gpt|GPT)?翻…)` —— `#翻`、`#gpt翻`、`#寄批踢翻` 都行，但 `#翻译` 不匹配（除非是帮助分支）",
+        "**`翻` 后面必须有内容**",
+        "来源用 `#chatgpt设置翻译来源` 改"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "写了 `#翻译`，或没配来源"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/ocr",
+      "command": "#ocr",
+      "aliases": [],
+      "title": "OCR 识图取字",
+      "summary": "带图",
+      "what": "对消息里/引用的图片做文字识别。",
+      "returns": "识别出的文本。",
+      "returnsDetail": "没有图片时提示。",
+      "timing": "3~20 秒",
+      "cost": "**消耗识图额度**",
+      "keywords": [
+        "ocr"
+      ],
+      "params": [],
+      "example": "#ocr",
+      "moreExamples": [],
+      "preconditions": [
+        "消息里或引用里有图片"
+      ],
+      "pitfalls": [
+        "**必须带图**，只发 `#ocr` 会提示没图",
+        "`#ocr` 之后可以跟语言/参数（取决于实现）"
+      ],
+      "failures": [
+        {
+          "symptom": "提示没图",
+          "cause": "没有图片或没引用图片"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/url-fetch",
+      "command": "#url:https://example.com",
+      "aliases": [
+        "#url：https://example.com"
+      ],
+      "title": "抓网页内容并总结",
+      "summary": "SSRF 面",
+      "what": "取指定 URL 的正文，交给模型总结/回答。",
+      "returns": "总结文本。",
+      "returnsDetail": "抓取失败时提示。",
+      "timing": "5~30 秒",
+      "cost": "抓取 + 模型额度",
+      "keywords": [
+        "url"
+      ],
+      "params": [
+        {
+          "name": "URL",
+          "required": true,
+          "desc": "紧跟 `#url:` 之后"
+        }
+      ],
+      "example": "#url:https://example.com",
+      "moreExamples": [
+        "#url：https://example.com"
+      ],
+      "preconditions": [
+        "能访问目标站点"
+      ],
+      "pitfalls": [
+        "**冒号有中英文两种**（`：` 或 `:`），但中间不能有空格",
+        "**会让服务器请求任意地址**（含内网），属于 SSRF 面",
+        "反爬站点会抓到空内容"
+      ],
+      "failures": [
+        {
+          "symptom": "总结是空的",
+          "cause": "站点反爬 / 内容在 JS 里"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "chatgpt/vqa",
+      "command": "#识图",
+      "aliases": [
+        "#图片识别",
+        "#VQA",
+        "#vqa"
+      ],
+      "title": "看图回答 / 图片理解",
+      "summary": "要视觉模型",
+      "what": "把消息里的图片交给视觉模型，回答问题或描述内容。",
+      "returns": "文本描述。",
+      "returnsDetail": "没有图片或模型不支持视觉时提示。",
+      "timing": "5~30 秒",
+      "cost": "**视觉模型额度更贵**",
+      "keywords": [
+        "识图"
+      ],
+      "params": [
+        {
+          "name": "问题",
+          "required": false,
+          "desc": "可跟在后面"
+        }
+      ],
+      "example": "#识图",
+      "moreExamples": [
+        "#图片识别",
+        "#VQA",
+        "#vqa"
+      ],
+      "preconditions": [
+        "当前模型支持视觉"
+      ],
+      "pitfalls": [
+        "**必须带图**",
+        "**`VQA`/`vqa` 都认**，`#Vqa` 不认",
+        "模型不支持视觉时会报错或瞎编"
+      ],
+      "failures": [
+        {
+          "symptom": "答非所问",
+          "cause": "当前模型不是视觉模型"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/confirm-on",
+      "command": "#chatgpt开启回复确认",
+      "aliases": [
+        "#chatgpt开启问题回复确认",
+        "#chatgpt开启问题确认"
+      ],
+      "title": "开启「回复前确认」",
+      "summary": "生成前先问一句",
+      "what": "打开后，Bot 在真正调用模型前会先请求确认（避免误触发/省钱）。",
+      "returns": "开关提示。",
+      "returnsDetail": "开关提示。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "chatgpt开启回复确认"
+      ],
+      "params": [],
+      "example": "#chatgpt开启回复确认",
+      "moreExamples": [
+        "#chatgpt开启问题回复确认",
+        "#chatgpt开启问题确认"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**三段可选**：`(问题)?(回复)?确认` —— `#chatgpt开启确认` 也认",
+        "这是全局或按群的开关，取决于实现"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/confirm-off",
+      "command": "#chatgpt关闭回复确认",
+      "aliases": [
+        "#chatgpt关闭问题回复确认"
+      ],
+      "title": "关闭「回复前确认」",
+      "summary": "直接出结果",
+      "what": "关掉确认步骤，消息进来直接调模型。",
+      "returns": "开关提示。",
+      "returnsDetail": "开关提示。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "chatgpt关闭回复确认"
+      ],
+      "params": [],
+      "example": "#chatgpt关闭回复确认",
+      "moreExamples": [
+        "#chatgpt关闭问题回复确认"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "关掉后误触也会直接消耗额度"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/set-token",
+      "command": "#chatgpt设置token sk-xxx",
+      "aliases": [
+        "#chatgpt绑定token sk-xxx",
+        "#chatgpt设置Token sk-xxx"
+      ],
+      "title": "写入 OpenAI token",
+      "summary": "明文落盘",
+      "what": "把 OpenAI（或兼容接口）的 token 写入配置。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置token",
+        "sk",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "token",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#chatgpt设置token sk-xxx",
+      "moreExamples": [
+        "#chatgpt绑定token sk-xxx",
+        "#chatgpt设置Token sk-xxx"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`token` 大小写都认**（`(token|Token)`）",
+        "**明文写进配置文件**，注意备份/仓库泄露",
+        "改完正在进行的会话可能仍用旧 token"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/del-token",
+      "command": "#chatgpt删除token",
+      "aliases": [
+        "#chatgpt解绑token",
+        "#chatgpt删除Token"
+      ],
+      "title": "删除 OpenAI token",
+      "summary": "删了就断电",
+      "what": "清空已保存的 token，之后对话会因缺 key 失败。",
+      "returns": "删除结果。",
+      "returnsDetail": "删除结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt删除token"
+      ],
+      "params": [],
+      "example": "#chatgpt删除token",
+      "moreExamples": [
+        "#chatgpt解绑token",
+        "#chatgpt删除Token"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**删除后对话立刻不可用**，不会自动回退到别的提供商",
+        "**`token` 可省**（`(token|Token)?`），`#chatgpt删除` 也会执行"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/set-poe-token",
+      "command": "#chatgpt设置Poetoken xxx",
+      "aliases": [
+        "#chatgpt绑定POEtoken xxx"
+      ],
+      "title": "写入 Poe token",
+      "summary": "Poe 通道",
+      "what": "配置 Poe 的 token，供 Poe 通道使用。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置Poetoken",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "token",
+          "required": true,
+          "desc": "Poe token"
+        }
+      ],
+      "example": "#chatgpt设置Poetoken xxx",
+      "moreExamples": [
+        "#chatgpt绑定POEtoken xxx"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`Poe`/`POE` 都认**，但中间不能有空格",
+        "Poe 通道与 OpenAI 通道互不影响"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/switch-api",
+      "command": "#chatgpt切换api",
+      "aliases": [
+        "#chatgpt切换API"
+      ],
+      "title": "切到 OpenAI 兼容通道",
+      "summary": "与 providers 里的同名功能重叠",
+      "what": "把当前提供商切到 `api`（OpenAI 兼容接口）。",
+      "returns": "切换结果。",
+      "returnsDetail": "切换结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt切换api"
+      ],
+      "params": [],
+      "example": "#chatgpt切换api",
+      "moreExamples": [
+        "#chatgpt切换API"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**必须带 `$` 结尾**（`^#chatgpt切换(API|api)$`），`#chatgpt切换api吧` 不匹配",
+        "与 `providers.js` 的 `#chatgpt切换api` 是两条规则，先命中者生效"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/switch-claude",
+      "command": "#chatgpt切换Claude",
+      "aliases": [],
+      "title": "切到 Claude 通道",
+      "summary": "要有 claude key",
+      "what": "把提供商切成 claude。",
+      "returns": "切换结果。",
+      "returnsDetail": "切换结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt切换Claude"
+      ],
+      "params": [],
+      "example": "#chatgpt切换Claude",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**没配 claude key 时切过去会直接对话失败**",
+        "`Claude`/`claude` 都认"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/switch-gemini",
+      "command": "#chatgpt切换gemini",
+      "aliases": [
+        "#chatgpt切换Gemini"
+      ],
+      "title": "切到 Gemini 通道",
+      "summary": "要有 gemini key",
+      "what": "把提供商切成 gemini。",
+      "returns": "切换结果。",
+      "returnsDetail": "切换结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt切换gemini"
+      ],
+      "params": [],
+      "example": "#chatgpt切换gemini",
+      "moreExamples": [
+        "#chatgpt切换Gemini"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "同样，没配 key 会直接失败",
+        "`Gemini`/`gemini` 都认"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/mode-help",
+      "command": "#chatgpt模式帮助",
+      "aliases": [
+        "#chatgpt模式"
+      ],
+      "title": "模式说明",
+      "summary": "文本",
+      "what": "讲解文本/图片/语音三种模式的用法。",
+      "returns": "文本帮助。",
+      "returnsDetail": "文本帮助。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt模式帮助"
+      ],
+      "params": [],
+      "example": "#chatgpt模式帮助",
+      "moreExamples": [
+        "#chatgpt模式"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "`(帮助)?` 可选，`#chatgpt模式` 与 `#chatgpt模式帮助` 一样"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/version",
+      "command": "#chatgpt版本",
+      "aliases": [
+        "#chatgpt版本信息"
+      ],
+      "title": "插件版本",
+      "summary": "文本/图",
+      "what": "显示插件版本号。",
+      "returns": "版本信息。",
+      "returnsDetail": "版本信息。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt版本"
+      ],
+      "params": [],
+      "example": "#chatgpt版本",
+      "moreExamples": [
+        "#chatgpt版本信息"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(信息)` 可省**",
+        "`#` 必须带",
+        "版本是静态值，不是 git 信息"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/shutup",
+      "command": "#chatgpt闭嘴",
+      "aliases": [
+        "#chatgpt本群闭嘴",
+        "#chatgpt群123456闭嘴",
+        "#chatgpt关机",
+        "#chatgpt休眠",
+        "#chatgpt下班"
+      ],
+      "title": "让 Bot 闭嘴（按群）",
+      "summary": "五个同义词",
+      "what": "在指定群（或本群）停止响应对话。",
+      "returns": "闭嘴结果。",
+      "returnsDetail": "闭嘴结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt闭嘴"
+      ],
+      "params": [
+        {
+          "name": "群号",
+          "required": false,
+          "desc": "`群123456789`，省略=本群"
+        }
+      ],
+      "example": "#chatgpt闭嘴",
+      "moreExamples": [
+        "#chatgpt本群闭嘴",
+        "#chatgpt群123456闭嘴",
+        "#chatgpt关机"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`闭嘴/关机/休眠/下班` 四个词等价**，但只有第一个带 `$` 之外的四个是「或」结构",
+        "**群号写法是 `群\\d+`**，写成 `123456789` 不带「群」字不匹配",
+        "闭嘴后**帮助/管理指令仍可用**，只是不聊"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/wakeup",
+      "command": "#chatgpt张嘴",
+      "aliases": [
+        "#chatgpt开口",
+        "#chatgpt说话",
+        "#chatgpt上班",
+        "#chatgpt本群张嘴"
+      ],
+      "title": "让 Bot 恢复说话",
+      "summary": "对应闭嘴",
+      "what": "解除指定群（或本群）的闭嘴状态。",
+      "returns": "恢复结果。",
+      "returnsDetail": "恢复结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt张嘴"
+      ],
+      "params": [
+        {
+          "name": "群号",
+          "required": false,
+          "desc": "`群123456789`"
+        }
+      ],
+      "example": "#chatgpt张嘴",
+      "moreExamples": [
+        "#chatgpt开口",
+        "#chatgpt说话",
+        "#chatgpt上班"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`张嘴/开口/说话/上班` 四个词**",
+        "这条正则以 `$` 结尾，多一个字都不匹配"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/shutup-list",
+      "command": "#chatgpt查看闭嘴列表",
+      "aliases": [
+        "#chatgpt查看关机列表",
+        "#chatgpt查看休眠列表"
+      ],
+      "title": "看哪些群被闭嘴",
+      "summary": "列表",
+      "what": "列出当前所有被闭嘴的群。",
+      "returns": "群号列表。",
+      "returnsDetail": "群号列表。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt查看闭嘴列表"
+      ],
+      "params": [],
+      "example": "#chatgpt查看闭嘴列表",
+      "moreExamples": [
+        "#chatgpt查看关机列表",
+        "#chatgpt查看休眠列表"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**中间那个 `?` 是笔误**：`查看?(闭嘴|…)` 让「看」也可单独成立",
+        "列表只给群号，不给操作人/时间"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/set-api-key",
+      "command": "#chatgpt设置APIKey sk-xxx",
+      "aliases": [
+        "#chatgpt设置APIkey sk-xxx"
+      ],
+      "title": "设 OpenAI key（旧写法）",
+      "summary": "与 providers 重叠",
+      "what": "写入 OpenAI 的 key。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置APIKey",
+        "sk",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "key",
+          "required": true,
+          "desc": "sk- 开头"
+        }
+      ],
+      "example": "#chatgpt设置APIKey sk-xxx",
+      "moreExamples": [
+        "#chatgpt设置APIkey sk-xxx"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`API`+`Key/key` 两组大小写都认**，但 `#chatgpt设置apikey` 不匹配（第二段要 Key 或 key，`k` 小写可以）",
+        "与 `#chatgpt设置api key` 是两条规则"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/set-claude-key",
+      "command": "#chatgpt设置claudeKey xxx",
+      "aliases": [
+        "#chatgpt设置ClaudeKey xxx"
+      ],
+      "title": "设 Claude key",
+      "summary": "旧写法",
+      "what": "写入 Claude 的 key。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置claudeKey",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "key",
+          "required": true,
+          "desc": "Claude key"
+        }
+      ],
+      "example": "#chatgpt设置claudeKey xxx",
+      "moreExamples": [
+        "#chatgpt设置ClaudeKey xxx"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`claude`/`Claude` 都认**，key 段是 `(Key|key)`",
+        "改完要确认当前提供商是 claude 才生效"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/set-gemini-key",
+      "command": "#chatgpt设置GeminiKey xxx",
+      "aliases": [
+        "#chatgpt设置geminiKey xxx"
+      ],
+      "title": "设 Gemini key",
+      "summary": "旧写法",
+      "what": "写入 Gemini 的 key。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置GeminiKey",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "key",
+          "required": true,
+          "desc": "Gemini key"
+        }
+      ],
+      "example": "#chatgpt设置GeminiKey xxx",
+      "moreExamples": [
+        "#chatgpt设置geminiKey xxx"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "`Gemini`/`gemini` 都认"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/api-prompt",
+      "command": "#chatgpt设置api设定 你是助手",
+      "aliases": [
+        "#chatgpt设置API设定 你是助手"
+      ],
+      "title": "设置 api 通道的系统提示词",
+      "summary": "全局人设",
+      "what": "给 api(OpenAI 兼容) 通道写一段系统提示词。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置api设定",
+        "你是助手"
+      ],
+      "params": [
+        {
+          "name": "设定内容",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#chatgpt设置api设定 你是助手",
+      "moreExamples": [
+        "#chatgpt设置API设定 你是助手"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**这是全局设定**，会盖过部分角色设定逻辑",
+        "与 `#chatgpt设置api模型` 不是一回事"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/bing-prompt",
+      "command": "#chatgpt设置Bing设定 你是助手",
+      "aliases": [
+        "#chatgpt设置必应设定 你是助手",
+        "#chatgpt设置Sydney设定 你是助手"
+      ],
+      "title": "设置 Bing/Sydney 通道的提示词",
+      "summary": "旧 Bing 通道",
+      "what": "给 Bing/Sydney 通道写系统提示词。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置Bing设定",
+        "你是助手"
+      ],
+      "params": [
+        {
+          "name": "设定内容",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#chatgpt设置Bing设定 你是助手",
+      "moreExamples": [
+        "#chatgpt设置必应设定 你是助手",
+        "#chatgpt设置Sydney设定 你是助手"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**别名一串**：Bing / 必应 / Sydney / 悉尼 / sydney / bing",
+        "Bing 通道在新版里基本废弃，配了也可能用不上"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/view-api-prompt",
+      "command": "#chatgpt查看api设定",
+      "aliases": [
+        "#chatgpt查看API设定"
+      ],
+      "title": "看 api 通道提示词",
+      "summary": "只读",
+      "what": "显示当前 api 通道的系统提示词。",
+      "returns": "提示词文本。",
+      "returnsDetail": "提示词文本。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt查看api设定"
+      ],
+      "params": [],
+      "example": "#chatgpt查看api设定",
+      "moreExamples": [
+        "#chatgpt查看API设定"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "只读，不会改任何东西",
+        "长了会刷屏"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/view-bing-prompt",
+      "command": "#chatgpt查看Bing设定",
+      "aliases": [
+        "#chatgpt查看Sydney设定"
+      ],
+      "title": "看 Bing 通道提示词",
+      "summary": "只读",
+      "what": "显示当前 Bing/Sydney 提示词。",
+      "returns": "提示词文本。",
+      "returnsDetail": "提示词文本。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt查看Bing设定"
+      ],
+      "params": [],
+      "example": "#chatgpt查看Bing设定",
+      "moreExamples": [
+        "#chatgpt查看Sydney设定"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "Bing 通道弃用后这里可能是空或默认值"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/global-mode",
+      "command": "#chatgpt打开全局文本模式",
+      "aliases": [
+        "#chatgpt关闭全局图片模式",
+        "#chatgpt设置全局角色 派蒙",
+        "#chatgpt全局语音模式"
+      ],
+      "title": "全局模式 / 全局角色",
+      "summary": "一条正则管一批",
+      "what": "`(打开|关闭|设置)?全局(文本模式|图片模式|语音模式|角色语音|角色…)` —— 批量设置全局的回复模式或语音角色。",
+      "returns": "设置结果。",
+      "returnsDetail": "设置结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt打开全局文本模式"
+      ],
+      "params": [
+        {
+          "name": "动作",
+          "required": false,
+          "desc": "打开 / 关闭 / 设置，可省"
+        },
+        {
+          "name": "目标",
+          "required": true,
+          "desc": "文本模式/图片模式/语音模式/角色"
+        }
+      ],
+      "example": "#chatgpt打开全局文本模式",
+      "moreExamples": [
+        "#chatgpt关闭全局图片模式",
+        "#chatgpt设置全局角色 派蒙",
+        "#chatgpt全局语音模式"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**动作可省**，`#chatgpt全局文本模式` 也成立",
+        "**「角色」后面要跟角色名**，否则只切开关",
+        "这条正则很长且含 `.*`，容易把别的 `#chatgpt全局xx` 也吃进来"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/group-context",
+      "command": "#关闭群聊上下文",
+      "aliases": [
+        "#打开群聊上下文",
+        "#chatgpt关闭群聊上下文"
+      ],
+      "title": "开关群聊上下文",
+      "summary": "是否带群内历史",
+      "what": "控制对话时是否把群聊上下文一起送进模型。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "关闭群聊上下文"
+      ],
+      "params": [],
+      "example": "#关闭群聊上下文",
+      "moreExamples": [
+        "#打开群聊上下文",
+        "#chatgpt关闭群聊上下文"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`chatgpt` 可省**（`^#(chatgpt)?(关闭|打开)群聊上下文$`），井号必须带",
+        "关掉后更像「单轮问答」，上下文断裂"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/private-chat",
+      "command": "#chatgpt允许私聊",
+      "aliases": [
+        "#chatgpt禁止私聊",
+        "#chatgpt打开私聊",
+        "#chatgpt关闭私聊",
+        "#chatgpt同意私聊"
+      ],
+      "title": "开关私聊对话",
+      "summary": "五动词",
+      "what": "允许/禁止私聊使用对话功能。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt允许私聊"
+      ],
+      "params": [],
+      "example": "#chatgpt允许私聊",
+      "moreExamples": [
+        "#chatgpt禁止私聊",
+        "#chatgpt打开私聊",
+        "#chatgpt关闭私聊"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**五个同义词**：允许/禁止/打开/关闭/同意",
+        "关掉后私聊发消息静默或提示"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/admin-password",
+      "command": "#chatgpt设置管理密码 123456",
+      "aliases": [
+        "#设置管理密码 123456",
+        "#chatgpt修改管理密码 123456"
+      ],
+      "title": "设置管理密码",
+      "summary": "工具箱用",
+      "what": "给 Web 工具箱设置管理员密码。",
+      "returns": "设置结果。",
+      "returnsDetail": "设置结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置管理密码"
+      ],
+      "params": [
+        {
+          "name": "密码",
+          "required": true,
+          "desc": "明文"
+        }
+      ],
+      "example": "#chatgpt设置管理密码 123456",
+      "moreExamples": [
+        "#设置管理密码 123456",
+        "#chatgpt修改管理密码 123456"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`chatgpt` 可省**（`^#(chatgpt)?(设置|修改)管理密码`）",
+        "**明文存**，别用常用密码"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/user-password",
+      "command": "#chatgpt设置用户密码 123456",
+      "aliases": [
+        "#设置用户密码 123456"
+      ],
+      "title": "设置普通用户密码",
+      "summary": "工具箱用",
+      "what": "给工具箱里的普通用户访问设置密码。",
+      "returns": "设置结果。",
+      "returnsDetail": "设置结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置用户密码"
+      ],
+      "params": [
+        {
+          "name": "密码",
+          "required": true,
+          "desc": "明文"
+        }
+      ],
+      "example": "#chatgpt设置用户密码 123456",
+      "moreExamples": [
+        "#设置用户密码 123456"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "和管理密码是两套",
+        "明文存"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/toolbox",
+      "command": "#chatgpt工具箱",
+      "aliases": [
+        "#工具箱"
+      ],
+      "title": "打开 Web 工具箱",
+      "summary": "要地址/密码",
+      "what": "给出工具箱入口（或直接返回工具箱地址/二维码）。",
+      "returns": "地址/提示。",
+      "returnsDetail": "地址/提示。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "chatgpt工具箱"
+      ],
+      "params": [],
+      "example": "#chatgpt工具箱",
+      "moreExamples": [
+        "#工具箱"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`chatgpt` 可省**",
+        "需要先配管理密码，否则可能直接放行或拒绝"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/sys-setting",
+      "command": "#chatgpt系统设置",
+      "aliases": [
+        "#chatgpt系统配置",
+        "#chatgpt系统管理"
+      ],
+      "title": "系统设置面板",
+      "summary": "图/文本",
+      "what": "展示并可修改系统级配置（模型、通道、开关）。",
+      "returns": "设置面板。",
+      "returnsDetail": "设置面板。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt系统设置"
+      ],
+      "params": [],
+      "example": "#chatgpt系统设置",
+      "moreExamples": [
+        "#chatgpt系统配置",
+        "#chatgpt系统管理"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**三个同义词**：设置/配置/管理",
+        "改动会影响所有人"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/user-setting",
+      "command": "#chatgpt用户设置",
+      "aliases": [
+        "#chatgpt用户配置",
+        "#chatgpt用户管理"
+      ],
+      "title": "用户设置面板",
+      "summary": "按用户",
+      "what": "查看/修改按用户维度的设置（语音角色、模式、黑名单等）。",
+      "returns": "设置面板。",
+      "returnsDetail": "设置面板。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt用户设置"
+      ],
+      "params": [],
+      "example": "#chatgpt用户设置",
+      "moreExamples": [
+        "#chatgpt用户配置",
+        "#chatgpt用户管理"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**与系统设置分开**：这里改的是用户级覆盖",
+        "用户级设置优先于系统默认"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/cmd-table",
+      "command": "#chatgpt指令表",
+      "aliases": [
+        "#chatgpt管理指令表",
+        "#chatgpt对话指令表",
+        "#chatgpt指令表搜索 语音"
+      ],
+      "title": "分类指令表 + 指令搜索",
+      "summary": "六类",
+      "what": "按 对话/管理/娱乐/绘图/人物设定/聊天记录 分类展示指令；带「搜索 关键词」时全文搜指令。",
+      "returns": "指令表图或搜索结果。",
+      "returnsDetail": "指令表图或搜索结果。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt指令表"
+      ],
+      "params": [
+        {
+          "name": "分类",
+          "required": false,
+          "desc": "对话/管理/娱乐/绘图/人物设定/聊天记录"
+        },
+        {
+          "name": "搜索 关键词",
+          "required": false,
+          "desc": "如 `指令表搜索 语音`"
+        }
+      ],
+      "example": "#chatgpt指令表",
+      "moreExamples": [
+        "#chatgpt管理指令表",
+        "#chatgpt对话指令表",
+        "#chatgpt指令表搜索 语音"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`#` 可省**（`^#?(chatgpt)…`），但 `chatgpt` 不能省",
+        "**分类词必须在 chatgpt 后面**，`#chatgpt 管理指令表` 有空格不匹配",
+        "搜索是 `(帮助|搜索(.+))?`，写「搜索」但不给词会走空搜索"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/voice-switch",
+      "command": "#语音切换 派蒙",
+      "aliases": [
+        "#chatgpt语音切换 派蒙"
+      ],
+      "title": "切换语音（角色）",
+      "summary": "按用户",
+      "what": "`^#(chatgpt)?语音切换.*` —— 切换当前用户使用的 TTS 角色/语音。",
+      "returns": "切换结果。",
+      "returnsDetail": "切换结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "语音切换",
+        "派蒙"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": false,
+          "desc": "跟在后面"
+        }
+      ],
+      "example": "#语音切换 派蒙",
+      "moreExamples": [
+        "#chatgpt语音切换 派蒙"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**正则带 `.*`**，`#语音切换` 后面不写也可能进入（显示当前/提示）",
+        "和 `#chatgpt设置角色 xxx` 功能重叠"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/voice-list",
+      "command": "#语音角色列表",
+      "aliases": [
+        "#vits语音角色列表",
+        "#azure语音服务",
+        "#语音服务"
+      ],
+      "title": "语音角色/服务列表",
+      "summary": "看有哪些声线",
+      "what": "列出可用的 TTS 角色或当前语音服务。",
+      "returns": "列表。",
+      "returnsDetail": "列表。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "语音角色列表"
+      ],
+      "params": [],
+      "example": "#语音角色列表",
+      "moreExamples": [
+        "#vits语音角色列表",
+        "#azure语音服务",
+        "#语音服务"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`vits`/`azure` 前缀可选**，`(语音角色列表|语音服务)` 是两种目标",
+        "列表取决于已配置的服务"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/refresh-token",
+      "command": "#chatgpt设置后台刷新token",
+      "aliases": [
+        "#chatgpt设置后台刷新Token",
+        "#chatgpt设置后台刷新t oken"
+      ],
+      "title": "设置后台刷新 token",
+      "summary": "自动续期用",
+      "what": "配置用于后台刷新会话的 token（部分通道需要）。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置后台刷新token"
+      ],
+      "params": [
+        {
+          "name": "token",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#chatgpt设置后台刷新token",
+      "moreExamples": [
+        "#chatgpt设置后台刷新Token",
+        "#chatgpt设置后台刷新t oken"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(t|T)oken` 大小写都认**",
+        "只在需要续期的通道（如网页版通道）有意义"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/sess-key",
+      "command": "#chatgpt设置sessKey xxx",
+      "aliases": [
+        "#chatgpt设置sessKey"
+      ],
+      "title": "设置 sessKey",
+      "summary": "网页版通道",
+      "what": "配置网页版 ChatGPT 的 session key。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置sessKey",
+        "xxx"
+      ],
+      "params": [
+        {
+          "name": "sessKey",
+          "required": true,
+          "desc": "网页版 session key"
+        }
+      ],
+      "example": "#chatgpt设置sessKey xxx",
+      "moreExamples": [
+        "#chatgpt设置sessKey"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**大小写敏感**（`sessKey`），`sesskey` 不匹配",
+        "网页版通道不稳定，key 容易失效"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/reply-setting",
+      "command": "#查看回复设置",
+      "aliases": [
+        "#chatgpt查看回复设置"
+      ],
+      "title": "看回复相关设置",
+      "summary": "一屏总览",
+      "what": "列出回复模式、确认开关、上下文开关等当前值。",
+      "returns": "设置清单。",
+      "returnsDetail": "设置清单。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "查看回复设置"
+      ],
+      "params": [],
+      "example": "#查看回复设置",
+      "moreExamples": [
+        "#chatgpt查看回复设置"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**只读**；改要用对应的开关指令",
+        "`chatgpt` 可省"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/export-config",
+      "command": "#chatgpt导出配置",
+      "aliases": [],
+      "title": "导出配置",
+      "summary": "含密钥，慎用",
+      "what": "把当前配置导出成文本/文件（可能包含 key）。",
+      "returns": "配置内容或文件。",
+      "returnsDetail": "配置内容或文件。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt导出配置"
+      ],
+      "params": [],
+      "example": "#chatgpt导出配置",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**很可能包含明文 key**，别贴到群里",
+        "导出格式与 `#chatgpt导入配置` 对应，手改容易格式错"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/import-config",
+      "command": "#chatgpt导入配置",
+      "aliases": [],
+      "title": "导入配置",
+      "summary": "覆盖当前配置",
+      "what": "把导出的配置文本写回，覆盖现有配置。",
+      "returns": "导入结果。",
+      "returnsDetail": "导入结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt导入配置"
+      ],
+      "params": [],
+      "example": "#chatgpt导入配置",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**是覆盖不是合并**，导错一份就全变",
+        "导入前建议先导出一份备份"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/smart-mode",
+      "command": "#chatgpt开启智能模式",
+      "aliases": [
+        "#chatgpt关闭智能模式"
+      ],
+      "title": "智能模式开关",
+      "summary": "自动选模型/工具",
+      "what": "开启后由插件自动决定用哪个模型或工具链。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt开启智能模式"
+      ],
+      "params": [],
+      "example": "#chatgpt开启智能模式",
+      "moreExamples": [
+        "#chatgpt关闭智能模式"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(开启|关闭)智能模式`** 两个词固定",
+        "智能模式下行为不完全可预测，排查问题时可先关掉"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/managed-tools",
+      "command": "#chatgpt托管工具",
+      "aliases": [
+        "#chatgpt查看托管工具"
+      ],
+      "title": "看托管的内置工具",
+      "summary": "function calling 工具列表",
+      "what": "列出当前开放给模型的托管工具（搜索、绘图等）。",
+      "returns": "工具列表。",
+      "returnsDetail": "工具列表。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt托管工具"
+      ],
+      "params": [],
+      "example": "#chatgpt托管工具",
+      "moreExamples": [
+        "#chatgpt查看托管工具"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(查看)?` 可选**，`#chatgpt托管工具` 与 `#chatgpt查看托管工具` 等价",
+        "列出来不代表模型一定会调"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/model-list",
+      "command": "#chatgpt模型列表",
+      "aliases": [],
+      "title": "看配置里可选的模型",
+      "summary": "静态清单",
+      "what": "列出插件内置的模型选项（不是从接口实时拉的）。",
+      "returns": "模型清单。",
+      "returnsDetail": "模型清单。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt模型列表"
+      ],
+      "params": [],
+      "example": "#chatgpt模型列表",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**这是本地清单**，实时可用模型用 `#chatgpt获取可用模型`",
+        "清单里的模型不一定有权限调用"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/set-api-model",
+      "command": "#chatgpt设置api模型 gpt-4o",
+      "aliases": [
+        "#chatgpt设置API模型 gpt-4o"
+      ],
+      "title": "设 api 通道的模型",
+      "summary": "全局",
+      "what": "写入 api 通道使用的模型名。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置api模型",
+        "gpt",
+        "o"
+      ],
+      "params": [
+        {
+          "name": "模型名",
+          "required": true,
+          "desc": "如 gpt-4o"
+        }
+      ],
+      "example": "#chatgpt设置api模型 gpt-4o",
+      "moreExamples": [
+        "#chatgpt设置API模型 gpt-4o"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**模型名写错不会立刻报错**，直到下一次对话才失败",
+        "与「模型列表」里的名字要一致"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/set-api-proxy",
+      "command": "#chatgpt设置api反代 https://x/v1",
+      "aliases": [
+        "#chatgpt设置API反代 https://x/v1"
+      ],
+      "title": "设 api 通道的反代地址",
+      "summary": "中转/自建",
+      "what": "把请求地址指到自建或中转网关。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置api反代",
+        "https"
+      ],
+      "params": [
+        {
+          "name": "地址",
+          "required": true,
+          "desc": "含协议与路径"
+        }
+      ],
+      "example": "#chatgpt设置api反代 https://x/v1",
+      "moreExamples": [
+        "#chatgpt设置API反代 https://x/v1"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**地址写错会导致所有对话失败**",
+        "反代通常要带 `/v1` 之类的路径，具体看网关"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/set-claude-model",
+      "command": "#chatgpt设置claude模型 claude-3-5-sonnet",
+      "aliases": [
+        "#chatgpt设置Claude模型 claude-3-5-sonnet"
+      ],
+      "title": "设 Claude 模型",
+      "summary": "全局",
+      "what": "写入 claude 通道使用的模型名。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置claude模型",
+        "claude",
+        "sonnet"
+      ],
+      "params": [
+        {
+          "name": "模型名",
+          "required": true,
+          "desc": "如 claude-3-5-sonnet"
+        }
+      ],
+      "example": "#chatgpt设置claude模型 claude-3-5-sonnet",
+      "moreExamples": [
+        "#chatgpt设置Claude模型 claude-3-5-sonnet"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "名字要与 Anthropic 的模型 ID 一致",
+        "改了要确认当前提供商是 claude"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/bing-search",
+      "command": "#chatgpt必应禁用搜索",
+      "aliases": [
+        "#chatgpt必应启用搜索",
+        "#chatgpt必应关闭搜索",
+        "#chatgpt必应开启搜索"
+      ],
+      "title": "Bing 搜索开关",
+      "summary": "旧通道",
+      "what": "开关 Bing 通道的联网搜索。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt必应禁用搜索"
+      ],
+      "params": [],
+      "example": "#chatgpt必应禁用搜索",
+      "moreExamples": [
+        "#chatgpt必应启用搜索",
+        "#chatgpt必应关闭搜索",
+        "#chatgpt必应开启搜索"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**四个同义词**：禁用/禁止/关闭/启用/开启",
+        "Bing 通道弃用后这条基本无效果"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/current-config",
+      "command": "#chatgpt查看当前配置",
+      "aliases": [],
+      "title": "一屏看当前配置",
+      "summary": "只读",
+      "what": "汇总显示当前提供商、模型、模式、开关状态。",
+      "returns": "配置摘要。",
+      "returnsDetail": "配置摘要。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "chatgpt查看当前配置"
+      ],
+      "params": [],
+      "example": "#chatgpt查看当前配置",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**可能包含部分密钥片段**，注意场合",
+        "只读，不会改"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-mgmt/api-stream",
+      "command": "#chatgpt开启API流",
+      "aliases": [
+        "#chatgpt关闭API流"
+      ],
+      "title": "开关流式输出",
+      "summary": "边生成边发",
+      "what": "打开后按流式返回（部分适配器体验更好）。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt开启API流"
+      ],
+      "params": [],
+      "example": "#chatgpt开启API流",
+      "moreExamples": [
+        "#chatgpt关闭API流"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`api`/`API` 都认**",
+        "流式在部分适配器上会拆成多条消息"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/toolbox-service",
+      "command": "#chatgpt开启工具箱",
+      "aliases": [
+        "#chatgpt关闭工具箱",
+        "#chatgpt开启后台服务",
+        "#chatgpt关闭后台服务"
+      ],
+      "title": "开关工具箱/后台服务",
+      "summary": "占端口",
+      "what": "启动或停止内置的 Web 工具箱服务。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt开启工具箱"
+      ],
+      "params": [],
+      "example": "#chatgpt开启工具箱",
+      "moreExamples": [
+        "#chatgpt关闭工具箱",
+        "#chatgpt开启后台服务",
+        "#chatgpt关闭后台服务"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**要占一个端口**，端口冲突会启动失败",
+        "关掉后 `#chatgpt工具箱` 的地址就不可用"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/gemini-search",
+      "command": "#chatgpt开启gemini搜索",
+      "aliases": [
+        "#chatgpt关闭gemini搜索",
+        "#chatgpt开启gemini代码执行",
+        "#chatgpt关闭gemini代码执行"
+      ],
+      "title": "Gemini 搜索 / 代码执行",
+      "summary": "两个能力",
+      "what": "开关 Gemini 通道的联网搜索与代码执行。",
+      "returns": "开关结果。",
+      "returnsDetail": "开关结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt开启gemini搜索"
+      ],
+      "params": [],
+      "example": "#chatgpt开启gemini搜索",
+      "moreExamples": [
+        "#chatgpt关闭gemini搜索",
+        "#chatgpt开启gemini代码执行",
+        "#chatgpt关闭gemini代码执行"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**两个能力共用一条正则**（`gemini(搜索|代码执行)`）",
+        "代码执行会真的跑代码，注意安全边界"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-mgmt/copilot-config",
+      "command": "#Copilot配置方法",
+      "aliases": [
+        "#Bing配置方法",
+        "#必应配置方法"
+      ],
+      "title": "Copilot/Bing 配置说明",
+      "summary": "文本",
+      "what": "回一段怎么配置 Copilot/Bing 通道的说明。",
+      "returns": "文本说明。",
+      "returnsDetail": "文本说明。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "Copilot配置方法"
+      ],
+      "params": [],
+      "example": "#Copilot配置方法",
+      "moreExamples": [
+        "#Bing配置方法",
+        "#必应配置方法"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**三个别名**：Copilot / Bing / 必应",
+        "**`chatgpt` 可省**（`^#(chatgpt)?…`）"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/help",
+      "command": "#tts帮助",
+      "aliases": [
+        "#tts语音帮助",
+        "#tts替换帮助",
+        "#tts语音替换帮助"
+      ],
+      "title": "TTS 用法帮助",
+      "summary": "总入口",
+      "what": "回一段 TTS 相关功能的说明（发音、替换、情感、语言等）。",
+      "returns": "文本帮助。",
+      "returnsDetail": "文本帮助。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "tts帮助"
+      ],
+      "params": [],
+      "example": "#tts帮助",
+      "moreExamples": [
+        "#tts语音帮助",
+        "#tts替换帮助",
+        "#tts语音替换帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(语音)?(替换)?` 两个词都可省**，`#tts帮助` 是最短形式",
+        "没有 `$` 结尾，后面跟字也算命中"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/emotion",
+      "command": "#tts情感设置 开心",
+      "aliases": [
+        "#tts情感设置",
+        "#tts情感设置帮助"
+      ],
+      "title": "TTS 情感",
+      "summary": "按需配置",
+      "what": "设置语音的情感参数（支持的 TTS 服务才有效）。",
+      "returns": "设置结果或帮助说明。",
+      "returnsDetail": "设置结果或帮助说明。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "tts情感设置",
+        "开心"
+      ],
+      "params": [
+        {
+          "name": "情感",
+          "required": false,
+          "desc": "省略=看帮助"
+        }
+      ],
+      "example": "#tts情感设置 开心",
+      "moreExamples": [
+        "#tts情感设置",
+        "#tts情感设置帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(设置)?(帮助)?` 都可省**，`#tts情感` 也命中",
+        "只有 part of 服务（如 azure）支持情感，vits 一般不支持"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/language",
+      "command": "#tts语言设置 日语",
+      "aliases": [
+        "#tts语言设置",
+        "#tts语言设置帮助"
+      ],
+      "title": "TTS 语言",
+      "summary": "换语种",
+      "what": "设置合成语种（部分服务支持）。",
+      "returns": "设置结果或帮助。",
+      "returnsDetail": "设置结果或帮助。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "tts语言设置",
+        "日语"
+      ],
+      "params": [
+        {
+          "name": "语言",
+          "required": false,
+          "desc": "如 日语/中文/英语"
+        }
+      ],
+      "example": "#tts语言设置 日语",
+      "moreExamples": [
+        "#tts语言设置",
+        "#tts语言设置帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "语种要服务端模型支持，否则合成失败",
+        "省略参数时给帮助而不是报错"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/length-scale",
+      "command": "#ttslengthScale设置 1.2",
+      "aliases": [
+        "#ttslength设置 1.0",
+        "#ttslengthScale设置"
+      ],
+      "title": "语速倍率（lengthScale）",
+      "summary": "调快慢",
+      "what": "设置 TTS 的 lengthScale（越大越慢）。",
+      "returns": "设置结果。",
+      "returnsDetail": "设置结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "ttslengthScale设置"
+      ],
+      "params": [
+        {
+          "name": "倍率",
+          "required": false,
+          "desc": "如 0.8~1.5"
+        }
+      ],
+      "example": "#ttslengthScale设置 1.2",
+      "moreExamples": [
+        "#ttslength设置 1.0",
+        "#ttslengthScale设置"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**指令名区分大小写**：`lengthScale` 的 `S` 必须大写（`lengthScale`），`lengthscale` 不匹配",
+        "数值范围取决于服务端，超范围会合成异常"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/to-japanese",
+      "command": "#tts转日语",
+      "aliases": [
+        "#tts语音转日语",
+        "#tts转日语帮助"
+      ],
+      "title": "把语音转成日语",
+      "summary": "转换模式",
+      "what": "把回复的语音用日语声线/语种合成。",
+      "returns": "开关或结果。",
+      "returnsDetail": "开关或结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "tts转日语"
+      ],
+      "params": [],
+      "example": "#tts转日语",
+      "moreExamples": [
+        "#tts语音转日语",
+        "#tts转日语帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "`(语音)?` 可省",
+        "需要日语模型，否则失败或无变化"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/slice",
+      "command": "#tts切片生成",
+      "aliases": [
+        "#tts语音切片生成",
+        "#tts切片生成帮助"
+      ],
+      "title": "切片生成",
+      "summary": "长文分段合成",
+      "what": "把长文本切成多段分别合成再拼接。",
+      "returns": "生成结果。",
+      "returnsDetail": "生成结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "tts切片生成"
+      ],
+      "params": [],
+      "example": "#tts切片生成",
+      "moreExamples": [
+        "#tts语音切片生成",
+        "#tts切片生成帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "长回复必用，否则会超 TTS 长度限制",
+        "切片多时合成时间线性增长"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/first-person",
+      "command": "#chatgpt设置第一人称 我就",
+      "aliases": [
+        "#chatgpt设置第一人称称谓 我就",
+        "#chatgpt设置第一人称帮助"
+      ],
+      "title": "配置第一人称触发词",
+      "summary": "对话入口开关",
+      "what": "`chat.js` 里那条 `Config.tts_First_person` 动态规则就是它 —— 设置后，以该称谓开头的消息会被当成语音对话触发。",
+      "returns": "设置结果。",
+      "returnsDetail": "设置结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置第一人称",
+        "我就"
+      ],
+      "params": [
+        {
+          "name": "称谓",
+          "required": false,
+          "desc": "如「我就」「本喵」"
+        }
+      ],
+      "example": "#chatgpt设置第一人称 我就",
+      "moreExamples": [
+        "#chatgpt设置第一人称称谓 我就",
+        "#chatgpt设置第一人称帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**它直接决定一条动态正则**，设得太宽（比如「我」）会让所有含该词的消息都触发对话",
+        "`(AI|ai)?第一人称(称谓)?` 里 `AI` 可省，`称谓` 可省"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-tts/fusion-text",
+      "command": "#tts融合文本 你好",
+      "aliases": [
+        "#tts查看融合文本",
+        "#tts设置融合文本 你好"
+      ],
+      "title": "融合文本",
+      "summary": "拼接用",
+      "what": "查看/设置与语音一起发送的融合文本。",
+      "returns": "当前值或设置结果。",
+      "returnsDetail": "当前值或设置结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "tts融合文本",
+        "你好"
+      ],
+      "params": [
+        {
+          "name": "文本",
+          "required": false,
+          "desc": "省略=查看"
+        }
+      ],
+      "example": "#tts融合文本 你好",
+      "moreExamples": [
+        "#tts查看融合文本",
+        "#tts设置融合文本 你好"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(设置|查看)?` 可省**，省略后行为取决于实现（多半是查看）",
+        "文本里有空格会被截断"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/fusion-weight",
+      "command": "#tts融合权重 0.5",
+      "aliases": [
+        "#tts查看融合权重",
+        "#tts设置融合权重 1"
+      ],
+      "title": "融合权重",
+      "summary": "数值参数",
+      "what": "查看/设置融合文本在语音消息里的权重占比。",
+      "returns": "当前值或设置结果。",
+      "returnsDetail": "当前值或设置结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "tts融合权重"
+      ],
+      "params": [
+        {
+          "name": "权重",
+          "required": false,
+          "desc": "数值"
+        }
+      ],
+      "example": "#tts融合权重 0.5",
+      "moreExamples": [
+        "#tts查看融合权重",
+        "#tts设置融合权重 1"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "非数值输入可能被当 0 或直接拒绝",
+        "和「融合文本」要配套使用"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/out-blacklist",
+      "command": "#chatgpt设置输出黑名单 呵呵",
+      "aliases": [
+        "#chatgpt查看输出黑名单"
+      ],
+      "title": "输出黑名单",
+      "summary": "过滤回复",
+      "what": "配置回复里出现哪些词时拦截/替换。",
+      "returns": "当前值或设置结果。",
+      "returnsDetail": "当前值或设置结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置输出黑名单",
+        "呵呵"
+      ],
+      "params": [
+        {
+          "name": "词",
+          "required": false,
+          "desc": "可多个"
+        }
+      ],
+      "example": "#chatgpt设置输出黑名单 呵呵",
+      "moreExamples": [
+        "#chatgpt查看输出黑名单"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**是「输出」侧过滤**，不影响用户输入",
+        "只用简单包含匹配的话，容易误伤"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-tts/in-blacklist",
+      "command": "#chatgpt设置输入黑名单 政治",
+      "aliases": [
+        "#chatgpt查看输入黑名单"
+      ],
+      "title": "输入黑名单",
+      "summary": "过滤提问",
+      "what": "用户消息里出现这些词就不送模型（或直接拒答）。",
+      "returns": "当前值或设置结果。",
+      "returnsDetail": "当前值或设置结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "chatgpt设置输入黑名单",
+        "政治"
+      ],
+      "params": [
+        {
+          "name": "词",
+          "required": false,
+          "desc": "可多个"
+        }
+      ],
+      "example": "#chatgpt设置输入黑名单 政治",
+      "moreExamples": [
+        "#chatgpt查看输入黑名单"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "命中后通常是静默或固定回复，看实现",
+        "输入侧拦不住变体写法"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-tts/clear-user-settings",
+      "command": "#tts删除所有用户设置",
+      "aliases": [
+        "#tts重置所有chatgpt用户设置",
+        "#tts删除所有用户回复设置"
+      ],
+      "title": "清空所有用户的 TTS 设置",
+      "summary": "不可恢复",
+      "what": "把所有用户单独的 TTS/回复设置重置成默认。",
+      "returns": "清理结果。",
+      "returnsDetail": "清理结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "tts删除所有用户设置"
+      ],
+      "params": [],
+      "example": "#tts删除所有用户设置",
+      "moreExamples": [
+        "#tts重置所有chatgpt用户设置",
+        "#tts删除所有用户回复设置"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**影响所有人**，且没有二次确认",
+        "`(chatgpt)?` 与 `(回复|单独)` 都可省，`#tts删除所有用户设置` 是最短形式"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-tts/poke-cd",
+      "command": "#派蒙戳一戳设置CD 60",
+      "aliases": [
+        "#派蒙戳一戳设置cd 60"
+      ],
+      "title": "戳一戳 CD",
+      "summary": "防刷",
+      "what": "设置被戳后的冷却秒数。",
+      "returns": "设置结果。",
+      "returnsDetail": "设置结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "派蒙戳一戳设置CD"
+      ],
+      "params": [
+        {
+          "name": "秒数",
+          "required": true,
+          "desc": "整数"
+        }
+      ],
+      "example": "#派蒙戳一戳设置CD 60",
+      "moreExamples": [
+        "#派蒙戳一戳设置cd 60"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`CD`/`cd` 都认**，但必须紧跟「设置」",
+        "设为 0 等于不限频，容易被刷"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/poke-save",
+      "command": "#派蒙戳保存图片",
+      "aliases": [
+        "#派蒙戳一戳保存表情包",
+        "#派蒙戳添加图片"
+      ],
+      "title": "给戳一戳添加图片",
+      "summary": "带图",
+      "what": "把消息里的图片存成戳一戳的回应素材。",
+      "returns": "保存结果。",
+      "returnsDetail": "保存结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "派蒙戳保存图片"
+      ],
+      "params": [],
+      "example": "#派蒙戳保存图片",
+      "moreExamples": [
+        "#派蒙戳一戳保存表情包",
+        "#派蒙戳添加图片"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**必须带图**",
+        "**`戳`/`戳一戳`、`保存`/`添加`、`图片`/`表情`/`表情包` 都可组合**"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/char-list",
+      "command": "#tts人物列表",
+      "aliases": [
+        "#tts可选人物列表",
+        "#tts人物可选列表"
+      ],
+      "title": "TTS 人物列表",
+      "summary": "可选声线",
+      "what": "列出可用的 TTS 人物（声线）。",
+      "returns": "列表。",
+      "returnsDetail": "列表。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "tts人物列表"
+      ],
+      "params": [],
+      "example": "#tts人物列表",
+      "moreExamples": [
+        "#tts可选人物列表",
+        "#tts人物可选列表"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(可选)?` 出现两次**，所以「可选人物列表」「人物可选列表」都行",
+        "列表取决于已配置服务"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/view-setting",
+      "command": "#tts查看当前设置",
+      "aliases": [
+        "#tts查看设置",
+        "#tts查看语音设置",
+        "#tts查看目前设置"
+      ],
+      "title": "看当前 TTS 设置",
+      "summary": "只读",
+      "what": "汇总显示当前语种、情感、语速、人物等设置。",
+      "returns": "设置清单。",
+      "returnsDetail": "设置清单。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "tts查看当前设置"
+      ],
+      "params": [],
+      "example": "#tts查看当前设置",
+      "moreExamples": [
+        "#tts查看设置",
+        "#tts查看语音设置",
+        "#tts查看目前设置"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`((当|目)前)?(语音)?` 都可省**",
+        "只读"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/img-recognize",
+      "command": "#chatgpt对话中图片识别",
+      "aliases": [
+        "#chatgpt对话中图片识别帮助"
+      ],
+      "title": "对话中的图片识别开关",
+      "summary": "是否理解图",
+      "what": "开启后对话里带图会被理解（而不是只当附件）。",
+      "returns": "开关或帮助。",
+      "returnsDetail": "开关或帮助。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "chatgpt对话中图片识别"
+      ],
+      "params": [],
+      "example": "#chatgpt对话中图片识别",
+      "moreExamples": [
+        "#chatgpt对话中图片识别帮助"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "要视觉模型支持",
+        "开启后每条带图消息都会多消耗额度"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/fish-usage",
+      "command": "#派蒙tts查看fish用量",
+      "aliases": [],
+      "title": "fish TTS 用量",
+      "summary": "查配额",
+      "what": "查询 fish 语音服务的剩余额度/用量。",
+      "returns": "用量文本。",
+      "returnsDetail": "用量文本。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "派蒙tts查看fish用量"
+      ],
+      "params": [],
+      "example": "#派蒙tts查看fish用量",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "没配 fish 账号时报错",
+        "接口变动时会查不到"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/fish-refresh",
+      "command": "#派蒙tts强制刷新fish账号",
+      "aliases": [],
+      "title": "强制刷新 fish 账号",
+      "summary": "重登",
+      "what": "重新拉取/登录 fish 账号，刷新凭证。",
+      "returns": "刷新结果。",
+      "returnsDetail": "刷新结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "派蒙tts强制刷新fish账号"
+      ],
+      "params": [],
+      "example": "#派蒙tts强制刷新fish账号",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**凭证失效时用这条**，但不保证能恢复",
+        "会打断正在进行的合成"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/fish-speaker",
+      "command": "#搜索fish发音人 派蒙",
+      "aliases": [
+        "#搜索fish发音人"
+      ],
+      "title": "搜索 fish 发音人",
+      "summary": "带参数",
+      "what": "在 fish 的发音人库里按关键词搜。",
+      "returns": "搜索结果。",
+      "returnsDetail": "搜索结果。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "搜索fish发音人",
+        "派蒙"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "跟在指令后"
+        }
+      ],
+      "example": "#搜索fish发音人 派蒙",
+      "moreExamples": [
+        "#搜索fish发音人"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**正则带 `(.*)$`**，不带关键词会搜空",
+        "结果里的发音人 ID 才是 `#tts人物` 能用的值"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/daily-task",
+      "command": "#派蒙chatgpt立即执行每日自动任务",
+      "aliases": [],
+      "title": "立刻跑每日自动任务",
+      "summary": "运维",
+      "what": "手动触发一次每日定时任务（签到/刷新/清理等）。",
+      "returns": "任务结果。",
+      "returnsDetail": "任务结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "派蒙chatgpt立即执行每日自动任务"
+      ],
+      "params": [],
+      "example": "#派蒙chatgpt立即执行每日自动任务",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**可能重复执行**，和定时任务撞车时小心",
+        "耗时较长"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/tts-test",
+      "command": "#派蒙tts测试",
+      "aliases": [],
+      "title": "TTS 自测",
+      "summary": "排查用",
+      "what": "用固定文本合成一段语音，验证 TTS 通路。",
+      "returns": "语音或错误信息。",
+      "returnsDetail": "语音或错误信息。",
+      "timing": "1~3 秒",
+      "cost": "只读，不改任何状态",
+      "keywords": [
+        "派蒙tts测试"
+      ],
+      "params": [],
+      "example": "#派蒙tts测试",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**排查「语音没声」第一步就用它**",
+        "失败时看日志里的服务端响应"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/clear-gemini",
+      "command": "#删除所有gemini对话记录",
+      "aliases": [
+        "#删除所有Gemini对话记录",
+        "#删除所有gemini会话记录"
+      ],
+      "title": "清空 Gemini 会话记录",
+      "summary": "不可恢复",
+      "what": "把 Gemini 通道的会话记录全部删掉。",
+      "returns": "清理结果。",
+      "returnsDetail": "清理结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "删除所有gemini对话记录"
+      ],
+      "params": [],
+      "example": "#删除所有gemini对话记录",
+      "moreExamples": [
+        "#删除所有Gemini对话记录",
+        "#删除所有gemini会话记录"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**只清 Gemini 通道**，其它通道的记录不动",
+        "**没有二次确认**"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-tts/steal-emoji",
+      "command": "#gpt偷图",
+      "aliases": [
+        "#chatgpt偷表情包",
+        "#gpt偷表情"
+      ],
+      "title": "偷图（存成表情）",
+      "summary": "带图 + 回执",
+      "what": "把消息里（或引用里）的图片存进表情库，并回一条带编号的回执，**回执与图片的关联保留两周**。",
+      "returns": "回执（含可撤销的编号）。",
+      "returnsDetail": "回执（含可撤销的编号）。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "gpt偷图"
+      ],
+      "params": [
+        {
+          "name": "参数",
+          "required": false,
+          "desc": "`(.*)` 原样透传，可能用于指定情感/标签"
+        }
+      ],
+      "example": "#gpt偷图",
+      "moreExamples": [
+        "#chatgpt偷表情包",
+        "#gpt偷表情"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`(chat)?gpt` 都可**，`#gpt偷图`/`#chatgpt偷图` 都行，且 `/i` 大小写不敏感",
+        "**必须带图**，纯文字只会报错",
+        "**回执保留两周**（redis `CHATGPT:EMOJI_UNDO:`），过期就不能撤销了"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/undo-steal",
+      "command": "#gpt撤销偷图",
+      "aliases": [
+        "#chatgpt撤销偷表情包"
+      ],
+      "title": "撤销刚才的偷图",
+      "summary": "两周内",
+      "what": "按回执编号撤销上一次偷图（从表情库删掉）。",
+      "returns": "撤销结果。",
+      "returnsDetail": "撤销结果。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "gpt撤销偷图"
+      ],
+      "params": [
+        {
+          "name": "编号",
+          "required": false,
+          "desc": "回执里的编号"
+        }
+      ],
+      "example": "#gpt撤销偷图",
+      "moreExamples": [
+        "#chatgpt撤销偷表情包"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**超过两周的撤销不了**（redis key 带过期）",
+        "`图片`/`表情包` 都可，`(图|表情包?)`"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "cgpt-tts/sf-voice-model",
+      "command": "#gptsf语音模型列表",
+      "aliases": [
+        "#gptsf语音模型创建",
+        "#gptsf语音模型删除",
+        "#gptsf语音模型上传",
+        "#gptsf语音模型新增"
+      ],
+      "title": "sf 语音模型的增删查/上传",
+      "summary": "五种动作",
+      "what": "管理 sf（SoVITS/fish 类）语音模型：列表、创建、删除、上传、新增。",
+      "returns": "操作结果。",
+      "returnsDetail": "操作结果。",
+      "timing": "1~3 秒",
+      "cost": "改配置或删数据，不可逆",
+      "keywords": [
+        "gptsf语音模型列表"
+      ],
+      "params": [
+        {
+          "name": "动作",
+          "required": true,
+          "desc": "创建/删除/列表/上传/新增"
+        }
+      ],
+      "example": "#gptsf语音模型列表",
+      "moreExamples": [
+        "#gptsf语音模型创建",
+        "#gptsf语音模型删除",
+        "#gptsf语音模型上传"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**五个动作同一条正则**，动作词必须是这五个之一",
+        "上传/创建一般要配合文件或链接，纯指令会提示缺参数"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "cgpt-tts/send-voice",
+      "command": "#gpt发语音 你好",
+      "aliases": [
+        "#chatgpt发语音 你好"
+      ],
+      "title": "直接合成并发送语音",
+      "summary": "不等对话",
+      "what": "把后面这段文字直接用 TTS 合成发出，不走对话。",
+      "returns": "语音消息。",
+      "returnsDetail": "语音消息。",
+      "timing": "1~3 秒",
+      "cost": "可能改配置 / 消耗额度",
+      "keywords": [
+        "gpt发语音",
+        "你好"
+      ],
+      "params": [
+        {
+          "name": "文本",
+          "required": true,
+          "desc": "要合成的文字"
+        }
+      ],
+      "example": "#gpt发语音 你好",
+      "moreExamples": [
+        "#chatgpt发语音 你好"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**`/i` 大小写不敏感**，且正则没有 `$`，后面的全部算文本",
+        "文本过长会超 TTS 限制（配合切片）",
+        "服务没配时会报「未配置…」"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [],
+      "vs": [],
+      "related": [],
+      "risk": "w",
+      "permission": ""
+    }
+  ]
+}
