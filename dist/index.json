@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 29,
-  "updated": "2026-10-28T23:59:47.606Z",
+  "revision": 30,
+  "updated": "2026-10-29T00:09:24.271Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -113,6 +113,20 @@
       "fingerprint": "21bf9ec8ebbc",
       "sha256": "d4832e6a41c12ec5ff6ced30e63ae531d629ceda83ae99ee7b5e24f4c0de20ad",
       "bytes": 106299,
+      "used": 0
+    },
+    "TRSS-Plugin": {
+      "file": "maps/TRSS-Plugin.json",
+      "display": "TRSS 工具集",
+      "category": "系统",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 30,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "ed353794aac5",
+      "sha256": "29602cab194c0210b49736b8d6d7532298fbc6e0b24afb41afde211be0c2b52e",
+      "bytes": 63730,
       "used": 0
     },
     "xiaoyao-cvs-plugin": {
@@ -242,6 +256,15 @@
       "command_count": 51,
       "units": [
         "Tlon-Sky"
+      ],
+      "used": 0
+    },
+    "TRSS-Plugin": {
+      "display": "TRSS 工具集",
+      "category": "系统",
+      "command_count": 30,
+      "units": [
+        "TRSS-Plugin"
       ],
       "used": 0
     },
