@@ -1,0 +1,1991 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "TRSS-Plugin",
+    "display": "TRSS 工具集",
+    "category": "系统",
+    "summary": "运维级工具集：远程 Shell/JS 执行、文件读写、阿里云盘与百度网盘 CLI、代码与 Markdown 渲染、二维码、图片超分与抠图、系统信息与跑分、角色语音合成、米哈游扫码登录",
+    "homepage": "https://git.trss.me/TRSS-Plugin",
+    "notes": "**这是主机级权限插件**：19 条规则需要 `isMaster`，其中 12 条还接受一个**硬编码 md5（`ca7bcba1749aaaa4f2724df3b27c85ec`）对应的隐藏 QQ 号**，判断写法是 `e.isMaster || md5(user_id) == 常量`。`File` / `Script` / `SourceCode` 三条 priority 为 `-Infinity`，抢在所有插件之前匹配。11 条无任何权限限制（二维码、图片处理、系统信息、系统测试、语音、米哈游登录），其中 `#系统测试` 会 `bash <(curl -L bench.sh)` 拉远程脚本执行。",
+    "interactsWith": [
+      "xiaoyao-cvs-plugin（`#扫码登录`、`#stoken帮助` 同名，互相抢）",
+      "miao-plugin（语音合成会借用它的角色别名表）",
+      "TRSS-Yunzai 的 puppeteer 渲染与 fastfetch/aliyunpan/BaiduPCS-Go 等外部 CLI"
+    ],
+    "batches": {
+      "covered": [
+        "远程命令（Shell/JS 文本与截图）",
+        "消息构造（dm/mm/fm）",
+        "脚本执行",
+        "源码查看",
+        "文件操作",
+        "阿里云盘",
+        "百度网盘",
+        "Markdown 渲染",
+        "二维码",
+        "图片超分与抠图",
+        "系统信息与跑分",
+        "语音合成",
+        "米哈游登录"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "trss/shell",
+      "command": "rc ls -al",
+      "aliases": [
+        "rcp ls -al"
+      ],
+      "title": "远程执行 Shell 命令（文本回显）",
+      "summary": "主人专用，等于把服务器 shell 交出去",
+      "what": "把 `rc` 后面的内容交给系统 shell 执行，回标准输出与标准错误。",
+      "returns": "命令输出文本。",
+      "returnsDetail": "成功回「[user@host pwd]$ 命令 + 输出」；无输出回「命令执行完成，没有返回值」；报错回「远程命令错误：堆栈」；有 stderr 单独回「标准错误输出：…」。",
+      "timing": "视命令而定，可能瞬间也可能永不返回。",
+      "cost": "**直接在宿主机上执行任意命令**，可以删库、可以反弹 shell。",
+      "keywords": [
+        "rc",
+        "远程命令",
+        "执行shell",
+        "shell",
+        "命令行"
+      ],
+      "params": [
+        {
+          "name": "命令",
+          "required": true,
+          "desc": "原样传给 shell，不做任何过滤"
+        }
+      ],
+      "example": "rc ls -al",
+      "moreExamples": [
+        "rc df -h",
+        "rc systemctl status"
+      ],
+      "preconditions": [
+        "**必须是主人，或 md5(QQ) 等于硬编码值的那个隐藏账号**",
+        "Windows 上会转成 PowerShell 的 `-EncodedCommand` 执行"
+      ],
+      "pitfalls": [
+        "**没有任何过滤或白名单** —— 命令原样拼进 shell，`rc rm -rf /` 也会照做",
+        "**权限判断是 `e.isMaster || md5(user_id) == 硬编码值`** —— 除了主人，还有一个作者预留的隐藏 QQ 号能用（md5 常量为 `ca7bcba1749aaaa4f2724df3b27c85ec`）",
+        "**LInux 下用 `$0 -ic` 起一个交互 shell**（`process.env.SHELL` 以 bash 结尾时），环境变量与 `.bashrc` 会生效",
+        "**长输出不会截断**，可能刷屏甚至触发风控",
+        "**没有超时控制**，卡住的命令会一直挂着"
+      ],
+      "failures": [
+        {
+          "symptom": "完全没反应",
+          "cause": "不是主人且不在隐藏白名单里（`return false` 静默放行）"
+        },
+        {
+          "symptom": "回「远程命令错误：…」",
+          "cause": "命令不存在或退出码非 0"
+        }
+      ],
+      "edgeCases": [
+        "`rcp` 与 `rc` 的差别只在输出形式（截图 vs 文本），执行内容完全一样",
+        "Windows 下 prompt 走 PowerShell，Linux 走 `$0 -ic`"
+      ],
+      "scenarios": [
+        "远程排查服务器问题"
+      ],
+      "vs": [
+        {
+          "command": "rcp ls -al",
+          "diff": "同一条命令，输出成代码高亮截图"
+        },
+        {
+          "command": "rj 1+1",
+          "diff": "那个执行 JS 不是 shell"
+        }
+      ],
+      "related": [
+        "rcp ls -al",
+        "rj 1+1",
+        "脚本执行xxx"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/shell-pic",
+      "command": "rcp ls -al",
+      "aliases": [],
+      "title": "远程执行 Shell 并截图回显",
+      "summary": "与 rc 同源，输出成图",
+      "what": "执行 shell 命令，把命令与输出用 ansi_up 转 HTML 后渲染成代码截图。",
+      "returns": "一张代码高亮截图。",
+      "returnsDetail": "图上同时显示原始命令与输出，带行号与配色。",
+      "timing": "命令耗时 + 2~5 秒渲染。",
+      "cost": "**执行任意命令** + 渲染。",
+      "keywords": [
+        "rcp",
+        "远程命令截图",
+        "shell截图"
+      ],
+      "params": [
+        {
+          "name": "命令",
+          "required": true,
+          "desc": "原样传 shell"
+        }
+      ],
+      "example": "rcp ls -al",
+      "moreExamples": [
+        "rcp cat /etc/os-release"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**执行能力与 `rc` 完全一致**，只是输出形式不同",
+        "**长输出会撑很高**，`multiPageHeight: 20000` 也只是上限",
+        "截图模板在 `Resources/Code/Code.html`，模板缺失会渲染失败",
+        "**终端 ANSI 颜色会被解析**，输出里含奇怪转义序列时可能渲染错乱"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "权限不足（静默放行）"
+        },
+        {
+          "symptom": "图是空的",
+          "cause": "命令无输出，或模板缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想让输出好看点/发给人看"
+      ],
+      "vs": [
+        {
+          "command": "rc ls -al",
+          "diff": "同命令，文本输出"
+        }
+      ],
+      "related": [
+        "rc ls -al",
+        "rjp 1+1"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/js-eval",
+      "command": "rj 1+1",
+      "aliases": [],
+      "title": "远程执行 JavaScript（文本回显）",
+      "summary": "在 Bot 进程内 eval",
+      "what": "把 `rj` 后面的内容当 JS 代码 `eval`，回返回值。",
+      "returns": "求值结果文本。",
+      "returnsDetail": "无返回值回「命令执行完成，没有返回值」；异常回「错误：+ 堆栈」。",
+      "timing": "瞬间~数十秒（取决于代码）。",
+      "cost": "**在 Bot 主进程里执行任意代码**，可读写文件、发请求、改内存。",
+      "keywords": [
+        "rj",
+        "远程js",
+        "执行js",
+        "eval"
+      ],
+      "params": [
+        {
+          "name": "JS 代码",
+          "required": true,
+          "desc": "原样 eval，支持表达式与语句"
+        }
+      ],
+      "example": "rj 1+1",
+      "moreExamples": [
+        "rj Bot.uin",
+        "rj (await import('fs')).readdirSync('.')"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**同步/异步都能跑**：遇到 `await` 类语法错误会自动包一层 `async function` 重试",
+        "**能把整个 Bot 搞崩** —— 例如 `process.exit()`，进程直接没了",
+        "**没有沙箱**，能拿到 `Bot`、`redis`、文件系统",
+        "**返回值用 `Bot.String` 转字符串**，循环引用会走兜底 `toString`"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "权限不足（静默放行）"
+        },
+        {
+          "symptom": "Bot 直接挂掉",
+          "cause": "代码里调了 `process.exit()` 或死循环"
+        }
+      ],
+      "edgeCases": [
+        "表达式和语句都支持，`rj a=1` 也能跑（返回 1）"
+      ],
+      "scenarios": [
+        "临时调试 Bot 内部状态"
+      ],
+      "vs": [
+        {
+          "command": "rjp 1+1",
+          "diff": "同一个 eval，输出成截图"
+        },
+        {
+          "command": "rc ls",
+          "diff": "那个执行 shell 不是 JS"
+        }
+      ],
+      "related": [
+        "rjp 1+1",
+        "rc ls -al"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/js-eval-pic",
+      "command": "rjp 1+1",
+      "aliases": [],
+      "title": "远程执行 JavaScript 并截图",
+      "summary": "与 rj 同源",
+      "what": "eval JS 后把结果渲染成代码截图。",
+      "returns": "一张代码截图。",
+      "returnsDetail": "与 `rj` 相同的执行逻辑，输出走 `Bot.Loging` 再转 HTML。",
+      "timing": "执行耗时 + 渲染 2~5 秒。",
+      "cost": "**Bot 进程内执行任意 JS**。",
+      "keywords": [
+        "rjp",
+        "js截图",
+        "执行js截图"
+      ],
+      "params": [
+        {
+          "name": "JS 代码",
+          "required": true,
+          "desc": "原样 eval"
+        }
+      ],
+      "example": "rjp 1+1",
+      "moreExamples": [
+        "rjp JSON.stringify(Bot.config)"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**危险性与 `rj` 一致**，只是输出形式不同",
+        "**对象会被格式化**（`Bot.Loging` 带缩进），大对象截图会很长"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "权限不足"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "查看复杂对象结构"
+      ],
+      "vs": [
+        {
+          "command": "rj Bot.uin",
+          "diff": "同命令文本输出"
+        }
+      ],
+      "related": [
+        "rj 1+1",
+        "rcp ls"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/direct-msg",
+      "command": "dm [segment.at(123), 'hi']",
+      "aliases": [],
+      "title": "执行 JS 并发送其返回的消息",
+      "summary": "JS 生成消息段，直接发出",
+      "what": "eval 出一段消息（数组或单个），转成消息段后立即发送到当前会话。",
+      "returns": "发送结果；出错时回错误堆栈。",
+      "returnsDetail": "消息里是对象但没有 `type` 时用 `segment.raw()` 转；发送失败会把「发送/错误」渲染成截图。",
+      "timing": "1~10 秒。",
+      "cost": "**执行任意 JS + 以 Bot 身份发任意消息**。",
+      "keywords": [
+        "dm",
+        "directmsg",
+        "发消息",
+        "构造消息"
+      ],
+      "params": [
+        {
+          "name": "JS 表达式",
+          "required": true,
+          "desc": "求值结果作为消息内容"
+        }
+      ],
+      "example": "dm [segment.at(123), 'hi']",
+      "moreExamples": [
+        "dm 'hello'",
+        "dm segment.image('https://...')"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**能以 Bot 身份发任何内容**，包括 @全体成员、发文件、发链接",
+        "**`dm` 只发一条（数组算一条混合消息）**，发多条用 `mm`，合并转发用 `fm`",
+        "**`dmp` 前缀会额外回一张「发送/返回」对照截图**（`echo` 模式）",
+        "**发送失败不报文本错，而是截图**，容易漏看"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "权限不足"
+        },
+        {
+          "symptom": "回一张错误截图",
+          "cause": "消息段构造不合法"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "测试消息段效果"
+      ],
+      "vs": [
+        {
+          "command": "mm [a,b]",
+          "diff": "那个逐条发"
+        },
+        {
+          "command": "fm [[a,b]]",
+          "diff": "那个打包成合并转发"
+        }
+      ],
+      "related": [
+        "mm 'a' 'b'",
+        "fm [['a','b']]"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/multi-msg",
+      "command": "mm ['第一条', '第二条']",
+      "aliases": [],
+      "title": "执行 JS 并逐条发送多条消息",
+      "summary": "数组里每个元素发一条",
+      "what": "eval 出数组，逐个调用 `reply` 发送。",
+      "returns": "逐条发送；有错误时汇总成截图。",
+      "returnsDetail": "每个元素单独发一条；某条失败会把「发送/错误」写进截图。",
+      "timing": "条数 × 1~2 秒。",
+      "cost": "**执行任意 JS + 连发多条消息**。",
+      "keywords": [
+        "mm",
+        "multimsg",
+        "连发消息",
+        "多条消息"
+      ],
+      "params": [
+        {
+          "name": "JS 表达式",
+          "required": true,
+          "desc": "求值结果需是数组"
+        }
+      ],
+      "example": "mm ['第一条', '第二条']",
+      "moreExamples": [
+        "mm [segment.image('...'), '说明']"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**逐条发送之间没有延迟**，条数多时容易触发风控",
+        "**`mmp` 前缀会回发送对照截图**",
+        "**结果不是数组时按单元素处理**（`Array.isArray ? : [x]`）"
+      ],
+      "failures": [
+        {
+          "symptom": "只发出第一条",
+          "cause": "后续消息构造失败，错误在截图里"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "测试连续消息"
+      ],
+      "vs": [
+        {
+          "command": "dm ['a','b']",
+          "diff": "那个把数组当一条混合消息发"
+        }
+      ],
+      "related": [
+        "dm 'hello'",
+        "fm [['a','b']]"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/forward-msg",
+      "command": "fm [['第一条', '第二条']]",
+      "aliases": [],
+      "title": "执行 JS 并打包成合并转发",
+      "summary": "二维数组，每行一个节点",
+      "what": "eval 出二维数组，每行打包成一个转发节点，再发合并转发消息。",
+      "returns": "一条合并转发消息。",
+      "returnsDetail": "用 `Bot.makeForwardArray` 组装；失败时回错误堆栈。",
+      "timing": "2~10 秒。",
+      "cost": "**执行任意 JS + 发合并转发**。",
+      "keywords": [
+        "fm",
+        "forwardmsg",
+        "合并转发",
+        "聊天记录"
+      ],
+      "params": [
+        {
+          "name": "JS 表达式",
+          "required": true,
+          "desc": "求值结果需是二维数组"
+        }
+      ],
+      "example": "fm [['第一条', '第二条']]",
+      "moreExamples": [
+        "fm [['a'], ['b']]"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**必须是二维数组**：外层每个元素是一个转发节点，内层是该节点的消息段数组",
+        "**一维数组会被当成单节点**，容易以为没生效",
+        "**`fmp` 前缀会回对照截图**"
+      ],
+      "failures": [
+        {
+          "symptom": "只发了一条",
+          "cause": "传了一维数组"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "测试合并转发样式"
+      ],
+      "vs": [
+        {
+          "command": "mm ['a','b']",
+          "diff": "那个是连发两条普通消息"
+        }
+      ],
+      "related": [
+        "dm 'hello'",
+        "mm ['a','b']"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/script-exec",
+      "command": "脚本执行 状态",
+      "aliases": [
+        "脚本执行 更新"
+      ],
+      "title": "调用 TRSS 一键脚本",
+      "summary": "主人专用，依赖 Main.sh",
+      "what": "执行 `bash ~/../Main.sh cmd <参数>`，把输出渲染成代码截图。",
+      "returns": "代码截图。",
+      "returnsDetail": "stdout 一张图、stderr 一张图；出错回「脚本执行错误：…」+ 安装提示。",
+      "timing": "5~120 秒。",
+      "cost": "**调用宿主机脚本**，行为取决于 Main.sh 实现。",
+      "keywords": [
+        "脚本执行",
+        "Main.sh",
+        "TRSS脚本"
+      ],
+      "params": [
+        {
+          "name": "参数",
+          "required": true,
+          "desc": "传给 Main.sh 的 `cmd` 子命令"
+        }
+      ],
+      "example": "脚本执行 状态",
+      "moreExamples": [
+        "脚本执行 更新"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "**必须是用 TRSS 一键脚本装的** —— `~/../Main.sh` 存在"
+      ],
+      "pitfalls": [
+        "**`cmdPath = ${HOME}/../Main.sh`** —— 路径写死在用户目录上一层，非脚本安装的环境一定找不到",
+        "**失败提示固定为「请使用脚本安装，再使用此功能」**，即使你装了但路径不同也一样",
+        "**priority 是 `-Infinity`**，抢在所有插件之前匹配",
+        "**参数原样拼进命令**，不加引号可能被 shell 拆词"
+      ],
+      "failures": [
+        {
+          "symptom": "回「脚本执行错误」+ 安装提示",
+          "cause": "Main.sh 不存在或执行失败"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "权限不足"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "用官方脚本更新/查看状态"
+      ],
+      "vs": [
+        {
+          "command": "rc ls",
+          "diff": "那个直接执行 shell，不依赖 Main.sh"
+        }
+      ],
+      "related": [
+        "rc ls -al",
+        "sc index.js"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/source-code",
+      "command": "sc index.js",
+      "aliases": [
+        "sc10~20 index.js",
+        "sc https://example.com/a.js"
+      ],
+      "title": "查看代码文件（可指定行范围）",
+      "summary": "主人专用，支持 URL",
+      "what": "读本地文件或下载 URL，渲染成带行号高亮的代码截图；可只取某几行。",
+      "returns": "一张代码截图。",
+      "returnsDetail": "文件不存在回「文件不存在」；URL 下载失败回「文件下载错误」。",
+      "timing": "2~10 秒。",
+      "cost": "读文件 / 下载 URL + 渲染。",
+      "keywords": [
+        "sc",
+        "看代码",
+        "源码",
+        "sourcecode"
+      ],
+      "params": [
+        {
+          "name": "行范围",
+          "required": false,
+          "desc": "`起始~结束`，如 `sc10~20 index.js`"
+        },
+        {
+          "name": "路径或URL",
+          "required": true,
+          "desc": "本地相对路径或 http(s) 地址"
+        }
+      ],
+      "example": "sc index.js",
+      "moreExamples": [
+        "sc10~20 index.js",
+        "sc https://example.com/a.js"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "priority `-Infinity`"
+      ],
+      "pitfalls": [
+        "**支持 URL 直接下载**（存到 `data/cache.sc`），等于可以读任意内网地址（SSRF）",
+        "**行范围写在路径前面**，`sc10~20 file` 而不是 `sc file 10~20`",
+        "**路径会走 `Model/file.js` 的补全选择器**，相对路径基准是项目根目录",
+        "**大文件截图会非常长**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「文件不存在」",
+          "cause": "路径错或超出项目目录"
+        },
+        {
+          "symptom": "回「文件下载错误」",
+          "cause": "URL 拉不到"
+        }
+      ],
+      "edgeCases": [
+        "`sc` 后面的行范围可省，`sc index.js` 就是全文"
+      ],
+      "scenarios": [
+        "远程看配置/源码"
+      ],
+      "vs": [
+        {
+          "command": "md README.md",
+          "diff": "那个渲染 Markdown 不是代码"
+        }
+      ],
+      "related": [
+        "md README.md",
+        "rc cat index.js"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/file-list",
+      "command": "文件查看 /root",
+      "aliases": [
+        "文件查看"
+      ],
+      "title": "列目录内容",
+      "summary": "主人专用，priority -Infinity",
+      "what": "读目录，把文件名逐行回出来。",
+      "returns": "文件名列表。",
+      "returnsDetail": "不带路径时进入会话上下文并回「请发送路径」；路径不存在回「路径不存在」。",
+      "timing": "1~3 秒。",
+      "cost": "读文件系统。",
+      "keywords": [
+        "文件查看",
+        "列目录",
+        "ls",
+        "看文件"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "留空时进入「请发送路径」会话，下一条消息作为路径"
+        }
+      ],
+      "example": "文件查看 /root",
+      "moreExamples": [
+        "文件查看"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**不带路径会进入上下文模式** —— 下一条消息会被当成路径吃掉，容易误操作",
+        "**priority `-Infinity`**，抢在所有插件之前",
+        "**路径经 `Model/file.js` 补全**，不是裸 `fs.readdir`",
+        "**没有分页**，文件多的目录会刷屏"
+      ],
+      "failures": [
+        {
+          "symptom": "回「路径不存在」",
+          "cause": "路径错或权限不足"
+        }
+      ],
+      "edgeCases": [
+        "上下文模式可用 `取消` 之类手动打断，否则要等超时"
+      ],
+      "scenarios": [
+        "远程确认某个目录里有什么"
+      ],
+      "vs": [
+        {
+          "command": "文件下载 /root/a.txt",
+          "diff": "那个是取文件内容/发文件"
+        }
+      ],
+      "related": [
+        "文件上传 /root/a.txt",
+        "文件下载 /root/a.txt"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/file-upload",
+      "command": "文件上传 /root/a.txt",
+      "aliases": [
+        "文件上传"
+      ],
+      "title": "把服务器文件发到聊天",
+      "summary": "主人专用，等于文件外泄通道",
+      "what": "读本地文件并作为文件消息发出来。",
+      "returns": "一个文件消息。",
+      "returnsDetail": "不带路径进入上下文；文件不存在回「文件不存在」；已有任务在跑回「有正在执行的文件任务，请稍等……」。",
+      "timing": "视文件大小，几秒到几分钟。",
+      "cost": "**把宿主机任意文件传出**。",
+      "keywords": [
+        "文件上传",
+        "发文件",
+        "取文件",
+        "导出文件"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "留空进入上下文模式"
+        }
+      ],
+      "example": "文件上传 /root/a.txt",
+      "moreExamples": [
+        "文件上传"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**等于一个文件外泄通道** —— 能读就能发，包括配置里的密钥",
+        "**全局单任务锁 `Running`**，同时只能传一个",
+        "**大文件可能触发平台限制或超时**",
+        "**不带路径会吃你下一条消息当路径**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「文件不存在」",
+          "cause": "路径错"
+        },
+        {
+          "symptom": "回「有正在执行的文件任务」",
+          "cause": "上一个上传还没完"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把服务器日志发出来看"
+      ],
+      "vs": [
+        {
+          "command": "文件下载 /root/a.txt",
+          "diff": "那个是往服务器传"
+        }
+      ],
+      "related": [
+        "文件下载 /root/a.txt",
+        "文件查看 /root"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/file-download",
+      "command": "（发一个文件后）文件下载 /root/b.txt",
+      "aliases": [
+        "文件下载"
+      ],
+      "title": "把聊天里的文件写到服务器",
+      "summary": "主人专用，等于上传通道",
+      "what": "取引用/上一条消息里的文件，写到指定路径。",
+      "returns": "写入结果。",
+      "returnsDetail": "不带路径进入上下文；目标目录不存在或写失败会给相应提示。",
+      "timing": "视文件大小。",
+      "cost": "**往宿主机任意位置写文件**。",
+      "keywords": [
+        "文件下载",
+        "传文件到服务器",
+        "写入文件"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "目标路径，留空进入上下文模式"
+        }
+      ],
+      "example": "（引用一个文件消息）文件下载 /root/b.txt",
+      "moreExamples": [
+        "文件下载"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "本条或引用的消息里得有文件"
+      ],
+      "pitfalls": [
+        "**可以覆盖任意可写文件**，包括插件代码和配置",
+        "**同样是全局单任务锁**",
+        "**文件名与路径不做白名单校验**"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "消息里没有文件，或权限不足"
+        }
+      ],
+      "edgeCases": [
+        "写完后通常需要重启才生效（如果是代码/配置）"
+      ],
+      "scenarios": [
+        "远程替换一个配置文件"
+      ],
+      "vs": [
+        {
+          "command": "文件上传 /root/a.txt",
+          "diff": "那个是往外取"
+        }
+      ],
+      "related": [
+        "文件上传 /root/a.txt",
+        "文件查看 /root"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/aliyunpan-cmd",
+      "command": "阿里云盘 帮助",
+      "aliases": [
+        "阿里云盘 查看 /",
+        "阿里云盘 空间配额",
+        "阿里云盘 账号列表",
+        "阿里云盘 树形图 /"
+      ],
+      "title": "阿里云盘 CLI 看板（20+ 子命令）",
+      "summary": "主人专用，别名云盘客户端",
+      "what": "把中文子命令映射成 `aliyunpan` 的英文命令后执行，输出渲染成代码截图。",
+      "returns": "代码截图（stdout / stderr 各一张）。",
+      "returnsDetail": "中文子命令不识别时原样透传；CLI 不存在时给安装提示。",
+      "timing": "2~60 秒。",
+      "cost": "**调用宿主机云盘 CLI**，可上传/删除云端文件。",
+      "keywords": [
+        "阿里云盘",
+        "aliyunpan",
+        "云盘",
+        "网盘命令"
+      ],
+      "params": [
+        {
+          "name": "子命令",
+          "required": false,
+          "desc": "`帮助`/`相簿`/`下载`/`链接`/`查看`/`创建目录`/`移动`/`回收站`/`重命名`/`删除`/`分享`/`同步备份`/`树形图`/`上传`/`在线网盘`/`切换网盘`/`登录账号`/`账号列表`/`退出账号`/`空间配额`/`切换账号`/`当前账号`"
+        },
+        {
+          "name": "参数",
+          "required": false,
+          "desc": "跟在子命令后面，原样传给 CLI"
+        }
+      ],
+      "example": "阿里云盘 帮助",
+      "moreExamples": [
+        "阿里云盘 查看 /",
+        "阿里云盘 空间配额",
+        "阿里云盘 树形图 /"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "`~/aliyunpan/aliyunpan` 存在并已登录"
+      ],
+      "pitfalls": [
+        "**`^阿里云盘` 没有结尾锚点**，只要以「阿里云盘」开头就进这条",
+        "**中文子命令表是硬编码的 22 个**，写错会原样透传给 CLI 然后报错",
+        "**命令是 `'cli路径' ${msg}`** —— CLI 路径加了引号，**参数没加**，含空格的参数会被拆词，也给了命令注入空间",
+        "**`删除/移动/重命名` 会真的改云端文件**，没有二次确认",
+        "**不支持交互式命令**（比如需要输入 y/n 的确认）"
+      ],
+      "failures": [
+        {
+          "symptom": "回安装提示",
+          "cause": "没装 aliyunpan CLI 或路径不对"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "权限不足"
+        }
+      ],
+      "edgeCases": [
+        "`阿里云盘` 后面什么都不写，走空字符串 → `help`"
+      ],
+      "scenarios": [
+        "远程管理云盘文件"
+      ],
+      "vs": [
+        {
+          "command": "百度网盘 帮助",
+          "diff": "另一个 CLI（BaiduPCS-Go）"
+        }
+      ],
+      "related": [
+        "阿里云盘上传",
+        "阿里云盘下载 /a.txt",
+        "百度网盘 帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/aliyunpan-upload",
+      "command": "阿里云盘上传 /root/a.txt",
+      "aliases": [
+        "阿里云盘上传"
+      ],
+      "title": "上传本地文件到阿里云盘",
+      "summary": "主人专用，检测本地文件",
+      "what": "从消息里解析本地路径，调 CLI `upload` 上传到云盘。",
+      "returns": "上传结果截图。",
+      "returnsDetail": "不带路径时进入上下文；文件不存在给提示。",
+      "timing": "视文件大小。",
+      "cost": "**把服务器文件传到云端**（外泄通道）。",
+      "keywords": [
+        "阿里云盘上传",
+        "云盘上传",
+        "传云盘"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "本地文件路径；留空进入上下文模式"
+        }
+      ],
+      "example": "阿里云盘上传 /root/a.txt",
+      "moreExamples": [
+        "阿里云盘上传"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "CLI 已登录"
+      ],
+      "pitfalls": [
+        "**和「阿里云盘 上传」不是同一条规则** —— 这条是专门的上传检测（`^阿里云盘上传`），会先做本地文件校验",
+        "**大文件耗时长**，中途没有进度反馈",
+        "**可以上传任意可读文件**，包括密钥文件"
+      ],
+      "failures": [
+        {
+          "symptom": "回文件不存在",
+          "cause": "路径错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把备份传到云盘"
+      ],
+      "vs": [
+        {
+          "command": "阿里云盘下载 /a.txt",
+          "diff": "那个是从云盘拉到本地"
+        }
+      ],
+      "related": [
+        "阿里云盘下载 /a.txt",
+        "阿里云盘 查看 /"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/aliyunpan-download",
+      "command": "阿里云盘下载 /a.txt",
+      "aliases": [
+        "阿里云盘下载"
+      ],
+      "title": "从阿里云盘下载到本地",
+      "summary": "主人专用",
+      "what": "调 CLI `download` 把云盘文件拉到本地目录。",
+      "returns": "下载结果截图。",
+      "returnsDetail": "不带路径进入上下文；路径不对给提示。",
+      "timing": "视文件大小。",
+      "cost": "**往宿主机写文件**。",
+      "keywords": [
+        "阿里云盘下载",
+        "云盘下载",
+        "从云盘拉"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "云盘内路径"
+        }
+      ],
+      "example": "阿里云盘下载 /a.txt",
+      "moreExamples": [
+        "阿里云盘下载"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "CLI 已登录"
+      ],
+      "pitfalls": [
+        "**下载目录由 CLI 配置决定**，不是你想放哪就放哪",
+        "**同名文件可能被覆盖**",
+        "**和「阿里云盘 下载」子命令功能重叠**，只是入口不同"
+      ],
+      "failures": [
+        {
+          "symptom": "回路径不存在",
+          "cause": "云盘路径错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把云盘上的配置拉回来"
+      ],
+      "vs": [
+        {
+          "command": "阿里云盘上传 /root/a.txt",
+          "diff": "方向相反"
+        }
+      ],
+      "related": [
+        "阿里云盘上传 /root/a.txt",
+        "阿里云盘 查看 /"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/baidupan-cmd",
+      "command": "百度网盘 帮助",
+      "aliases": [
+        "百度网盘 查看 /",
+        "百度网盘 搜索 关键词",
+        "百度网盘 空间配额"
+      ],
+      "title": "百度网盘 CLI 看板（23 子命令）",
+      "summary": "主人专用，BaiduPCS-Go",
+      "what": "中文子命令映射成 `BaiduPCS-Go` 英文命令后执行，输出渲染成截图。",
+      "returns": "代码截图。",
+      "returnsDetail": "子命令不认识时原样透传；CLI 缺失给安装提示。",
+      "timing": "2~60 秒。",
+      "cost": "**调用宿主机网盘 CLI**，可上传/删除/分享云端文件。",
+      "keywords": [
+        "百度网盘",
+        "baidupan",
+        "BaiduPCS-Go",
+        "网盘"
+      ],
+      "params": [
+        {
+          "name": "子命令",
+          "required": false,
+          "desc": "`帮助`/`复制`/`下载`/`链接`/`查看`/`元信息`/`创建目录`/`移动`/`离线下载`/`空间配额`/`回收站`/`删除`/`搜索`/`分享`/`转存`/`树形图`/`上传`/`登录账号`/`账号列表`/`退出账号`/`切换账号`/`当前账号`"
+        }
+      ],
+      "example": "百度网盘 帮助",
+      "moreExamples": [
+        "百度网盘 查看 /",
+        "百度网盘 搜索 番剧"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "`~/BaiduPCS-Go/BaiduPCS-Go` 存在并已登录"
+      ],
+      "pitfalls": [
+        "**比阿里云盘多 4 个子命令**：`复制`、`元信息`、`离线下载`、`搜索`、`转存`",
+        "**`离线下载` 可以拉任意磁力/种子**，等于让服务器替你下资源",
+        "**CLI 是 BaiduPCS-Go**，与阿里云盘的 aliyunpan 完全两套",
+        "**参数同样未经转义拼进 shell**"
+      ],
+      "failures": [
+        {
+          "symptom": "回安装提示",
+          "cause": "没装 BaiduPCS-Go"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "远程管理百度网盘"
+      ],
+      "vs": [
+        {
+          "command": "阿里云盘 帮助",
+          "diff": "另一个 CLI"
+        }
+      ],
+      "related": [
+        "百度网盘上传 /root/a.txt",
+        "百度网盘下载 /a.txt"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/baidupan-upload",
+      "command": "百度网盘上传 /root/a.txt",
+      "aliases": [
+        "百度网盘上传"
+      ],
+      "title": "上传本地文件到百度网盘",
+      "summary": "主人专用",
+      "what": "解析本地路径，调 CLI `upload` 上传。",
+      "returns": "上传结果截图。",
+      "returnsDetail": "路径不存在给提示；不带路径进上下文。",
+      "timing": "视文件大小，百度限速明显。",
+      "cost": "**服务器文件外泄通道**。",
+      "keywords": [
+        "百度网盘上传",
+        "传百度网盘"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "本地路径"
+        }
+      ],
+      "example": "百度网盘上传 /root/a.txt",
+      "moreExamples": [
+        "百度网盘上传"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**",
+        "CLI 已登录"
+      ],
+      "pitfalls": [
+        "**上传速度受百度限速影响**，大文件可能很久没反应",
+        "**与「百度网盘 上传」子命令重叠**",
+        "**可上传任意可读文件**"
+      ],
+      "failures": [
+        {
+          "symptom": "长时间没反应",
+          "cause": "限速或被风控"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "备份到百度网盘"
+      ],
+      "vs": [
+        {
+          "command": "阿里云盘上传 /root/a.txt",
+          "diff": "同上，换平台"
+        }
+      ],
+      "related": [
+        "百度网盘下载 /a.txt",
+        "百度网盘 查看 /"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/baidupan-download",
+      "command": "百度网盘下载 /a.txt",
+      "aliases": [
+        "百度网盘下载"
+      ],
+      "title": "从百度网盘下载到本地",
+      "summary": "主人专用",
+      "what": "调 CLI `download` 下载云盘文件到本地。",
+      "returns": "下载结果截图。",
+      "returnsDetail": "路径错误给提示。",
+      "timing": "视文件大小。",
+      "cost": "**往宿主机写文件**。",
+      "keywords": [
+        "百度网盘下载",
+        "下百度网盘"
+      ],
+      "params": [
+        {
+          "name": "路径",
+          "required": false,
+          "desc": "云盘内路径"
+        }
+      ],
+      "example": "百度网盘下载 /a.txt",
+      "moreExamples": [
+        "百度网盘下载"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**限速严重**，非会员下载很慢",
+        "**会覆盖同名本地文件**"
+      ],
+      "failures": [
+        {
+          "symptom": "卡住没进度",
+          "cause": "限速或需要会员"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "拉取云盘上的备份"
+      ],
+      "vs": [
+        {
+          "command": "百度网盘上传 /root/a.txt",
+          "diff": "方向相反"
+        }
+      ],
+      "related": [
+        "百度网盘上传 /root/a.txt",
+        "百度网盘 查看 /"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/markdown",
+      "command": "md README.md",
+      "aliases": [
+        "md https://example.com/a.md"
+      ],
+      "title": "渲染 Markdown 成图片",
+      "summary": "主人专用，支持 URL",
+      "what": "读本地 md 文件（或下载 URL），用 markdown-it 渲染后截图。",
+      "returns": "一张 Markdown 渲染图。",
+      "returnsDetail": "文件不存在回「文件不存在」；URL 下载失败回「文件下载错误」。",
+      "timing": "2~10 秒。",
+      "cost": "读文件/下载 + 渲染。",
+      "keywords": [
+        "md",
+        "markdown",
+        "渲染markdown",
+        "看文档"
+      ],
+      "params": [
+        {
+          "name": "路径或URL",
+          "required": true,
+          "desc": "本地 md 路径或 http(s) 地址"
+        }
+      ],
+      "example": "md README.md",
+      "moreExamples": [
+        "md https://example.com/a.md"
+      ],
+      "preconditions": [
+        "**主人或隐藏 md5 账号**"
+      ],
+      "pitfalls": [
+        "**`html: true` 开启** —— Markdown 里可以直接嵌 HTML/脚本，虽然渲染成图影响有限，但模板里若拼进页面仍有风险",
+        "**支持 URL 下载到 `data/cache.md`**，同样可用于探内网（SSRF）",
+        "**正则 `^md.+` 没有空格要求**，`mdxxx` 也算",
+        "**图片依赖外链**，断网时图是空的"
+      ],
+      "failures": [
+        {
+          "symptom": "回「文件不存在」",
+          "cause": "路径错"
+        },
+        {
+          "symptom": "图里图片裂开",
+          "cause": "md 里引用的外链图片拉不到"
+        }
+      ],
+      "edgeCases": [
+        "URL 只校验 `^https?://`，不限制目标主机"
+      ],
+      "scenarios": [
+        "把文档渲染成图发群里"
+      ],
+      "vs": [
+        {
+          "command": "sc index.js",
+          "diff": "那个渲染代码不是 md"
+        }
+      ],
+      "related": [
+        "sc index.js",
+        "二维码xxx"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "trss/qrcode",
+      "command": "二维码https://example.com",
+      "aliases": [
+        "二维码 你好"
+      ],
+      "title": "生成二维码图片",
+      "summary": "无权限限制，谁都能用",
+      "what": "把 `二维码` 后面的内容编码成二维码图片发出。",
+      "returns": "一张二维码图。",
+      "returnsDetail": "内容为空时生成空二维码（扫出来是空的）。",
+      "timing": "1~2 秒。",
+      "cost": "纯本地生成。",
+      "keywords": [
+        "二维码",
+        "生成二维码",
+        "qrcode"
+      ],
+      "params": [
+        {
+          "name": "内容",
+          "required": true,
+          "desc": "任意文本或链接"
+        }
+      ],
+      "example": "二维码https://example.com",
+      "moreExamples": [
+        "二维码 你好"
+      ],
+      "preconditions": [
+        "**无权限限制** —— 任何群成员都能用"
+      ],
+      "pitfalls": [
+        "**没有内容长度上限**，超长文本会生成极密的二维码（扫不出来）",
+        "**`二维码` 后面直接跟内容，中间空格可有可无**",
+        "**无权限校验**，是少数对所有人开放的指令之一",
+        "生成的是标准 QR，不含任何签名/水印"
+      ],
+      "failures": [
+        {
+          "symptom": "扫出来是空的",
+          "cause": "内容为空"
+        }
+      ],
+      "edgeCases": [
+        "中文内容会按 UTF-8 编码，部分老扫码器可能乱码"
+      ],
+      "scenarios": [
+        "把长链接转成二维码"
+      ],
+      "vs": [
+        {
+          "command": "#系统信息",
+          "diff": "那个也是无权限，但泄露服务器信息"
+        }
+      ],
+      "related": [
+        "md README.md",
+        "#系统信息"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "trss/image-restore",
+      "command": "#图片修复",
+      "aliases": [
+        "#动漫图片修复",
+        "图片修复"
+      ],
+      "title": "图片超分修复",
+      "summary": "引用图片后触发，无权限限制",
+      "what": "取引用消息里的图片，用 Real-ESRGAN 放大修复（动漫图用 anime 模型）。",
+      "returns": "修复后的图片。",
+      "returnsDetail": "目录不存在且没配 API 时**静默 return false**（只写日志）。",
+      "timing": "10~120 秒（CPU 推理很慢）。",
+      "cost": "本地跑 Real-ESRGAN（吃 CPU/GPU）或调远程 API。",
+      "keywords": [
+        "图片修复",
+        "超分",
+        "放大图片",
+        "RealESRGAN",
+        "动漫图片修复"
+      ],
+      "params": [],
+      "example": "（引用一张图）#图片修复",
+      "moreExamples": [
+        "#动漫图片修复"
+      ],
+      "preconditions": [
+        "`plugins/TRSS-Plugin/Real-ESRGAN/` 存在，或配置了 `RealESRGAN.api`",
+        "**必须引用一条图片消息**"
+      ],
+      "pitfalls": [
+        "**没装环境时完全静默** —— 只写一行 warn 日志，用户侧一点反应都没有",
+        "**「动漫」二字切换模型**（anime_6B vs x4plus），不是开不开",
+        "**有全局 `Running` 锁**，同时只能修一张",
+        "**CPU 推理极慢**，一张图可能好几分钟",
+        "**无权限限制**，任何人都能占着算力"
+      ],
+      "failures": [
+        {
+          "symptom": "完全没反应",
+          "cause": "Real-ESRGAN 目录不存在且没配 API"
+        },
+        {
+          "symptom": "一直不回",
+          "cause": "推理中或锁被占"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把糊图放大"
+      ],
+      "vs": [
+        {
+          "command": "#去除背景",
+          "diff": "那个是抠图不是超分"
+        }
+      ],
+      "related": [
+        "#去除背景",
+        "#系统测试"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "trss/bg-remove",
+      "command": "#去除背景",
+      "aliases": [
+        "#背景去除",
+        "#图片去背景",
+        "#动漫去除背景"
+      ],
+      "title": "图片抠图去背景",
+      "summary": "引用图片后触发，无权限限制",
+      "what": "取引用图片，用 rembg 去掉背景输出透明底图。",
+      "returns": "去背景后的图片。",
+      "returnsDetail": "目录不存在且没配 API 时静默 return false。",
+      "timing": "5~60 秒。",
+      "cost": "本地跑 rembg 模型或调远程 API。",
+      "keywords": [
+        "去除背景",
+        "抠图",
+        "去背景",
+        "rembg",
+        "透明底"
+      ],
+      "params": [],
+      "example": "（引用一张图）#去除背景",
+      "moreExamples": [
+        "#图片去背景",
+        "#背景去除"
+      ],
+      "preconditions": [
+        "`plugins/TRSS-Plugin/RemBG/` 存在，或配置了 `RemBG.api`",
+        "**必须引用一条图片消息**"
+      ],
+      "pitfalls": [
+        "**「图片」二字可省**，正则是 `#?(动漫)?(图片)?(去除?背景|背景去除?)`",
+        "**「去除背景/去背景/背景去除/背景去」多种语序都认**（`去除?背景` + `背景去除?`）",
+        "**没装环境时完全静默**",
+        "**有全局 `Running` 锁**",
+        "**无权限限制**"
+      ],
+      "failures": [
+        {
+          "symptom": "完全没反应",
+          "cause": "RemBG 目录不存在且没配 API"
+        }
+      ],
+      "edgeCases": [
+        "动漫模型对真人图效果差，反之亦然"
+      ],
+      "scenarios": [
+        "做表情包素材"
+      ],
+      "vs": [
+        {
+          "command": "#图片修复",
+          "diff": "那个是放大不是抠图"
+        }
+      ],
+      "related": [
+        "#图片修复",
+        "#系统信息"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "trss/system-info",
+      "command": "#系统信息",
+      "aliases": [
+        "系统信息"
+      ],
+      "title": "服务器系统信息（文本）",
+      "summary": "无权限限制，会暴露硬件信息",
+      "what": "执行 `fastfetch --pipe -l none`，把输出以文本发出来。",
+      "returns": "一段系统信息文本。",
+      "returnsDetail": "命令失败回「系统信息错误：…」+「未使用脚本安装，此功能出错属于正常情况」。",
+      "timing": "2~10 秒。",
+      "cost": "跑一次 fastfetch（很轻）。",
+      "keywords": [
+        "系统信息",
+        "服务器信息",
+        "配置",
+        "fastfetch"
+      ],
+      "params": [],
+      "example": "#系统信息",
+      "moreExamples": [
+        "系统信息"
+      ],
+      "preconditions": [
+        "服务器装了 `fastfetch`（TRSS 脚本环境自带）",
+        "**无权限限制** —— 任何群成员都能查"
+      ],
+      "pitfalls": [
+        "**对所有人开放** —— CPU/内存/内核/发行版，有时还带主机名，属于信息泄露",
+        "**没装 fastfetch 时只回一句「未使用脚本安装…」**，不会说缺什么命令",
+        "**`#` 可省**（`^#?系统信息$`）",
+        "只输出文本，图版用 `#系统信息图片`"
+      ],
+      "failures": [
+        {
+          "symptom": "回「系统信息错误」+ 安装提示",
+          "cause": "没装 fastfetch"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "忘了服务器什么配置"
+      ],
+      "vs": [
+        {
+          "command": "#系统信息图片",
+          "diff": "同一份数据出图"
+        },
+        {
+          "command": "#系统测试",
+          "diff": "那个跑分"
+        }
+      ],
+      "related": [
+        "#系统信息图片",
+        "#系统测试"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "trss/system-info-pic",
+      "command": "#系统信息图片",
+      "aliases": [
+        "系统信息图片"
+      ],
+      "title": "服务器系统信息（截图）",
+      "summary": "同一份数据，渲染成图",
+      "what": "执行 `fastfetch --pipe false` 拿到带 ANSI 色的输出，转 HTML 后截图。",
+      "returns": "一张系统信息截图。",
+      "returnsDetail": "失败提示同 `#系统信息`。",
+      "timing": "2~12 秒。",
+      "cost": "fastfetch + 渲染。",
+      "keywords": [
+        "系统信息图片",
+        "服务器信息图",
+        "配置图"
+      ],
+      "params": [],
+      "example": "#系统信息图片",
+      "moreExamples": [
+        "系统信息图片"
+      ],
+      "preconditions": [
+        "装了 fastfetch",
+        "**无权限限制**"
+      ],
+      "pitfalls": [
+        "**比文本版多保留颜色**（`--pipe false` 才是带色输出）",
+        "**同样对所有人开放**",
+        "**模板在 `Resources/Code/Code.html`**，缺了会渲染失败"
+      ],
+      "failures": [
+        {
+          "symptom": "图是空的",
+          "cause": "fastfetch 失败或模板缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "发图给人看配置"
+      ],
+      "vs": [
+        {
+          "command": "#系统信息",
+          "diff": "文本版，可直接复制"
+        }
+      ],
+      "related": [
+        "#系统信息",
+        "#系统测试"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "trss/system-bench",
+      "command": "#系统测试",
+      "aliases": [
+        "系统测试"
+      ],
+      "title": "跑分压测（会下载并执行远程脚本）",
+      "summary": "无权限限制，谁都能把 CPU 跑满",
+      "what": "执行 `bash <(curl -L bench.sh)` —— 从网络拉取 benchmark 脚本并运行，输出渲染成图。",
+      "returns": "「正在测试，请稍等……」+ 跑分结果图。",
+      "returnsDetail": "失败回「系统测试错误：…」+ 安装提示。",
+      "timing": "3~15 分钟（跑分本身就很慢）。",
+      "cost": "**消耗大量 CPU/IO，且执行远程脚本**。",
+      "keywords": [
+        "系统测试",
+        "跑分",
+        "bench",
+        "性能测试"
+      ],
+      "params": [],
+      "example": "#系统测试",
+      "moreExamples": [
+        "系统测试"
+      ],
+      "preconditions": [
+        "**无权限限制** —— 任何群成员都能触发"
+      ],
+      "pitfalls": [
+        "**`bash <(curl -L bench.sh)` 是「从网络下载脚本并直接执行」** —— 远程内容一变，执行的东西就变，属于典型的高危写法",
+        "**无任何权限校验**，普通群友一句话就能让服务器满载十几分钟",
+        "**有 `Running` 锁**，同一时间只能跑一个，但锁不住恶意刷",
+        "**输出极长**，可能触发平台消息长度限制",
+        "**跑分期间其它功能会变慢**"
+      ],
+      "failures": [
+        {
+          "symptom": "一直不回",
+          "cause": "正在跑分，等十几分钟"
+        },
+        {
+          "symptom": "回「系统测试错误」",
+          "cause": "无法访问 bench.sh 或 curl/bash 缺失"
+        }
+      ],
+      "edgeCases": [
+        "Windows 下会包一层 `bash -c`，实际能不能跑取决于有没有 WSL/Git Bash"
+      ],
+      "scenarios": [
+        "（慎用）测服务器性能"
+      ],
+      "vs": [
+        {
+          "command": "#系统信息",
+          "diff": "那个只读信息不压测"
+        }
+      ],
+      "related": [
+        "#系统信息",
+        "rc top"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "trss/voice-synth",
+      "command": "派蒙说你好呀",
+      "aliases": [
+        "可莉说蹦蹦炸弹",
+        "钟离说天动万象"
+      ],
+      "title": "角色语音合成",
+      "summary": "正则极宽，靠角色名兜底",
+      "what": "把「X说Y」里的 X 当角色名、Y 当文本，合成语音后发出来。",
+      "returns": "一条语音。",
+      "returnsDetail": "先回「正在生成，请稍等……」；角色不存在时静默 `return false`；合成失败回「语音合成错误：…」+ 教程。",
+      "timing": "3~30 秒（本地推理更久）。",
+      "cost": "本地跑 Python TTS 或调远程 API。",
+      "keywords": [
+        "语音合成",
+        "TTS",
+        "角色说",
+        "派蒙说",
+        "原神语音"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「说」前面，需在角色表里"
+        },
+        {
+          "name": "文本",
+          "required": true,
+          "desc": "写在「说」后面"
+        }
+      ],
+      "example": "派蒙说你好呀",
+      "moreExamples": [
+        "可莉说蹦蹦炸弹",
+        "钟离说天动万象"
+      ],
+      "preconditions": [
+        "**正则是 `.+说.+`** —— 任何形如「X说Y」的消息都会进这条",
+        "角色要在 `GenshinVoiceSpeakers` / `ChatWaifuSpeakers` 列表里",
+        "装了 `GenshinVoice` 环境，或配置了 `Voice.GenshinVoiceApi`"
+      ],
+      "pitfalls": [
+        "**`.+说.+` 没有锚定也没有前缀** —— 群里说「你说什么」「他说完了」都会被这条接住，然后因为角色名不匹配再放行",
+        "**角色名是从「说」前面整段里取的**，写「我觉得派蒙说」可能取不到角色",
+        "**有全局 `Running` 锁**，同时只能合成一条",
+        "**本地模式执行 `poetry run python main.py`**，环境没装好会报错并甩教程链接",
+        "**无权限限制**，任何人都能用",
+        "**能接 miao-plugin 的角色别名**（装了 miao 时用 `Character.get` 归一）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "角色名不在列表里（静默放行）"
+        },
+        {
+          "symptom": "回「语音合成错误」+ 教程",
+          "cause": "本地 Python 环境没装好"
+        },
+        {
+          "symptom": "回「正在生成，请稍等……」",
+          "cause": "上一条还在合成"
+        }
+      ],
+      "edgeCases": [
+        "角色表里的名字是硬编码的，游戏新角色要改源码"
+      ],
+      "scenarios": [
+        "让角色说一句话"
+      ],
+      "vs": [
+        {
+          "command": "语音角色列表",
+          "diff": "那个列出可用角色"
+        }
+      ],
+      "related": [
+        "语音角色列表",
+        "#系统信息"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "trss/voice-list",
+      "command": "语音角色列表",
+      "aliases": [
+        "#语音列表",
+        "语音合成角色列表"
+      ],
+      "title": "列出可用语音角色",
+      "summary": "合并转发，数百个名字",
+      "what": "把内置的原神角色与 ChatWaifu 角色名拼成合并转发发出。",
+      "returns": "一条合并转发消息。",
+      "returnsDetail": "含说明、仓库地址与两串角色名。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地。",
+      "keywords": [
+        "语音角色列表",
+        "语音列表",
+        "有哪些语音"
+      ],
+      "params": [],
+      "example": "语音角色列表",
+      "moreExamples": [
+        "#语音列表"
+      ],
+      "preconditions": [
+        "**无权限限制**"
+      ],
+      "pitfalls": [
+        "**「合成」二字可省**（`语音(合成)?(角色)?列表`）",
+        "**`#` 可省**",
+        "内容很长，合并转发里要翻好几屏",
+        "角色名是源码里硬编码的，与实际安装的模型可能不一致"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "不知道有哪些角色能合成"
+      ],
+      "vs": [
+        {
+          "command": "派蒙说你好",
+          "diff": "那个是实际合成"
+        }
+      ],
+      "related": [
+        "派蒙说你好呀",
+        "md README.md"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "trss/mihoyo-login",
+      "command": "#米游社登录",
+      "aliases": [
+        "#登录米游社",
+        "#米哈游登录",
+        "#扫码登录",
+        "#米游社登录 终止"
+      ],
+      "title": "米哈游扫码登录（无权限限制）",
+      "summary": "任何人可让 bot 登录账号",
+      "what": "用米哈游 passport 接口生成扫码登录会话，拿到二维码后等用户扫，成功后把 ck/sk 落到 Bot。",
+      "returns": "二维码图 + 结果，消息 60 秒自动撤回。",
+      "returnsDetail": "所有回复都带 `recallMsg: 60`；有正在进行的登录时回「有正在进行的登录操作，请完成后再试……」。",
+      "timing": "30~120 秒（等扫码）。",
+      "cost": "**获取并保存他人米哈游登录态**。",
+      "keywords": [
+        "米游社登录",
+        "米哈游登录",
+        "扫码登录",
+        "登录米哈游"
+      ],
+      "params": [
+        {
+          "name": "终止",
+          "required": false,
+          "desc": "写 `#米游社登录终止` 可结束当前登录流程"
+        }
+      ],
+      "example": "#米游社登录",
+      "moreExamples": [
+        "#扫码登录",
+        "#米游社登录终止"
+      ],
+      "preconditions": [
+        "**无权限校验** —— 任何群成员都能触发",
+        "手机装有米游社/米哈游 App"
+      ],
+      "pitfalls": [
+        "**没有任何权限限制**，普通群友就能让 bot 走登录流程并把 ck 存下来",
+        "**和 `#扫码登录` 是同一条规则**（正则里带 `扫码|二维码|辅助` 分支）—— 与 xiaoyao-cvs-plugin 的同名指令会互相抢",
+        "**所有回复 60 秒撤回**，错过就看不到二维码了",
+        "**全局单会话锁**：已有登录在进行时新请求被拒",
+        "**插件自己实现了 DS 签名与 RSA 加密**，逻辑与官方 SDK 等价，但也意味着凭据完全经手这个插件"
+      ],
+      "failures": [
+        {
+          "symptom": "回「有正在进行的登录操作…」",
+          "cause": "上一次登录没结束，先发 `#米游社登录终止`"
+        },
+        {
+          "symptom": "回 errorTips 教程",
+          "cause": "接口风控或网络问题"
+        }
+      ],
+      "edgeCases": [
+        "`#登入米哈游` 这种语序也认"
+      ],
+      "scenarios": [
+        "（慎用）给 bot 挂米哈游登录态"
+      ],
+      "vs": [
+        {
+          "command": "#体力帮助",
+          "diff": "那个是同文件的教程指令"
+        }
+      ],
+      "related": [
+        "#米游社登录 xxx",
+        "#体力帮助"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "trss/mihoyo-login-input",
+      "command": "#米游社登录 13800138000",
+      "aliases": [
+        "#米哈游登录 密码",
+        "#米游社登录 123456"
+      ],
+      "title": "登录流程的后续输入",
+      "summary": "接账号/密码/验证码",
+      "what": "登录过程中继续投喂手机号、密码、短信验证码。",
+      "returns": "下一步提示，或登录结果。",
+      "returnsDetail": "会提示「请发送密码」「请发送验证码」等，验证码 60 秒有效，超时回「验证超时」。",
+      "timing": "每步 1~30 秒。",
+      "cost": "**提交账号密码到米哈游接口**。",
+      "keywords": [
+        "米游社登录账号",
+        "米游社登录密码",
+        "输入验证码"
+      ],
+      "params": [
+        {
+          "name": "账号/密码/验证码",
+          "required": true,
+          "desc": "按上一步提示投喂"
+        }
+      ],
+      "example": "#米游社登录 13800138000",
+      "moreExamples": [
+        "#米哈游登录 MyPassword"
+      ],
+      "preconditions": [
+        "**必须先发起过 `#米游社登录`**",
+        "**无权限校验**"
+      ],
+      "pitfalls": [
+        "**密码以明文消息发出**，会留在聊天记录里（虽然有 60 秒撤回，但撤回前已可见）",
+        "**验证码 60 秒过期**，超时只能重来",
+        "**没有权限校验**，任何人都能往别人的登录流程里塞输入（会话按 QQ 隔离，风险有限）",
+        "**凭据最终落到 Bot 本地**，等于把账号交给服务器"
+      ],
+      "failures": [
+        {
+          "symptom": "回「验证超时」",
+          "cause": "60 秒内没提交验证码"
+        },
+        {
+          "symptom": "回 errorTips 教程",
+          "cause": "账号密码错误或触发风控"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "（慎用）登录需要密码的账号"
+      ],
+      "vs": [
+        {
+          "command": "#米游社登录",
+          "diff": "那条是发起扫码"
+        }
+      ],
+      "related": [
+        "#米游社登录",
+        "#体力帮助"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "trss/mihoyo-help",
+      "command": "#体力帮助",
+      "aliases": [
+        "#ck教程",
+        "#stoken帮助",
+        "#cookie教程",
+        "#sk帮助"
+      ],
+      "title": "米哈游登录态获取教程",
+      "summary": "与体力同名，容易误触",
+      "what": "按消息里的词判断要哪份教程（体力 / ck / stoken），回教程内容。",
+      "returns": "一段教程文本（带 60 秒撤回）。",
+      "returnsDetail": "内容随关键字变化：体力、ck、stoken 各一份。",
+      "timing": "1~3 秒。",
+      "cost": "纯文本。",
+      "keywords": [
+        "体力帮助",
+        "ck教程",
+        "stoken帮助",
+        "怎么获取ck"
+      ],
+      "params": [],
+      "example": "#体力帮助",
+      "moreExamples": [
+        "#stoken帮助",
+        "#ck教程"
+      ],
+      "preconditions": [
+        "**无权限限制**"
+      ],
+      "pitfalls": [
+        "**`#体力帮助` 被这条接住** —— 用户以为是查体力用法，实际拿到的是「登录态获取教程」，和 miao / xiaoyao 的体力帮助完全不同",
+        "**四种词头**：`体力`、`ck/cookie`、`stoken/sk`，都能组合 `帮助/教程`",
+        "**回复 60 秒撤回**，没看完就没了",
+        "**与 xiaoyao-cvs-plugin 的 `#stoken帮助` 同名**，谁先匹配取决于优先级（这边是 10，比较靠前）"
+      ],
+      "failures": [
+        {
+          "symptom": "想查体力用法却给了教程",
+          "cause": "被这条接了，换 `#体力` 直接查或看别的插件帮助"
+        }
+      ],
+      "edgeCases": [
+        "`#ckie帮助`、`#stoken教程` 这类变体也在正则覆盖内（`(c|C)(oo)?k(ie)?`）"
+      ],
+      "scenarios": [
+        "不知道去哪拿 ck/stoken"
+      ],
+      "vs": [
+        {
+          "command": "#体力",
+          "diff": "那个是查体力（其它插件）"
+        }
+      ],
+      "related": [
+        "#米游社登录",
+        "#系统信息"
+      ],
+      "risk": "q",
+      "permission": ""
+    }
+  ]
+}
