@@ -1,0 +1,344 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "Guoba-Plugin",
+    "display": "锅巴（Guoba）Web 面板",
+    "category": "系统",
+    "summary": "Bot 的 Web 配置面板：拿一次性登录地址、重载锅巴服务、看版本、更新锅巴、帮助链接",
+    "notes": "**5 条规则**（`apps/helper.js` 2 条 + `login.js` 1 条 + `update.js` 2 条），`priority: 100`。**`#锅巴重启` 不是重启 Bot**，它只调 `Guoba.reload()` 重载 `guoba.support.js` 与配置——改插件代码还是得重启进程。**`#锅巴登录` 的令牌 3 分钟有效、用一次就失效**，群里默认走私聊发（`base.loginInGroup` 控制），`base.onlyCustomAddress` 打开时只发自定义地址。**`#锅巴帮助` 只回一个 gitee wiki 链接**（不是图），在 `e.platform` 环境（频道/官方 bot）下会 `console.log` 并回「[请在后台查看地址]」。另外 `utils/guobaImport.js` 与 `initV2.js` 里有 `/`、`@/`、`#/` 前缀的导入规则，那是锅巴导入机制用的，不是用户指令。",
+    "interactsWith": [
+      "锅巴服务（HTTP/WS，端口与地址来自配置；`#锅巴登录` 依赖它已启动）",
+      "`guoba.support.js`（`#锅巴重启` 重载它）",
+      "框架更新器（`#锅巴更新`）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助（wiki 链接）",
+        "重载服务",
+        "面板登录地址",
+        "版本",
+        "更新"
+      ],
+      "pending": [],
+      "complete": true
+    },
+    "homepage": "https://gitee.com/guoba-yunzai/guoba-plugin"
+  },
+  "instructions": [
+    {
+      "id": "guoba/help",
+      "command": "#锅巴帮助",
+      "aliases": [
+        "#锅巴菜单",
+        "#锅巴说明",
+        "#锅巴功能",
+        "#锅巴指令",
+        "#锅巴命令",
+        "#锅巴使用说明",
+        "#锅巴help"
+      ],
+      "title": "锅巴帮助（只给一个 wiki 链接）",
+      "summary": "仅 master",
+      "what": "回一条帮助文本，内容就是 gitee wiki 的链接。",
+      "returns": "「锅巴帮助：\\nhttps://gitee.com/guoba-yunzai/guoba-plugin/wikis/Home」。",
+      "returnsDetail": "在 `e.platform` 环境（频道/官方 bot）下会把每条消息 `console.log` 并逐条回「[请在后台查看地址]」。",
+      "timing": "1 秒内。",
+      "cost": "只读。",
+      "keywords": [
+        "锅巴帮助",
+        "锅巴菜单",
+        "guoba 帮助"
+      ],
+      "params": [],
+      "example": "#锅巴帮助",
+      "moreExamples": [
+        "#锅巴菜单",
+        "#锅巴help"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**不是图，也不是指令清单**，只有一条链接",
+        "**`#` 可省**（`^#?锅巴(帮助|…)`），`锅巴帮助` 也能触发",
+        "**8 个别名**（帮助/菜单/说明/功能/指令/命令/使用说明/help），但都必须紧跟「锅巴」",
+        "**频道环境下走 console.log**，群里什么都看不到，只回一句「[请在后台查看地址]」"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        },
+        {
+          "symptom": "只回「[请在后台查看地址]」",
+          "cause": "在频道/官方 bot 平台下发的"
+        }
+      ],
+      "edgeCases": [
+        "`#锅巴帮助` 与 `#锅巴help` 完全等价"
+      ],
+      "scenarios": [
+        "刚装完想看文档"
+      ],
+      "vs": [
+        {
+          "command": "#锅巴登录",
+          "diff": "那个给面板地址，不是文档"
+        }
+      ],
+      "related": [
+        "#锅巴登录",
+        "#锅巴版本"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "guoba/restart",
+      "command": "#锅巴重启",
+      "aliases": [],
+      "title": "重载锅巴服务（不是重启 Bot）",
+      "summary": "只 reload",
+      "what": "调 `Guoba.reload()` 重载 `guoba.support.js` 与相关配置，Bot 进程本身不重启。",
+      "returns": "「锅巴重启成功~」或「奇怪，服务似乎并没有启动……」。",
+      "returnsDetail": "`Guoba.reload` 不存在时回后者。",
+      "timing": "1~3 秒。",
+      "cost": "重载配置与插件支撑文件，**会短暂中断面板请求**。",
+      "keywords": [
+        "锅巴重启",
+        "重载锅巴"
+      ],
+      "params": [],
+      "example": "#锅巴重启",
+      "moreExamples": [
+        "#锅巴重启"
+      ],
+      "preconditions": [
+        "master",
+        "锅巴服务已启动"
+      ],
+      "pitfalls": [
+        "**它不重启 Bot**，只 reload 锅巴自己的支撑文件 —— 改完 `guoba.support.js` 用这条，改完插件代码还得重启进程",
+        "**必须带 `#`**（`^#锅巴重启$`，没有 `#?`）",
+        "**成功了也只说明 reload 调用成功**，配置是否真的生效要自己去面板看"
+      ],
+      "failures": [
+        {
+          "symptom": "回「奇怪，服务似乎并没有启动……」",
+          "cause": "锅巴服务没起来（端口占用/依赖缺失）"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "不是 master，或漏了 `#`"
+        }
+      ],
+      "edgeCases": [
+        "面板正被访问时重启，页面会要求重新登录"
+      ],
+      "scenarios": [
+        "改完 guoba.support.js 想让配置表单刷新"
+      ],
+      "vs": [
+        {
+          "command": "#锅巴登录",
+          "diff": "那个拿登录地址"
+        }
+      ],
+      "related": [
+        "#锅巴登录",
+        "#锅巴更新"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "guoba/login",
+      "command": "#锅巴登录",
+      "aliases": [
+        "#锅巴登陆"
+      ],
+      "title": "拿 Web 面板登录地址（临时令牌 3 分钟）",
+      "summary": "群里默认走私聊",
+      "what": "向锅巴服务申请一次性登录令牌，回自定义/内网/外网地址；令牌 **3 分钟内有效**，用过即失效。",
+      "returns": "「欢迎回来主人~\\n这是您的登录地址：」+ 各类地址 + 令牌有效期说明。",
+      "returnsDetail": "服务起不来回「锅巴服务启动失败，可能是端口号占用，或者依赖没有安装完整…」；群里且 `loginInGroup` 关闭时会私聊发，成功回「地址已发送至主人的私信了~」，发不出去回「消息发送失败~请加Bot的好友或者私聊发送#锅巴登录」。",
+      "timing": "1~5 秒。",
+      "cost": "生成一次性令牌。",
+      "keywords": [
+        "锅巴登录",
+        "锅巴面板",
+        "guoba web"
+      ],
+      "params": [],
+      "example": "#锅巴登录",
+      "moreExamples": [
+        "#锅巴登陆"
+      ],
+      "preconditions": [
+        "锅巴服务已启动"
+      ],
+      "pitfalls": [
+        "**令牌 3 分钟过期**，而且**用过一次就失效**，别在群里贴",
+        "**群里默认走私聊**（`base.loginInGroup` 为 false 时），所以群里可能只看到「地址已发送至主人的私信了~」",
+        "**`base.onlyCustomAddress` 打开时只发自定义地址**，没配就只有一句提示",
+        "**适配器不支持私聊**时回「当前适配器不支持私聊发送，请直接使用群内返回的地址~」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「锅巴服务启动失败…」",
+          "cause": "端口占用 / 依赖没装全"
+        },
+        {
+          "symptom": "回「消息发送失败~请加Bot的好友…」",
+          "cause": "Bot 加不上你好友，私聊发不出去"
+        },
+        {
+          "symptom": "链接打开提示令牌无效",
+          "cause": "超过 3 分钟，或已经用过一次"
+        }
+      ],
+      "edgeCases": [
+        "面板地址可能是内网 IP，外网访问需要自己配反代"
+      ],
+      "scenarios": [
+        "想用浏览器改配置"
+      ],
+      "vs": [
+        {
+          "command": "#锅巴帮助",
+          "diff": "那个给文档链接"
+        }
+      ],
+      "related": [
+        "#锅巴重启",
+        "#锅巴帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "guoba/version",
+      "command": "#锅巴版本",
+      "aliases": [],
+      "title": "当前锅巴版本",
+      "summary": "谁都能看",
+      "what": "读 `package.json` 的版本号回一行文本。",
+      "returns": "「[Guoba] 当前版本：x.y.z」。",
+      "returnsDetail": "读不到时可能显示 undefined。",
+      "timing": "1 秒内。",
+      "cost": "只读。",
+      "keywords": [
+        "锅巴版本",
+        "guoba 版本"
+      ],
+      "params": [],
+      "example": "#锅巴版本",
+      "moreExamples": [
+        "#锅巴版本"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**这条没有权限限制**（对比 `#锅巴帮助` 要 master）",
+        "**必须带 `#`**（`^#锅巴版本$`）"
+      ],
+      "failures": [
+        {
+          "symptom": "版本显示 undefined",
+          "cause": "`package.json` 缺 version 字段"
+        }
+      ],
+      "edgeCases": [
+        "版本号是静态文件里的值，不是 git 信息"
+      ],
+      "scenarios": [
+        "报 bug 前确认版本"
+      ],
+      "vs": [
+        {
+          "command": "#锅巴更新",
+          "diff": "那个会去拉新版"
+        }
+      ],
+      "related": [
+        "#锅巴更新",
+        "#锅巴帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "guoba/update",
+      "command": "#锅巴更新",
+      "aliases": [
+        "#锅巴升级",
+        "#锅巴update",
+        "#锅巴强制更新",
+        "#锅巴强制升级"
+      ],
+      "title": "更新锅巴插件",
+      "summary": "仅 master",
+      "what": "走内置更新器检查并拉取新版本，有更新时按需重启。",
+      "returns": "「[Guoba] 正在检查更新，请稍候……」→「[Guoba] 已经是最新版本啦」/「[Guoba] 更新成功」。",
+      "returnsDetail": "失败回「[Guoba] 更新失败！\\n<message>」或「[Guoba] 更新失败…… 请查看日志获取更多信息」。",
+      "timing": "10~60 秒。",
+      "cost": "**拉代码 + 可能重启**；强制模式丢本地改动。",
+      "keywords": [
+        "锅巴更新",
+        "更新锅巴",
+        "guoba update"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "丢弃本地改动后强拉"
+        }
+      ],
+      "example": "#锅巴更新",
+      "moreExamples": [
+        "#锅巴升级",
+        "#锅巴update",
+        "#锅巴强制更新"
+      ],
+      "preconditions": [
+        "master",
+        "git 安装"
+      ],
+      "pitfalls": [
+        "**四个动词**：更新 / 升级 / update / 强制更新 都认",
+        "**`#锅巴重启` 和 `#锅巴更新` 完全不同**：前者 reload，后者拉代码",
+        "**更新完可能自动重启**，面板会短暂不可用"
+      ],
+      "failures": [
+        {
+          "symptom": "回「更新失败……请查看日志」",
+          "cause": "网络/权限问题，需看日志"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [
+        "已经是最新时只回一句，不会重启"
+      ],
+      "scenarios": [
+        "拉新版锅巴"
+      ],
+      "vs": [
+        {
+          "command": "#锅巴重启",
+          "diff": "那个只 reload 配置"
+        }
+      ],
+      "related": [
+        "#锅巴版本",
+        "#锅巴重启"
+      ],
+      "risk": "a",
+      "permission": "master"
+    }
+  ]
+}

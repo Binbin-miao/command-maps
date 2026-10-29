@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 40,
-  "updated": "2026-10-29T00:53:40.000Z",
+  "revision": 41,
+  "updated": "2026-10-29T01:08:24.041Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -17,200 +17,18 @@
       "bytes": 25602,
       "used": 0
     },
-    "delta-force-plugin": {
-      "file": "maps/delta-force-plugin.json",
-      "display": "三角洲行动",
-      "category": "游戏",
-      "version": "0.0.6",
-      "revision": 6,
-      "command_count": 113,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "e7410e3fad59",
-      "sha256": "efcf7d512bf0b1afd0d91c774744fbbc556da354c59523ee6e327839602418b8",
-      "bytes": 273785,
-      "used": 0
-    },
-    "genshin": {
-      "file": "maps/genshin.json",
-      "display": "原神",
-      "category": "游戏",
-      "version": "0.0.4",
-      "revision": 4,
-      "command_count": 67,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "dbb0d9e80cbd",
-      "sha256": "dcd665fe5571500683166b54001a751c769e5f3e4c535ee4f275ae7324fabce0",
-      "bytes": 137060,
-      "used": 0
-    },
-    "miao-plugin": {
-      "file": "maps/miao-plugin.json",
-      "display": "喵喵插件",
-      "category": "游戏",
-      "version": "0.0.4",
-      "revision": 4,
-      "command_count": 77,
-      "default_off_count": 13,
-      "delegated_count": 0,
-      "fingerprint": "7ba734b73a15",
-      "sha256": "b2009454f1e5725a361eedb80b79d0649533df5554fc428349c4e0e0d96d45cb",
-      "bytes": 177604,
-      "used": 0
-    },
-    "rconsole-plugin": {
-      "file": "maps/rconsole-plugin.json",
-      "display": "R插件",
-      "category": "工具",
-      "version": "0.0.3",
-      "revision": 3,
-      "command_count": 53,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "c29400666f1c",
-      "sha256": "8d4913c4197858cbf127aab5441e380af8197acdbd48f7c09e1acc816fb56862",
-      "bytes": 136212,
-      "used": 0
-    },
-    "StarRail-plugin": {
-      "file": "maps/StarRail-plugin.json",
-      "display": "星穹铁道",
-      "category": "游戏",
-      "version": "0.0.2",
-      "revision": 2,
-      "command_count": 53,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "4d3cc31a8b33",
-      "sha256": "dab5e3a70ccdb1b302a15b724c947f40b6e34206493383ac27fcbaf332bf0ce4",
-      "bytes": 106977,
-      "used": 0
-    },
-    "TaJiDuo-plugin": {
-      "file": "maps/TaJiDuo-plugin.json",
-      "display": "塔吉多",
-      "category": "游戏",
-      "version": "0.0.2",
-      "revision": 2,
-      "command_count": 48,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "c8644218f00b",
-      "sha256": "710ae055bbd7c080a475fec3ee89e92904610df87681478099174f6cad682288",
-      "bytes": 107947,
-      "used": 0
-    },
-    "Tlon-Sky": {
-      "file": "maps/Tlon-Sky.json",
-      "display": "光遇",
-      "category": "游戏",
-      "version": "0.0.2",
-      "revision": 2,
-      "command_count": 51,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "21bf9ec8ebbc",
-      "sha256": "905a2540b8df203675ce4f95b51a816e40a58abd44ea756dd663fff91b46a0e4",
-      "bytes": 109598,
-      "used": 0
-    },
-    "TRSS-Plugin": {
-      "file": "maps/TRSS-Plugin.json",
-      "display": "TRSS 工具集",
-      "category": "系统",
-      "version": "0.0.2",
-      "revision": 2,
-      "command_count": 30,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "ed353794aac5",
-      "sha256": "ad05f5d9876e25bc449223dca1e4d86e909ef7e0ce17f43b815331b3db45712a",
-      "bytes": 65721,
-      "used": 0
-    },
-    "xiaoyao-cvs-plugin": {
-      "file": "maps/xiaoyao-cvs-plugin.json",
-      "display": "逍遥图鉴",
-      "category": "工具",
-      "version": "0.0.2",
-      "revision": 2,
-      "command_count": 35,
-      "default_off_count": 5,
-      "delegated_count": 0,
-      "fingerprint": "3f0dc85e31f7",
-      "sha256": "59c97d6c13fab51c968e63f569427ef518c1ed4f1f63acc4592d213457508441",
-      "bytes": 80458,
-      "used": 0
-    },
-    "yenai-plugin": {
-      "file": "maps/yenai-plugin.json",
-      "display": "椰奶",
-      "category": "群管理",
-      "version": "0.0.2",
-      "revision": 2,
-      "command_count": 143,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "1e796db12333",
-      "sha256": "1f69902c3b24fc5ef200b3c36a48b86106c13e3e4aa742235446b8e7c3597876",
-      "bytes": 319205,
-      "used": 0
-    },
-    "zmd-plugin": {
-      "file": "maps/zmd-plugin.json",
-      "display": "终末地",
-      "category": "游戏",
-      "version": "0.0.4",
-      "revision": 4,
-      "command_count": 73,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "78ff64f98816",
-      "sha256": "4c15c34270bb51e9cc41ce0869e4877f7749a97a84d42c51eaa0fe41b275b349",
-      "bytes": 166519,
-      "used": 0
-    },
-    "ZZZ-Plugin": {
-      "file": "maps/ZZZ-Plugin.json",
-      "display": "绝区零",
-      "category": "游戏",
-      "version": "0.0.4",
-      "revision": 4,
-      "command_count": 83,
-      "default_off_count": 0,
-      "delegated_count": 0,
-      "fingerprint": "d84f0ac63e89",
-      "sha256": "e2d2d20ba13f1c44d144d9b4be9b8b91070d12268f3805cb6c2521758c13a5aa",
-      "bytes": 176387,
-      "used": 0
-    },
-    "windoge-plugin": {
-      "file": "maps/windoge-plugin.json",
-      "display": "Windoge",
-      "category": "游戏",
+    "bililivePush-plugin": {
+      "file": "maps/bililivePush-plugin.json",
+      "display": "B站直播推送（bililivePush）",
+      "category": "推送",
       "version": "0.0.1",
       "revision": 1,
-      "command_count": 28,
-      "default_off_count": 1,
-      "delegated_count": 0,
-      "fingerprint": "a5ae9d7aa211",
-      "sha256": "70a64673a7be02332d6d0ca8ba6a9e8ee89d6f49a3ca07e437b8cd3312b1c7cd",
-      "bytes": 59241,
-      "used": 0
-    },
-    "xitian-plugin": {
-      "file": "maps/xitian-plugin.json",
-      "display": "戏天插件管理器",
-      "category": "系统",
-      "version": "0.0.1",
-      "revision": 1,
-      "command_count": 23,
+      "command_count": 10,
       "default_off_count": 0,
       "delegated_count": 0,
-      "fingerprint": "b964b0b21bf4",
-      "sha256": "7b82efd244873b2264c37f18d060fb0e95c4a5a76a61a085f6d00ed3568f9f2e",
-      "bytes": 46525,
+      "fingerprint": "9cf66547160f",
+      "sha256": "3820fdff087f09cf51c36c0bcb37110938604da4050a6e1052f63571bce5df91",
+      "bytes": 21063,
       "used": 0
     },
     "bujidao": {
@@ -227,6 +45,118 @@
       "bytes": 70168,
       "used": 0
     },
+    "cyxz-plugin": {
+      "file": "maps/cyxz-plugin.json",
+      "display": "次元小镇（cyxz）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 12,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "7ff54fdeb961",
+      "sha256": "8394d6e765de2f11c7436e3a67c7136dbb220d880b7ac3c9d11fe113793ab12f",
+      "bytes": 21684,
+      "used": 0
+    },
+    "Daily-Attendance-plugin": {
+      "file": "maps/Daily-Attendance-plugin.json",
+      "display": "每日运势（Daily-Attendance）",
+      "category": "娱乐",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 7,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "f3a42a69b54f",
+      "sha256": "630d4c424e247081e04d02d7017505e52532b3b2c12d8911344080e3975c8f6a",
+      "bytes": 13146,
+      "used": 0
+    },
+    "delta-force-plugin": {
+      "file": "maps/delta-force-plugin.json",
+      "display": "三角洲行动",
+      "category": "游戏",
+      "version": "0.0.7",
+      "revision": 7,
+      "command_count": 113,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "2ad12d7a7d05",
+      "sha256": "0adba82fbe40ddb948e56c1732d6b7e105cdd4db14706e773eb3cfcd3b6b396a",
+      "bytes": 266115,
+      "used": 0
+    },
+    "genshin": {
+      "file": "maps/genshin.json",
+      "display": "原神",
+      "category": "游戏",
+      "version": "0.0.3",
+      "revision": 3,
+      "command_count": 67,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "dbb0d9e80cbd",
+      "sha256": "28f95040640dcbee5b038723e326fc035640bfe31daef36a976ef769b4a98ed2",
+      "bytes": 132555,
+      "used": 0
+    },
+    "GT-Manual": {
+      "file": "maps/GT-Manual.json",
+      "display": "GT 手动签到（GT-Manual）",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 3,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "f59ccf4f96be",
+      "sha256": "f2dafd5a3936e21dcce6f61ed308d2a18c00a5739a315f1b38e1b23536eaf829",
+      "bytes": 8250,
+      "used": 0
+    },
+    "Guoba-Plugin": {
+      "file": "maps/Guoba-Plugin.json",
+      "display": "锅巴（Guoba）Web 面板",
+      "category": "系统",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 5,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "01c2d91e31f2",
+      "sha256": "d905d1aa7d25e2cf8eecade7d775dc5e478813d659608abbadac6d85115f05cd",
+      "bytes": 11771,
+      "used": 0
+    },
+    "meme-plugin": {
+      "file": "maps/meme-plugin.json",
+      "display": "清语表情（meme-plugin）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 13,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "09d427c18efc",
+      "sha256": "3c7f860550f41594963db9415a3d38cc7229d59d4f3736f8145377e2ad28ede8",
+      "bytes": 31390,
+      "used": 0
+    },
+    "miao-plugin": {
+      "file": "maps/miao-plugin.json",
+      "display": "喵喵插件",
+      "category": "游戏",
+      "version": "0.0.4",
+      "revision": 4,
+      "command_count": 77,
+      "default_off_count": 13,
+      "delegated_count": 0,
+      "fingerprint": "7ba734b73a15",
+      "sha256": "b2009454f1e5725a361eedb80b79d0649533df5554fc428349c4e0e0d96d45cb",
+      "bytes": 177604,
+      "used": 0
+    },
     "mora-plugin": {
       "file": "maps/mora-plugin.json",
       "display": "摩拉插件（mora）",
@@ -239,6 +169,118 @@
       "fingerprint": "d100abc7b54f",
       "sha256": "e71cceb4630dee6c5491b4494837bc5ecd6fd8e29443331464f2bd909dd3b185",
       "bytes": 56609,
+      "used": 0
+    },
+    "rconsole-plugin": {
+      "file": "maps/rconsole-plugin.json",
+      "display": "R插件",
+      "category": "工具",
+      "version": "0.0.2",
+      "revision": 2,
+      "command_count": 53,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "c29400666f1c",
+      "sha256": "1bd53ee90770b37fe846221d9b2d8df977af63414236265b03fced2d62ead3b5",
+      "bytes": 132570,
+      "used": 0
+    },
+    "StarRail-plugin": {
+      "file": "maps/StarRail-plugin.json",
+      "display": "星穹铁道",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 53,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "4d3cc31a8b33",
+      "sha256": "297ffbd27bf8c0e0f73eec0278e1f6b493f76f2ee97864c226a498c942688488",
+      "bytes": 103465,
+      "used": 0
+    },
+    "TaJiDuo-plugin": {
+      "file": "maps/TaJiDuo-plugin.json",
+      "display": "塔吉多",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 48,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "c8644218f00b",
+      "sha256": "a66e26607a6bfccd754be1e5c8df2108d98ede9cbbb6665586b80a01e6e39df0",
+      "bytes": 104680,
+      "used": 0
+    },
+    "TianRu-plugin": {
+      "file": "maps/TianRu-plugin.json",
+      "display": "天如插件（TianRu）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 13,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "8ceee681754a",
+      "sha256": "8d0c137ddd89e8bd4d14fb0818661e73b148721ac072f441a166a597cd245f00",
+      "bytes": 34053,
+      "used": 0
+    },
+    "Tlon-Sky": {
+      "file": "maps/Tlon-Sky.json",
+      "display": "光遇",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 51,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "21bf9ec8ebbc",
+      "sha256": "d4832e6a41c12ec5ff6ced30e63ae531d629ceda83ae99ee7b5e24f4c0de20ad",
+      "bytes": 106299,
+      "used": 0
+    },
+    "TRSS-Plugin": {
+      "file": "maps/TRSS-Plugin.json",
+      "display": "TRSS 工具集",
+      "category": "系统",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 30,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "ed353794aac5",
+      "sha256": "29602cab194c0210b49736b8d6d7532298fbc6e0b24afb41afde211be0c2b52e",
+      "bytes": 63730,
+      "used": 0
+    },
+    "TRSS-WeChat-OC-Plugin": {
+      "file": "maps/TRSS-WeChat-OC-Plugin.json",
+      "display": "微信个人号适配器（TRSS-WeChat-OC）",
+      "category": "系统",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 6,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "e582bd948470",
+      "sha256": "5735d132bfc8bf43d307340a6364d2499bfe3c8f46be15bb95fcdd90891875f1",
+      "bytes": 14822,
+      "used": 0
+    },
+    "windoge-plugin": {
+      "file": "maps/windoge-plugin.json",
+      "display": "Windoge",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 28,
+      "default_off_count": 1,
+      "delegated_count": 0,
+      "fingerprint": "a5ae9d7aa211",
+      "sha256": "70a64673a7be02332d6d0ca8ba6a9e8ee89d6f49a3ca07e437b8cd3312b1c7cd",
+      "bytes": 59241,
       "used": 0
     },
     "ws-plugin": {
@@ -269,46 +311,88 @@
       "bytes": 47820,
       "used": 0
     },
-    "meme-plugin": {
-      "file": "maps/meme-plugin.json",
-      "display": "清语表情（meme-plugin）",
+    "xiaoyao-cvs-plugin": {
+      "file": "maps/xiaoyao-cvs-plugin.json",
+      "display": "逍遥图鉴",
       "category": "工具",
       "version": "0.0.1",
       "revision": 1,
-      "command_count": 13,
-      "default_off_count": 0,
+      "command_count": 35,
+      "default_off_count": 5,
       "delegated_count": 0,
-      "fingerprint": "09d427c18efc",
-      "sha256": "3c7f860550f41594963db9415a3d38cc7229d59d4f3736f8145377e2ad28ede8",
-      "bytes": 31390,
+      "fingerprint": "3f0dc85e31f7",
+      "sha256": "d545c4e31149ab945b15e6f1980c222fcec2a12e319c744eb30401f225150e57",
+      "bytes": 78127,
       "used": 0
     },
-    "TianRu-plugin": {
-      "file": "maps/TianRu-plugin.json",
-      "display": "天如插件（TianRu）",
-      "category": "工具",
+    "XingYue-plugin": {
+      "file": "maps/XingYue-plugin.json",
+      "display": "星月（XingYue）",
+      "category": "系统",
       "version": "0.0.1",
       "revision": 1,
-      "command_count": 13,
+      "command_count": 4,
       "default_off_count": 0,
       "delegated_count": 0,
-      "fingerprint": "8ceee681754a",
-      "sha256": "8d0c137ddd89e8bd4d14fb0818661e73b148721ac072f441a166a597cd245f00",
-      "bytes": 34053,
+      "fingerprint": "b88ce7706fc1",
+      "sha256": "3c63b10034c21344f6eb4431a09a0b3769ea0f0d4209d36305467a3cda78b220",
+      "bytes": 7780,
       "used": 0
     },
-    "cyxz-plugin": {
-      "file": "maps/cyxz-plugin.json",
-      "display": "次元小镇（cyxz）",
-      "category": "工具",
+    "xitian-plugin": {
+      "file": "maps/xitian-plugin.json",
+      "display": "戏天插件管理器",
+      "category": "系统",
       "version": "0.0.1",
       "revision": 1,
-      "command_count": 12,
+      "command_count": 23,
       "default_off_count": 0,
       "delegated_count": 0,
-      "fingerprint": "7ff54fdeb961",
-      "sha256": "8394d6e765de2f11c7436e3a67c7136dbb220d880b7ac3c9d11fe113793ab12f",
-      "bytes": 21684,
+      "fingerprint": "b964b0b21bf4",
+      "sha256": "7b82efd244873b2264c37f18d060fb0e95c4a5a76a61a085f6d00ed3568f9f2e",
+      "bytes": 46525,
+      "used": 0
+    },
+    "yenai-plugin": {
+      "file": "maps/yenai-plugin.json",
+      "display": "椰奶",
+      "category": "群管理",
+      "version": "0.0.2",
+      "revision": 2,
+      "command_count": 143,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "1e796db12333",
+      "sha256": "1f69902c3b24fc5ef200b3c36a48b86106c13e3e4aa742235446b8e7c3597876",
+      "bytes": 319205,
+      "used": 0
+    },
+    "zmd-plugin": {
+      "file": "maps/zmd-plugin.json",
+      "display": "终末地",
+      "category": "游戏",
+      "version": "0.0.5",
+      "revision": 5,
+      "command_count": 73,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "78ff64f98816",
+      "sha256": "e19cd33835a9cf2fb4885cbcea0d9d9a4a2e3daf820f5633c272bf45fcefffbf",
+      "bytes": 161505,
+      "used": 0
+    },
+    "ZZZ-Plugin": {
+      "file": "maps/ZZZ-Plugin.json",
+      "display": "绝区零",
+      "category": "游戏",
+      "version": "0.0.5",
+      "revision": 5,
+      "command_count": 83,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "d84f0ac63e89",
+      "sha256": "1c709e2fa91cdc77f2d63eae2057e7e27a82e82f821bc4542d2602f96588b14c",
+      "bytes": 170788,
       "used": 0
     }
   },
@@ -319,6 +403,42 @@
       "command_count": 7,
       "units": [
         "Atlas"
+      ],
+      "used": 0
+    },
+    "bililivePush-plugin": {
+      "display": "B站直播推送（bililivePush）",
+      "category": "推送",
+      "command_count": 10,
+      "units": [
+        "bililivePush-plugin"
+      ],
+      "used": 0
+    },
+    "bujidao": {
+      "display": "寄插件（bujidao）",
+      "category": "游戏",
+      "command_count": 22,
+      "units": [
+        "bujidao"
+      ],
+      "used": 0
+    },
+    "cyxz-plugin": {
+      "display": "次元小镇（cyxz）",
+      "category": "工具",
+      "command_count": 12,
+      "units": [
+        "cyxz-plugin"
+      ],
+      "used": 0
+    },
+    "Daily-Attendance-plugin": {
+      "display": "每日运势（Daily-Attendance）",
+      "category": "娱乐",
+      "command_count": 7,
+      "units": [
+        "Daily-Attendance-plugin"
       ],
       "used": 0
     },
@@ -340,12 +460,48 @@
       ],
       "used": 0
     },
+    "GT-Manual": {
+      "display": "GT 手动签到（GT-Manual）",
+      "category": "游戏",
+      "command_count": 3,
+      "units": [
+        "GT-Manual"
+      ],
+      "used": 0
+    },
+    "Guoba-Plugin": {
+      "display": "锅巴（Guoba）Web 面板",
+      "category": "系统",
+      "command_count": 5,
+      "units": [
+        "Guoba-Plugin"
+      ],
+      "used": 0
+    },
+    "meme-plugin": {
+      "display": "清语表情（meme-plugin）",
+      "category": "工具",
+      "command_count": 13,
+      "units": [
+        "meme-plugin"
+      ],
+      "used": 0
+    },
     "miao-plugin": {
       "display": "喵喵插件",
       "category": "游戏",
       "command_count": 77,
       "units": [
         "miao-plugin"
+      ],
+      "used": 0
+    },
+    "mora-plugin": {
+      "display": "摩拉插件（mora）",
+      "category": "游戏",
+      "command_count": 21,
+      "units": [
+        "mora-plugin"
       ],
       "used": 0
     },
@@ -376,6 +532,15 @@
       ],
       "used": 0
     },
+    "TianRu-plugin": {
+      "display": "天如插件（TianRu）",
+      "category": "工具",
+      "command_count": 13,
+      "units": [
+        "TianRu-plugin"
+      ],
+      "used": 0
+    },
     "Tlon-Sky": {
       "display": "光遇",
       "category": "游戏",
@@ -394,12 +559,66 @@
       ],
       "used": 0
     },
+    "TRSS-WeChat-OC-Plugin": {
+      "display": "微信个人号适配器（TRSS-WeChat-OC）",
+      "category": "系统",
+      "command_count": 6,
+      "units": [
+        "TRSS-WeChat-OC-Plugin"
+      ],
+      "used": 0
+    },
+    "windoge-plugin": {
+      "display": "Windoge",
+      "category": "游戏",
+      "command_count": 28,
+      "units": [
+        "windoge-plugin"
+      ],
+      "used": 0
+    },
+    "ws-plugin": {
+      "display": "ws-plugin（WS/HTTP 连接与转发）",
+      "category": "系统",
+      "command_count": 20,
+      "units": [
+        "ws-plugin"
+      ],
+      "used": 0
+    },
+    "xiaofei-plugin": {
+      "display": "小飞插件（xiaofei）",
+      "category": "工具",
+      "command_count": 17,
+      "units": [
+        "xiaofei-plugin"
+      ],
+      "used": 0
+    },
     "xiaoyao-cvs-plugin": {
       "display": "逍遥图鉴",
       "category": "工具",
       "command_count": 35,
       "units": [
         "xiaoyao-cvs-plugin"
+      ],
+      "used": 0
+    },
+    "XingYue-plugin": {
+      "display": "星月（XingYue）",
+      "category": "系统",
+      "command_count": 4,
+      "units": [
+        "XingYue-plugin"
+      ],
+      "used": 0
+    },
+    "xitian-plugin": {
+      "display": "戏天插件管理器",
+      "category": "系统",
+      "command_count": 23,
+      "units": [
+        "xitian-plugin"
       ],
       "used": 0
     },
@@ -427,87 +646,6 @@
       "command_count": 83,
       "units": [
         "ZZZ-Plugin"
-      ],
-      "used": 0
-    },
-    "windoge-plugin": {
-      "display": "Windoge",
-      "category": "游戏",
-      "command_count": 28,
-      "units": [
-        "windoge-plugin"
-      ],
-      "used": 0
-    },
-    "xitian-plugin": {
-      "display": "戏天插件管理器",
-      "category": "系统",
-      "command_count": 23,
-      "units": [
-        "xitian-plugin"
-      ],
-      "used": 0
-    },
-    "bujidao": {
-      "display": "寄插件（bujidao）",
-      "category": "游戏",
-      "command_count": 22,
-      "units": [
-        "bujidao"
-      ],
-      "used": 0
-    },
-    "mora-plugin": {
-      "display": "摩拉插件（mora）",
-      "category": "游戏",
-      "command_count": 21,
-      "units": [
-        "mora-plugin"
-      ],
-      "used": 0
-    },
-    "ws-plugin": {
-      "display": "ws-plugin（WS/HTTP 连接与转发）",
-      "category": "系统",
-      "command_count": 20,
-      "units": [
-        "ws-plugin"
-      ],
-      "used": 0
-    },
-    "xiaofei-plugin": {
-      "display": "小飞插件（xiaofei）",
-      "category": "工具",
-      "command_count": 17,
-      "units": [
-        "xiaofei-plugin"
-      ],
-      "used": 0
-    },
-    "meme-plugin": {
-      "display": "清语表情（meme-plugin）",
-      "category": "工具",
-      "command_count": 13,
-      "units": [
-        "meme-plugin"
-      ],
-      "used": 0
-    },
-    "TianRu-plugin": {
-      "display": "天如插件（TianRu）",
-      "category": "工具",
-      "command_count": 13,
-      "units": [
-        "TianRu-plugin"
-      ],
-      "used": 0
-    },
-    "cyxz-plugin": {
-      "display": "次元小镇（cyxz）",
-      "category": "工具",
-      "command_count": 12,
-      "units": [
-        "cyxz-plugin"
       ],
       "used": 0
     }

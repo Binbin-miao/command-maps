@@ -424,7 +424,7 @@
     },
     {
       "id": "delta-force/music-select",
-      "command": "#三角洲点歌",
+      "command": "#三角洲点歌 123456",
       "aliases": [
         "^点歌 3",
         "^听 3",
@@ -1146,7 +1146,7 @@
     },
     {
       "id": "delta-force/room-join",
-      "command": "#三角洲加入房间",
+      "command": "#三角洲加入房间 123456",
       "aliases": [
         "^加入房间 12345",
         "#三角洲加入房间 12345 密码"
@@ -1224,7 +1224,7 @@
     },
     {
       "id": "delta-force/room-quit",
-      "command": "#三角洲退出房间",
+      "command": "#三角洲退出房间 123456",
       "aliases": [
         "^退出房间 12345",
         "^解散房间 12345"
@@ -1288,7 +1288,7 @@
     },
     {
       "id": "delta-force/room-kick",
-      "command": "#三角洲踢人",
+      "command": "#三角洲踢人 123456",
       "aliases": [
         "^踢人 12345"
       ],
@@ -2046,7 +2046,7 @@
     },
     {
       "id": "delta-force/account-bind",
-      "command": "#三角洲绑定",
+      "command": "#三角洲绑定 abc-123",
       "aliases": [
         "^绑定 abc-123"
       ],
@@ -2805,7 +2805,7 @@
     },
     {
       "id": "delta-force/price-history",
-      "command": "#三角洲价格历史",
+      "command": "#三角洲价格历史 五级甲",
       "aliases": [
         "^价格历史 m4a1",
         "^历史价格 低级燃料,燃料电池"
@@ -2872,7 +2872,7 @@
     },
     {
       "id": "delta-force/price-current",
-      "command": "#三角洲当前价格",
+      "command": "#三角洲当前价格 五级甲",
       "aliases": [
         "^价格 m4a1",
         "^最新价格 低级燃料"
@@ -2998,7 +2998,7 @@
     },
     {
       "id": "delta-force/profit-history",
-      "command": "#三角洲利润历史",
+      "command": "#三角洲利润历史 五级甲",
       "aliases": [
         "^历史利润 低级燃料"
       ],
@@ -3728,7 +3728,7 @@
     },
     {
       "id": "delta-force/tts-preset-detail",
-      "command": "#三角洲tts角色详情",
+      "command": "#三角洲tts角色详情 红狼",
       "aliases": [
         "^tts角色详情 maiXiaowen"
       ],
@@ -4271,7 +4271,7 @@
     },
     {
       "id": "delta-force/notify-enable",
-      "command": "#三角洲开启广播",
+      "command": "#三角洲广播开启",
       "aliases": [
         "#三角洲广播开启",
         "^广播开启",
@@ -4347,7 +4347,7 @@
     },
     {
       "id": "delta-force/notify-disable",
-      "command": "#三角洲关闭广播",
+      "command": "#三角洲广播关闭",
       "aliases": [
         "#三角洲广播关闭",
         "^广播关闭",
@@ -5839,11 +5839,11 @@
     },
     {
       "id": "delta-force/object-search",
-      "command": "#三角洲物品搜索",
+      "command": "#三角洲物品搜索 五级甲",
       "aliases": [
         "#三角洲物品搜索 6.8子弹",
         "#三角洲物品搜索 12345",
-        "^物品搜索"
+        "^物品搜索 五级甲"
       ],
       "title": "按名称或 ID 搜物品",
       "summary": "模糊搜物品，回全部命中项",
@@ -7432,7 +7432,7 @@
         "#三角洲插件更新",
         "#三角洲强制更新",
         "#三角洲update",
-        "^更新三角洲",
+        "#三角洲更新",
         "^强制更新"
       ],
       "title": "更新插件本体",
