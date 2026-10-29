@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 39,
-  "updated": "2026-10-29T00:53:16.000Z",
+  "revision": 40,
+  "updated": "2026-10-29T00:53:40.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -296,6 +296,20 @@
       "sha256": "8d0c137ddd89e8bd4d14fb0818661e73b148721ac072f441a166a597cd245f00",
       "bytes": 34053,
       "used": 0
+    },
+    "cyxz-plugin": {
+      "file": "maps/cyxz-plugin.json",
+      "display": "次元小镇（cyxz）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 12,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "7ff54fdeb961",
+      "sha256": "8394d6e765de2f11c7436e3a67c7136dbb220d880b7ac3c9d11fe113793ab12f",
+      "bytes": 21684,
+      "used": 0
     }
   },
   "packages": {
@@ -485,6 +499,15 @@
       "command_count": 13,
       "units": [
         "TianRu-plugin"
+      ],
+      "used": 0
+    },
+    "cyxz-plugin": {
+      "display": "次元小镇（cyxz）",
+      "category": "工具",
+      "command_count": 12,
+      "units": [
+        "cyxz-plugin"
       ],
       "used": 0
     }
