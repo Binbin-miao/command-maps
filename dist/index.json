@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 28,
-  "updated": "2026-10-28T23:54:12.796Z",
+  "revision": 29,
+  "updated": "2026-10-28T23:59:47.606Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -113,6 +113,20 @@
       "fingerprint": "21bf9ec8ebbc",
       "sha256": "d4832e6a41c12ec5ff6ced30e63ae531d629ceda83ae99ee7b5e24f4c0de20ad",
       "bytes": 106299,
+      "used": 0
+    },
+    "xiaoyao-cvs-plugin": {
+      "file": "maps/xiaoyao-cvs-plugin.json",
+      "display": "逍遥图鉴",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 35,
+      "default_off_count": 5,
+      "delegated_count": 0,
+      "fingerprint": "3f0dc85e31f7",
+      "sha256": "d545c4e31149ab945b15e6f1980c222fcec2a12e319c744eb30401f225150e57",
+      "bytes": 78127,
       "used": 0
     },
     "yenai-plugin": {
@@ -228,6 +242,15 @@
       "command_count": 51,
       "units": [
         "Tlon-Sky"
+      ],
+      "used": 0
+    },
+    "xiaoyao-cvs-plugin": {
+      "display": "逍遥图鉴",
+      "category": "工具",
+      "command_count": 35,
+      "units": [
+        "xiaoyao-cvs-plugin"
       ],
       "used": 0
     },
