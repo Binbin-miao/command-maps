@@ -1,0 +1,32 @@
+name: 地图流水线
+
+# 每次 push / PR 都重建索引并自检。
+# 不依赖插件源码快照，也不使用任何 secret —— fork 与任何 CI 环境都能跑。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # 已提交的索引必须和地图对得上。这一关专门拦「改了地图的 display、
+      # 却没重建索引」的半更新 —— 等合并进 main 再发现就晚了。
+      - name: 展示名与地图对账
+        run: node scripts/build-index-v2.mjs --check-display
+
+      # 结构门禁：缺必填字段、id 重复、写法重复、schema 不对，都在这里非 0 退出
+      - name: 重建索引
+        run: node scripts/build-index-v2.mjs
+
+      # 哈希 / 字节数 / 条数 / 展示名逐条对账，并查 dist/maps 有无孤儿文件
+      - name: 发布产物自检
+        run: node scripts/verify-pipeline.mjs
