@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 33,
-  "updated": "2026-10-29T00:50:52.000Z",
+  "revision": 34,
+  "updated": "2026-10-29T00:51:16.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -212,6 +212,20 @@
       "sha256": "7b82efd244873b2264c37f18d060fb0e95c4a5a76a61a085f6d00ed3568f9f2e",
       "bytes": 46525,
       "used": 0
+    },
+    "bujidao": {
+      "file": "maps/bujidao.json",
+      "display": "寄插件（bujidao）",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 22,
+      "default_off_count": 8,
+      "delegated_count": 0,
+      "fingerprint": "a48757371227",
+      "sha256": "34076dfe414861f9f652f34b632e6a79985f5779d9d25c666ccd46ad14c8d131",
+      "bytes": 70168,
+      "used": 0
     }
   },
   "packages": {
@@ -347,6 +361,15 @@
       "command_count": 23,
       "units": [
         "xitian-plugin"
+      ],
+      "used": 0
+    },
+    "bujidao": {
+      "display": "寄插件（bujidao）",
+      "category": "游戏",
+      "command_count": 22,
+      "units": [
+        "bujidao"
       ],
       "used": 0
     }
