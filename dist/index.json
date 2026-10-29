@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 31,
-  "updated": "2026-10-29T00:24:13.811Z",
+  "revision": 32,
+  "updated": "2026-10-29T00:50:32.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -184,6 +184,20 @@
       "sha256": "e2d2d20ba13f1c44d144d9b4be9b8b91070d12268f3805cb6c2521758c13a5aa",
       "bytes": 176387,
       "used": 0
+    },
+    "windoge-plugin": {
+      "file": "maps/windoge-plugin.json",
+      "display": "Windoge",
+      "category": "游戏",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 28,
+      "default_off_count": 1,
+      "delegated_count": 0,
+      "fingerprint": "a5ae9d7aa211",
+      "sha256": "70a64673a7be02332d6d0ca8ba6a9e8ee89d6f49a3ca07e437b8cd3312b1c7cd",
+      "bytes": 59241,
+      "used": 0
     }
   },
   "packages": {
@@ -301,6 +315,15 @@
       "command_count": 83,
       "units": [
         "ZZZ-Plugin"
+      ],
+      "used": 0
+    },
+    "windoge-plugin": {
+      "display": "Windoge",
+      "category": "游戏",
+      "command_count": 28,
+      "units": [
+        "windoge-plugin"
       ],
       "used": 0
     }

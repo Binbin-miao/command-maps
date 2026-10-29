@@ -1,0 +1,1826 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "windoge-plugin",
+    "display": "Windoge",
+    "category": "游戏",
+    "summary": "原神周边助手：实时便笺与背景模板、参考面板、天赋/武器/周本素材表、原石预估、复刻查询、采集路线、抽卡期望、深渊攻略、兑换码、国际服活动、充值汇率、群通知群发",
+    "homepage": "https://gitee.com/windoge/windoge-plugin",
+    "notes": "结构与 xiaoyao-cvs-plugin 同源：主类 `.` catch-all + `apps/index.js` 合并 `rule` 对象（19 条 + admin 4 + broadcast 3 = 26，加 catch-all 共 27），子规则默认 `priority: 51`。**依赖 genshin 插件**：参考面板的角色名↔ID 映射走 `plugins/genshin/model/gsCfg.js`，国服兑换码直接 import `plugins/genshin/apps/exchange.js`。开关集中 `#windoge设置`（`sys.Note`、`os.code`、`os.currency_key`、`banner.*` 等）。",
+    "interactsWith": [
+      "genshin（参考面板与国服兑换码强依赖）",
+      "miao-plugin（同名参考面板类指令可能重叠）",
+      "xiaoyao-cvs-plugin（`#帮助`、`#便笺`、`#兑换码` 同域，会互相抢）"
+    ],
+    "batches": {
+      "covered": [
+        "总入口与分派",
+        "帮助与版本",
+        "便笺与推送",
+        "便笺模板与背景资源",
+        "功能设置台",
+        "插件更新",
+        "群通知与群列表",
+        "兑换码与国际服活动",
+        "充值汇率",
+        "深渊攻略",
+        "参考面板",
+        "素材表与原石预估",
+        "复刻查询",
+        "采集路线",
+        "抽卡期望",
+        "缓存清理"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "windoge/dispatch",
+      "command": "（任意消息）",
+      "aliases": [],
+      "title": "总入口：`.` 吃掉所有消息再分派",
+      "summary": "27 条规则由它统一分发",
+      "what": "主类注册 `.+` catch-all，所有消息先进这里，再按 `apps/index.js` 合并出的 `rule` 对象逐条匹配（含 `adminRule` 与 `broadcastRule`）。",
+      "returns": "由具体命中函数决定。",
+      "returnsDetail": "命中但函数 `return false` 时继续尝试后续规则与其它插件。",
+      "timing": "视子规则而定。",
+      "cost": "每条消息都要过一遍正则。",
+      "keywords": [
+        "windoge",
+        "便笺",
+        "参考面板",
+        "原神助手"
+      ],
+      "params": [],
+      "example": "（无需主动输入）",
+      "moreExamples": [],
+      "preconditions": [
+        "插件已加载"
+      ],
+      "pitfalls": [
+        "**`apps/index.js` 里定义的 19 条 + admin 4 条 + broadcast 3 条 = 26 条**，加这条 catch-all 共 27",
+        "**子规则默认 `priority: 51`、`prehash: true`**，可按消息 hash 缓存匹配结果",
+        "**部分规则自带优先级**：`参考面板说明` 100、`未复刻` 200、`复刻间隔` 300、`深渊攻略` 30、`参考面板` 1",
+        "**`refer_Artifacts.js` / `materials.js` / `gacha_expect.js` 里也有 `rule` 导出**，但真正生效的是 index.js 合并的那份，别被重复定义迷惑"
+      ],
+      "failures": [
+        {
+          "symptom": "某条指令毫无反应",
+          "cause": "可能命中后函数内部放行了（比如 `sys.Note` 没开）"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "排查「指令像被吞了」"
+      ],
+      "vs": [
+        {
+          "command": "#windoge版本",
+          "diff": "那是一条正常的具名子规则"
+        }
+      ],
+      "related": [
+        "#windoge版本",
+        "#帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/help",
+      "command": "#帮助",
+      "aliases": [
+        "#windoge帮助",
+        "#菜单",
+        "#功能",
+        "#指令"
+      ],
+      "title": "插件帮助",
+      "summary": "8 种叫法，`windoge` 可省",
+      "what": "渲染帮助图，列出版本与功能清单。",
+      "returns": "一张帮助图。",
+      "returnsDetail": "内容来自 `apps/help.js` 的配置。",
+      "timing": "2~10 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "帮助",
+        "菜单",
+        "windoge帮助",
+        "功能列表"
+      ],
+      "params": [],
+      "example": "#windoge帮助",
+      "moreExamples": [
+        "#帮助",
+        "#菜单",
+        "#功能"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**`windoge` 前缀可选**（`^#?(windoge)?(...)`），`#帮助` 直接可用",
+        "**8 种后缀**：`命令/帮助/菜单/help/说明/功能/指令/使用说明`",
+        "**和 xiaoyao-cvs-plugin 的 `#帮助` 同名**，谁先命中取决于插件加载顺序"
+      ],
+      "failures": [
+        {
+          "symptom": "出来的是别的插件的帮助",
+          "cause": "同名指令被别家抢了，用 `#windoge帮助` 更稳"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "第一次用看功能"
+      ],
+      "vs": [
+        {
+          "command": "#windoge版本",
+          "diff": "那个只看版本"
+        }
+      ],
+      "related": [
+        "#windoge版本",
+        "#参考面板说明"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/version",
+      "command": "#windoge版本",
+      "aliases": [
+        "windoge版本"
+      ],
+      "title": "查看插件版本",
+      "summary": "版本卡片",
+      "what": "读 `components/Changelog.js` 的版本与更新日志，渲染成卡片。",
+      "returns": "一张版本图。",
+      "returnsDetail": "含当前版本号与最近几条更新。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "windoge版本",
+        "版本号",
+        "更新日志"
+      ],
+      "params": [],
+      "example": "#windoge版本",
+      "moreExamples": [
+        "windoge版本"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**`#` 可省**（`^#?windoge版本$`）",
+        "**`windoge` 四个字不能省** —— `#版本` 不匹配",
+        "更新日志只有最近几条，完整历史看 `CHANGELOG.md`"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "确认更新有没有生效"
+      ],
+      "vs": [
+        {
+          "command": "#windoge更新",
+          "diff": "那个才真的拉代码"
+        }
+      ],
+      "related": [
+        "#windoge更新",
+        "#帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/note",
+      "command": "#便笺",
+      "aliases": [
+        "#便签",
+        "#派遣",
+        "#全部便笺",
+        "#多便笺"
+      ],
+      "title": "原神实时便笺（体力/派遣）",
+      "summary": "受 sys.Note 开关控制",
+      "what": "读绑定的 Cookie 请求米游社便笺接口，渲染体力与派遣卡片；带「多/全/全部」时遍历所有账号。",
+      "returns": "一张便笺图。",
+      "returnsDetail": "多账号时先回「多账号体力查询中请稍等...」再汇总发送。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口 + 渲染。",
+      "keywords": [
+        "便笺",
+        "便签",
+        "派遣",
+        "体力",
+        "树脂"
+      ],
+      "params": [],
+      "example": "#便笺",
+      "moreExamples": [
+        "#全部便笺",
+        "#便签",
+        "#派遣"
+      ],
+      "preconditions": [
+        "**`sys.Note` 必须开启**（默认关，用 `#windoge设置 便签 开`）",
+        "已绑定 Cookie"
+      ],
+      "pitfalls": [
+        "**默认关**：`Cfg.get(\"sys.Note\")` 为假时不响应（戳一戳走另一个开关）",
+        "**四个词等价**：`便笺` / `便签` / `派遣`，前缀 `#*` 可多个",
+        "**没绑 CK 时提示「请先【#绑定cookie】」**，但实际指令是 `#绑定ck`",
+        "**「请先开启实时便笺数据展示」**：米游社那边还要打开实时便笺，否则拿不到数据",
+        "**Cookie 失效提示很明确**：「体力cookie已失效，请重新配置，注意：退出米游社登录cookie将会失效！」"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "`sys.Note` 没开"
+        },
+        {
+          "symptom": "回「请先开启实时便笺数据展示」",
+          "cause": "米游社里没开实时便笺"
+        },
+        {
+          "symptom": "回「体力cookie已失效」",
+          "cause": "CK 过期或你在别处退登了"
+        },
+        {
+          "symptom": "回「尚未配置，无法查询体力」",
+          "cause": "完全没绑 CK，提示里带教程链接"
+        }
+      ],
+      "edgeCases": [
+        "`#多便笺` 会遍历多账号，耗时随账号数增长"
+      ],
+      "scenarios": [
+        "看树脂和派遣还剩多久"
+      ],
+      "vs": [
+        {
+          "command": "#便签模板列表",
+          "diff": "那个是换底图，不查数据"
+        }
+      ],
+      "related": [
+        "#便签模板列表",
+        "#windoge设置",
+        "#便笺"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "windoge/note-template",
+      "command": "#便签模板列表",
+      "aliases": [
+        "#便签模板设置1",
+        "#我的便签模板列表",
+        "#便签模板移除",
+        "#便笺模板列表2"
+      ],
+      "title": "便笺背景模板",
+      "summary": "换便笺卡底图",
+      "what": "列出可用模板、按序号绑定、移除自己的模板。",
+      "returns": "模板列表图或设置结果。",
+      "returnsDetail": "序号越界回「没有N的索引序号哦~」；查「我的」但没设过回「未获取到您设置的模板信息哦~」；找不到模板回「没有找到你想要的模板昵！可输入 【#便签模板列表】 查询当前支持的模板哦~~」。",
+      "timing": "2~10 秒。",
+      "cost": "读本地图片资源。",
+      "keywords": [
+        "便签模板",
+        "便笺模板",
+        "换底图",
+        "模板列表"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": false,
+          "desc": "列表里的编号，或 `我的` 查自己设过的"
+        }
+      ],
+      "example": "#便签模板列表",
+      "moreExamples": [
+        "#便签模板设置1",
+        "#我的便签模板列表",
+        "#便签模板移除"
+      ],
+      "preconditions": [
+        "要先能查便笺（`sys.Note` 开启 + 已绑 CK）"
+      ],
+      "pitfalls": [
+        "**四种写法**：`便笺模板设置N` / `便笺模板列表N` / `我的便笺模板列表` / `便笺模板移除X`",
+        "**`便笺` 与 `便签` 两种写法都认**",
+        "**模板图来自 `resources/dailyNote/`**，要先 `#便签背景图更新` 把资源拉下来",
+        "**`mb.len` 配置控制可见模板数量**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「没有N的索引序号哦~」",
+          "cause": "序号超出模板总数"
+        },
+        {
+          "symptom": "回「未获取到您设置的模板信息哦~」",
+          "cause": "查「我的」但没设过"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把便笺卡换成喜欢的图"
+      ],
+      "vs": [
+        {
+          "command": "#便笺",
+          "diff": "那个是查数据"
+        }
+      ],
+      "related": [
+        "#便笺",
+        "#便签背景图更新"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "windoge/poke",
+      "command": "（戳一戳机器人）",
+      "aliases": [],
+      "title": "戳一戳查便笺",
+      "summary": "独立开关 note.poke",
+      "what": "被戳时走便笺查询流程。",
+      "returns": "一张便笺图。",
+      "returnsDetail": "`Cfg.get(\"note.poke\")` 为假时不响应。",
+      "timing": "3~15 秒。",
+      "cost": "走米游社接口 + 渲染。",
+      "keywords": [
+        "戳一戳",
+        "poke",
+        "戳我"
+      ],
+      "params": [],
+      "example": "（对机器人戳一戳）",
+      "moreExamples": [],
+      "preconditions": [
+        "`note.poke` 开关打开",
+        "已绑 CK"
+      ],
+      "pitfalls": [
+        "**`#poke#` 是框架事件标记，不是给用户输入的指令**",
+        "**与 `sys.Note` 相互独立**，可能出现「戳一戳能查、`#便笺` 不能查」",
+        "频繁戳会触发频繁接口请求"
+      ],
+      "failures": [
+        {
+          "symptom": "戳了没反应",
+          "cause": "`note.poke` 没开或没绑 CK"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "懒得打字"
+      ],
+      "vs": [
+        {
+          "command": "#便笺",
+          "diff": "那个要 `sys.Note` 开"
+        }
+      ],
+      "related": [
+        "#便笺",
+        "#windoge设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/setting",
+      "command": "#windoge设置",
+      "aliases": [
+        "#windoge设置 便签 开",
+        "#windoge设置 更多活动 开",
+        "#windoge设置 汇率key xxx"
+      ],
+      "title": "功能总开关台",
+      "summary": "主人专用，8 个开关",
+      "what": "按开关名改 `components/cfg.json`：便签（`sys.Note`）、模板（`mb.len`）、更多活动（`hoyolab.more_event`）、兑换码（`os.code`）、汇率key（`os.currency_key`）、深渊攻略来源（`abyss_strategy.default`）、显示常驻（`banner.show_permanent`）、卡池数据源（`banner.data_source`）。",
+      "returns": "设置结果或当前状态列表。",
+      "returnsDetail": "不带参数列出全部开关与当前值；带参数则修改。",
+      "timing": "1~5 秒。",
+      "cost": "写 cfg.json。",
+      "keywords": [
+        "windoge设置",
+        "插件设置",
+        "开关",
+        "汇率key",
+        "便签开关"
+      ],
+      "params": [
+        {
+          "name": "开关名",
+          "required": false,
+          "desc": "`便签`/`模板`/`更多活动`/`兑换码`/`汇率key`/`深渊攻略来源`/`显示常驻`/`卡池数据源`"
+        },
+        {
+          "name": "值",
+          "required": false,
+          "desc": "开/关，或数值/字符串"
+        }
+      ],
+      "example": "#windoge设置",
+      "moreExamples": [
+        "#windoge设置 便签 开",
+        "#windoge设置 汇率key abc123"
+      ],
+      "preconditions": [
+        "**必须是主人**"
+      ],
+      "pitfalls": [
+        "**`sys.Note` 没开时 `#便笺` 完全没反应**，先来这里打开",
+        "**开关名是中文且只有 8 个**，写错不生效",
+        "**「汇率key」是给充值汇率功能用的 exchangerate-api Key**，不填那个功能直接提示去注册",
+        "**「帮助」「戳一戳」在代码里被注释掉了**，只能在 cfg.json 里手改",
+        "**「深渊攻略来源」和「显示常驻」是数值型**，不是开关"
+      ],
+      "failures": [
+        {
+          "symptom": "不是主人时发了没反应",
+          "cause": "`checkAuth` 拦截并回「只有主人才能命令我哦~」"
+        }
+      ],
+      "edgeCases": [
+        "`#windoge设置` 后面什么都不写 = 查看全部开关"
+      ],
+      "scenarios": [
+        "把便笺功能打开"
+      ],
+      "vs": [
+        {
+          "command": "#便笺",
+          "diff": "那个是功能本身"
+        }
+      ],
+      "related": [
+        "#便笺",
+        "#充值汇率",
+        "#兑换码"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/plugin-update",
+      "command": "#windoge更新",
+      "aliases": [
+        "#windoge强制更新"
+      ],
+      "title": "更新插件并自动重启",
+      "summary": "主人专用，会 process.exit",
+      "what": "在插件目录 `git pull`（强制模式先 `git checkout .`），成功后 1 秒自动 `npm run start` / `pm2 restart` 并退出进程。",
+      "returns": "多条进度文本。",
+      "returnsDetail": "已最新回「目前已经是最新版windoge插件了~」；成功回「windoge插件更新成功，尝试重新启动Yunzai以应用更新...」；失败贴 error code 与堆栈。",
+      "timing": "10~120 秒后重启。",
+      "cost": "走 git + **重启整个 Yunzai**。",
+      "keywords": [
+        "windoge更新",
+        "更新插件",
+        "强制更新"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "先 `git checkout .` 丢弃本地改动"
+        }
+      ],
+      "example": "#windoge更新",
+      "moreExamples": [
+        "#windoge强制更新"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "插件目录是 git 仓库"
+      ],
+      "pitfalls": [
+        "**更新成功会自动重启整个 Bot**，重启前会往 redis 写「重启成功」提示（30 秒过期）",
+        "**`npm run start` 走项目根目录**，非 npm 方式启动时自动重启会失败并提示手动重启",
+        "**强制模式只 `git checkout .`**，不清未跟踪文件",
+        "**和 xiaoyao-cvs-plugin 的 `#图鉴插件更新` 逻辑几乎一样**（同作者体系）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「自动重启失败，请手动重启…」",
+          "cause": "启动方式不是 npm 脚本"
+        },
+        {
+          "symptom": "回「windoge插件更新失败！」",
+          "cause": "git 冲突或网络不通"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "插件发新版了"
+      ],
+      "vs": [
+        {
+          "command": "#windoge版本",
+          "diff": "那个只看版本"
+        }
+      ],
+      "related": [
+        "#windoge版本",
+        "#便签背景图更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/note-res-update",
+      "command": "#便签背景图更新",
+      "aliases": [
+        "#便签背景图强制更新"
+      ],
+      "title": "更新便笺背景图资源",
+      "summary": "主人专用，克隆/拉取资源库",
+      "what": "检查 `resources/BJT/` 与 `resources/BJT-Template/` 是否存在，缺了克隆、有了就 `git pull`。",
+      "returns": "多条进度文本。",
+      "returnsDetail": "成功/已最新/失败三种提示。",
+      "timing": "30 秒~数分钟（首次克隆很慢）。",
+      "cost": "走 git 网络 + 写大量图片。",
+      "keywords": [
+        "便签背景图更新",
+        "便笺背景",
+        "背景图资源"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "丢弃本地改动重新拉"
+        }
+      ],
+      "example": "#便签背景图更新",
+      "moreExamples": [
+        "#便签背景图强制更新"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "能访问资源仓库"
+      ],
+      "pitfalls": [
+        "**首次是完整克隆，非常慢且占空间**（两套模板库加起来很大）",
+        "**两个库都要在**（`BJT` + `BJT-Template`），缺一个就会去补",
+        "**更新完还要 `#导入便签背景图N` 才真正生效** —— 更新只是把资源下载下来",
+        "失败提示可能只是 git 报错原文"
+      ],
+      "failures": [
+        {
+          "symptom": "卡很久",
+          "cause": "首次克隆大仓库"
+        },
+        {
+          "symptom": "回「未找到背景图资源」",
+          "cause": "克隆失败，网络不通"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想换便笺底图先拉资源"
+      ],
+      "vs": [
+        {
+          "command": "#导入便签背景图1",
+          "diff": "那个才是把资源装到使用目录"
+        }
+      ],
+      "related": [
+        "#导入便签背景图1",
+        "#清空便签背景图",
+        "#便签模板列表"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/note-res-import",
+      "command": "#导入便签背景图1",
+      "aliases": [
+        "#导入便签背景图3",
+        "#导入便签背景图5"
+      ],
+      "title": "导入第 N 套便笺背景",
+      "summary": "5 套模板任选",
+      "what": "把 `templatePath` 里第 N 套模板复制到 `resources/dailyNote/`，成为当前可用模板。",
+      "returns": "导入结果。",
+      "returnsDetail": "索引越界不匹配正则；资源缺失回「未找到背景图资源，请先使用 #便签背景图更新 命令获取背景图」。",
+      "timing": "2~30 秒（要看图片数量）。",
+      "cost": "复制大量图片文件。",
+      "keywords": [
+        "导入便签背景图",
+        "便签背景",
+        "模板导入"
+      ],
+      "params": [
+        {
+          "name": "序号",
+          "required": true,
+          "desc": "`1`~`5`，对应内置的 5 套模板"
+        }
+      ],
+      "example": "#导入便签背景图1",
+      "moreExamples": [
+        "#导入便签背景图3"
+      ],
+      "preconditions": [
+        "**必须是主人**",
+        "先跑过 `#便签背景图更新`"
+      ],
+      "pitfalls": [
+        "**只有 5 套**（正则 `[1-${Object.keys(templatePath).length}]`，即 1~5），写 6 不匹配",
+        "**导入会覆盖 `resources/dailyNote/`** 里的现有模板",
+        "**必须先有资源**，否则只有一句提示",
+        "导入后用户还要自己 `#便签模板设置N` 选具体那张"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未找到背景图资源」",
+          "cause": "没跑过背景图更新"
+        },
+        {
+          "symptom": "发 `#导入便签背景图6` 没反应",
+          "cause": "只支持 1~5"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "换一套整体风格"
+      ],
+      "vs": [
+        {
+          "command": "#便签模板设置1",
+          "diff": "那个是用户选单张，不是整套导入"
+        }
+      ],
+      "related": [
+        "#便签背景图更新",
+        "#清空便签背景图",
+        "#便签模板列表"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/note-res-clear",
+      "command": "#清空便签背景图",
+      "aliases": [],
+      "title": "清空已导入的便笺背景",
+      "summary": "主人专用，会恢复自带模板",
+      "what": "删除 `resources/dailyNote/background_image` 与 `Template`，然后恢复工程自带模板。",
+      "returns": "「开始清空模板目录」+ 结果。",
+      "returnsDetail": "清完会把仓库内置模板重新放回去。",
+      "timing": "2~20 秒。",
+      "cost": "**删本地图片资源**。",
+      "keywords": [
+        "清空便签背景图",
+        "重置背景",
+        "删除模板"
+      ],
+      "params": [],
+      "example": "#清空便签背景图",
+      "moreExamples": [],
+      "preconditions": [
+        "**必须是主人**"
+      ],
+      "pitfalls": [
+        "**删完会恢复工程自带模板**，所以不会变成完全没图",
+        "**用户之前设的模板选择会失效**，需要重新 `#便签模板设置N`",
+        "**删的是 `resources/dailyNote/` 下的两个子目录**，不影响 `BJT/` 资源库"
+      ],
+      "failures": [
+        {
+          "symptom": "清完便笺图变成默认样式",
+          "cause": "正常，模板选择被重置了"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "导入的模板有问题想重来"
+      ],
+      "vs": [
+        {
+          "command": "#导入便签背景图1",
+          "diff": "那个是导入"
+        }
+      ],
+      "related": [
+        "#导入便签背景图1",
+        "#便签背景图更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/broadcast-help",
+      "command": "#群通知帮助",
+      "aliases": [],
+      "title": "群通知用法说明",
+      "summary": "主人专用",
+      "what": "输出群通知的用法说明。",
+      "returns": "一段帮助文本。",
+      "returnsDetail": "含群发与单群发两种用法。",
+      "timing": "1~2 秒。",
+      "cost": "纯文本。",
+      "keywords": [
+        "群通知帮助",
+        "群发帮助",
+        "广播帮助"
+      ],
+      "params": [],
+      "example": "#群通知帮助",
+      "moreExamples": [],
+      "preconditions": [
+        "**主人**（走 `checkAuth`）"
+      ],
+      "pitfalls": [
+        "**`#群通知` 开头的三条都是主人专用**",
+        "帮助里给的示例格式是 `#群通知12345678`（群号直接跟，不带空格）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「只有主人才能命令我哦~」",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "第一次用群发"
+      ],
+      "vs": [
+        {
+          "command": "#群列表",
+          "diff": "那个列群号"
+        }
+      ],
+      "related": [
+        "#群通知12345678",
+        "#群列表"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/broadcast",
+      "command": "#群通知",
+      "aliases": [
+        "#群通知12345678"
+      ],
+      "title": "向所有群/指定群发通知",
+      "summary": "两步：先发指令，再发内容",
+      "what": "进上下文模式等待你发内容；不带群号发全部群，带群号只发那一个。",
+      "returns": "「请发送群通知内容」→ 发送结果。",
+      "returnsDetail": "不带群号时回「开始向所有群发送群消息」；发失败回「发送失败，请检查日志」；成功回「群通知发送成功」；发「取消」可退出并回「群通知已取消」。",
+      "timing": "群多时可达数分钟。",
+      "cost": "**向机器人所在的所有群群发**。",
+      "keywords": [
+        "群通知",
+        "群发",
+        "广播",
+        "通知所有群"
+      ],
+      "params": [
+        {
+          "name": "群号",
+          "required": false,
+          "desc": "直接跟在「群通知」后面；不写则发给所有群"
+        }
+      ],
+      "example": "#群通知",
+      "moreExamples": [
+        "#群通知12345678"
+      ],
+      "preconditions": [
+        "**主人**",
+        "机器人要在目标群里（否则回「我不在这个群里哦」）"
+      ],
+      "pitfalls": [
+        "**两步操作**：先发指令进上下文，再发内容；内容不会被当成新指令",
+        "**不带群号 = 全部群**，误发影响面极大，且没有二次确认",
+        "**群号紧贴「群通知」写**，中间加空格会导致群号被忽略（变成全群发）",
+        "**上下文中发「取消」可以退出**",
+        "**群多时耗时长，中间没有进度反馈**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「我不在这个群里哦」",
+          "cause": "指定群号机器人不在"
+        },
+        {
+          "symptom": "回「请在指令中加上群号，例如: #群通知12345678」",
+          "cause": "格式没被识别成群号"
+        },
+        {
+          "symptom": "回「发送失败，请检查日志」",
+          "cause": "目标群异常或被风控"
+        }
+      ],
+      "edgeCases": [
+        "一次只能发一条内容，多发要重新触发"
+      ],
+      "scenarios": [
+        "维护公告群发"
+      ],
+      "vs": [
+        {
+          "command": "#群列表",
+          "diff": "先查有哪些群"
+        }
+      ],
+      "related": [
+        "#群列表",
+        "#群通知帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/group-list",
+      "command": "#群列表",
+      "aliases": [],
+      "title": "列出机器人所在的群",
+      "summary": "主人专用",
+      "what": "调 Bot 接口取群列表，拼成文本发出。",
+      "returns": "一段群号与群名列表。",
+      "returnsDetail": "群多时可能被拆成多条。",
+      "timing": "2~10 秒。",
+      "cost": "走协议端接口。",
+      "keywords": [
+        "群列表",
+        "所有群",
+        "群号",
+        "bot在哪些群"
+      ],
+      "params": [],
+      "example": "#群列表",
+      "moreExamples": [],
+      "preconditions": [
+        "**主人**"
+      ],
+      "pitfalls": [
+        "**只列得出协议端能返回的群**，数量特别多时可能被截断",
+        "**和 `#群通知` 配合用**：先看群号再单群发"
+      ],
+      "failures": [
+        {
+          "symptom": "回「只有主人才能命令我哦~」",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "查群号做单群发"
+      ],
+      "vs": [
+        {
+          "command": "#群通知",
+          "diff": "那个是发内容"
+        }
+      ],
+      "related": [
+        "#群通知",
+        "#群通知帮助"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "windoge/redeem-code",
+      "command": "#兑换码",
+      "aliases": [
+        "#国际服兑换码",
+        "#国服兑换码"
+      ],
+      "title": "查当前可用兑换码",
+      "summary": "国际服抓网页，国服借 genshin",
+      "what": "`#国际服兑换码` 从 `gamewith.jp` 抓码（缓存 5 分钟）；`#国服兑换码` 动态 import genshin 插件的 exchange 模块；只发 `#兑换码` 时给出提示。",
+      "returns": "合并转发（国际服）或 genshin 的兑换码输出（国服）。",
+      "returnsDetail": "国际服附兑换网址与 `#兑换码使用` 用法；没抓到回「未获取到兑换码」；只发 `#兑换码` 回「请回复 #国服兑换码 或 #国际服兑换码 进行查询」。",
+      "timing": "3~15 秒。",
+      "cost": "走第三方网页 + 可能依赖 genshin 插件。",
+      "keywords": [
+        "兑换码",
+        "礼包码",
+        "国际服兑换码",
+        "国服兑换码"
+      ],
+      "params": [],
+      "example": "#国际服兑换码",
+      "moreExamples": [
+        "#国服兑换码",
+        "#兑换码"
+      ],
+      "preconditions": [
+        "**只发 `#兑换码` 时要求 `os.code` 开关为开**，否则直接放行（什么都不回）",
+        "**`#国服兑换码` 依赖 genshin 插件存在**（动态 import 它的 `apps/exchange.js`）"
+      ],
+      "pitfalls": [
+        "**三条路径三种行为**：`#兑换码` 只给提示、`#国际服兑换码` 抓第三方网页、`#国服兑换码` 调 genshin 插件",
+        "**`os.code` 关闭时 `#兑换码` 完全没反应**",
+        "**国服功能只在 V3 环境有**，非 V3 会走国际服逻辑",
+        "**国际服数据来源是 `gamewith.jp`**，网页改版就会抓不到",
+        "缓存 300 秒，刚出新码可能还没刷到"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#兑换码` 没反应",
+          "cause": "`os.code` 没开"
+        },
+        {
+          "symptom": "回「未获取到兑换码」",
+          "cause": "第三方网页结构变了"
+        },
+        {
+          "symptom": "`#国服兑换码` 报错",
+          "cause": "没装 genshin 插件"
+        }
+      ],
+      "edgeCases": [
+        "兑换本身要用 `#兑换码使用 <码>`，这条只查不发"
+      ],
+      "scenarios": [
+        "版本更新后领码"
+      ],
+      "vs": [
+        {
+          "command": "#国际服白嫖",
+          "diff": "那个是网页活动不是兑换码"
+        }
+      ],
+      "related": [
+        "#windoge设置",
+        "#国际服白嫖"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/hoyolab-event",
+      "command": "#国际服白嫖",
+      "aliases": [
+        "#国际服羊毛",
+        "#国际服活动"
+      ],
+      "title": "国际服 Hoyolab 网页活动",
+      "summary": "要代理才能拉",
+      "what": "请求 hoyolab 活动列表接口，筛选后渲染/拼消息发出。",
+      "returns": "活动列表。",
+      "returnsDetail": "走 `bot.proxyAddress` 代理；结果缓存到 redis。",
+      "timing": "3~20 秒（走代理）。",
+      "cost": "走 hoyolab 接口 + 代理。",
+      "keywords": [
+        "国际服活动",
+        "白嫖",
+        "羊毛",
+        "hoyolab",
+        "原石活动"
+      ],
+      "params": [],
+      "example": "#国际服白嫖",
+      "moreExamples": [
+        "#国际服羊毛",
+        "#国际服活动"
+      ],
+      "preconditions": [
+        "**需要配代理**（`lib/config/config.js` 的 `bot.proxyAddress`），否则大概率请求失败",
+        "`hoyolab.more_event` 控制是否显示更多活动"
+      ],
+      "pitfalls": [
+        "**三个词等价**：`白嫖` / `羊毛` / `活动`，都要带「国际服」",
+        "**代理地址是 `http://0.0.0.0:0` 时视为无代理**",
+        "**接口是境外域名**，无代理基本拉不到",
+        "**缓存键 `windoge:hoyolab:event`**，改配置后可能还看到旧数据"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应或报错",
+          "cause": "没配代理"
+        },
+        {
+          "symptom": "活动列表是旧的",
+          "cause": "redis 缓存未过期"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "找国际服的网页领原石活动"
+      ],
+      "vs": [
+        {
+          "command": "#国际服兑换码",
+          "diff": "那个是码，这个是网页活动"
+        }
+      ],
+      "related": [
+        "#国际服兑换码",
+        "#windoge设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/currency-rate",
+      "command": "#充值汇率",
+      "aliases": [
+        "#Google充值价格",
+        "#谷歌充值汇率",
+        "#安卓充值价格 all"
+      ],
+      "title": "各平台充值价格换算",
+      "summary": "要 exchangerate-api Key",
+      "what": "取汇率，把各区的原神充值价格换算成本币展示。",
+      "returns": "价格表图或文本。",
+      "returnsDetail": "没配 Key 回「未配置API Key，请先注册API Key，并使用【#windoge设置】配置后，再使用此功能。注册地址：https://www.exchangerate-api.com/」；接口失败回「汇率API请求失败」。",
+      "timing": "3~15 秒。",
+      "cost": "走 exchangerate-api（免费额度有限）。",
+      "keywords": [
+        "充值汇率",
+        "充值价格",
+        "Google充值",
+        "安卓充值",
+        "原神充值价格"
+      ],
+      "params": [
+        {
+          "name": "平台",
+          "required": false,
+          "desc": "含 `Google/谷歌/安卓` 走 Google Play 数据，否则走官网数据"
+        },
+        {
+          "name": "all",
+          "required": false,
+          "desc": "跟在后面表示列出全部区服"
+        }
+      ],
+      "example": "#充值汇率",
+      "moreExamples": [
+        "#Google充值价格",
+        "#安卓充值汇率 all"
+      ],
+      "preconditions": [
+        "**必须配 `os.currency_key`**（`#windoge设置 汇率key xxx`）",
+        "能访问 exchangerate-api"
+      ],
+      "pitfalls": [
+        "**没 Key 时提示里明确写了去 exchangerate-api 注册**",
+        "**平台是靠关键词猜的**：含 `Google/谷歌/安卓` 走 Google Play，否则走官网",
+        "**`all` 是可选的尾缀**（正则 `(all)*`），写不写都能跑",
+        "**汇率是实时拉的**，接口额度用完就只剩报错",
+        "**价格数据是本地 JSON 维护的**，不是从游戏接口拉"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未配置API Key…」",
+          "cause": "没配 `os.currency_key`"
+        },
+        {
+          "symptom": "回「汇率API请求失败」",
+          "cause": "Key 失效或额度用完"
+        }
+      ],
+      "edgeCases": [
+        "`#充值价格all` 不带平台词时按官网数据算"
+      ],
+      "scenarios": [
+        "比价哪个区充值便宜"
+      ],
+      "vs": [
+        {
+          "command": "#windoge设置",
+          "diff": "那个是配 Key 的地方"
+        }
+      ],
+      "related": [
+        "#windoge设置",
+        "#兑换码"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/abyss-strategy",
+      "command": "#5.1深渊攻略",
+      "aliases": [
+        "#深渊攻略",
+        "#深渊攻略2",
+        "#更新5.1深渊攻略3"
+      ],
+      "title": "深渊攻略（按版本/队伍）",
+      "summary": "从米游社合辑里找帖",
+      "what": "按版本号在米游社合辑里搜索对应攻略帖，取出内容渲染。",
+      "returns": "攻略图或转发消息。",
+      "returnsDetail": "搜索失败回「查询米游社攻略失败，请检查网络或稍后重试」；没有该版本回「暂无该版本攻略数据，请稍后再试」。",
+      "timing": "5~30 秒。",
+      "cost": "走米游社搜索接口。",
+      "keywords": [
+        "深渊攻略",
+        "深境螺旋",
+        "深渊配队",
+        "版本攻略"
+      ],
+      "params": [
+        {
+          "name": "版本号",
+          "required": false,
+          "desc": "`x.y` 格式，如 `5.1`；不写则用默认"
+        },
+        {
+          "name": "队伍序号",
+          "required": false,
+          "desc": "`1`~`4`，对应不同合辑来源"
+        }
+      ],
+      "example": "#5.1深渊攻略",
+      "moreExamples": [
+        "#深渊攻略2",
+        "#更新5.1深渊攻略3"
+      ],
+      "preconditions": [
+        "能访问米游社",
+        "`abyss_strategy.default` 决定默认队伍序号"
+      ],
+      "pitfalls": [
+        "**版本号必须是 `x.y` 两位**，`#11.0深渊攻略` 不匹配（正则 `([1-9]\\.[0-9])`）",
+        "**`更新` 前缀表示强制刷新**，不加则可能读缓存",
+        "**队伍序号 1~4 对应 4 个不同合辑**，缺省取配置值",
+        "**`深渊攻略` 四个字前面不能带别的版本词**，写了版本就必须写对"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂无该版本攻略数据」",
+          "cause": "该版本还没人发攻略"
+        },
+        {
+          "symptom": "回「查询米游社攻略失败」",
+          "cause": "网络或接口异常"
+        }
+      ],
+      "edgeCases": [
+        "不写版本号时用默认（通常是当前版本）"
+      ],
+      "scenarios": [
+        "打深渊前看配队"
+      ],
+      "vs": [
+        {
+          "command": "#希儿参考面板",
+          "diff": "那个是单角色配装参考"
+        }
+      ],
+      "related": [
+        "#希儿参考面板",
+        "#windoge设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/refer-panel",
+      "command": "#希儿参考面板",
+      "aliases": [
+        "#雷电将军参考面板",
+        "#风主参考面板"
+      ],
+      "title": "角色参考面板（毕业标准）",
+      "summary": "依赖 genshin 做角色名映射",
+      "what": "把角色名转成 ID，找到对应参考面板图发出。",
+      "returns": "一张参考面板图。",
+      "returnsDetail": "旅行者要写「风主/岩主/雷主/草主/水主」，其它写法回「请输入风主/岩主/雷主/草主/水主参考面板~」。",
+      "timing": "2~10 秒。",
+      "cost": "读本地图 + 依赖 genshin 的角色表。",
+      "keywords": [
+        "参考面板",
+        "毕业面板",
+        "配装参考",
+        "参考属性"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「参考面板」前面"
+        }
+      ],
+      "example": "#希儿参考面板",
+      "moreExamples": [
+        "#风主参考面板",
+        "#雷电将军参考面板"
+      ],
+      "preconditions": [
+        "**必须装了 genshin 插件** —— 角色名↔ID 映射走它的 `model/gsCfg.js`",
+        "**角色名不能含 `-` 或 `~`**（正则 `[^-~]+`，避免和别的指令冲突）"
+      ],
+      "pitfalls": [
+        "**正则是 `^#*[^-~]+参考面板+$`** —— 「参考面板」后面可以有多个「板」，但前面不能有 `-`/`~`",
+        "**旅行者必须区分为风主/岩主/雷主/草主/水主**，写「旅行者」会提示你重写",
+        "**依赖 genshin 插件**，没装会直接报错（`import` 失败）",
+        "**「参考面板说明」是另一条指令**，别混"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请输入风主/岩主/雷主/草主/水主参考面板~」",
+          "cause": "写的是「旅行者」或空旅行者 ID"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "角色名没匹配上（找不到 ID 时直接 return）"
+        }
+      ],
+      "edgeCases": [
+        "角色别名支持取决于 genshin 插件是否配了别名表"
+      ],
+      "scenarios": [
+        "查某角色该堆多少暴击"
+      ],
+      "vs": [
+        {
+          "command": "#希儿面板",
+          "diff": "那个是查你自己的实际面板（别的插件）"
+        }
+      ],
+      "related": [
+        "#参考面板说明",
+        "#5.1深渊攻略"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/refer-panel-desc",
+      "command": "#参考面板说明",
+      "aliases": [],
+      "title": "参考面板的图例说明",
+      "summary": "priority 100，先于参考面板",
+      "what": "输出参考面板图里各字段的含义说明。",
+      "returns": "一张说明图或文本。",
+      "returnsDetail": "解释词条、有效词条数、评分等口径。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "参考面板说明",
+        "面板图例",
+        "怎么看参考面板"
+      ],
+      "params": [],
+      "example": "#参考面板说明",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "**priority 是 100**，比 `参考面板`（priority 1）低，但因为正则更具体会先命中",
+        "**`#` 可省**（`^#?参考面板说明$`）",
+        "**没有参数**，只看说明"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "看不懂参考面板上的数字"
+      ],
+      "vs": [
+        {
+          "command": "#希儿参考面板",
+          "diff": "那个是具体角色的图"
+        }
+      ],
+      "related": [
+        "#希儿参考面板"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/material-chart",
+      "command": "#天赋素材",
+      "aliases": [
+        "#武器素材",
+        "#周本素材"
+      ],
+      "title": "天赋/武器/周本素材表",
+      "summary": "从观测枢抓图，缓存 30 天",
+      "what": "按类型从米游社观测枢接口取图片地址，下载到本地后发出。",
+      "returns": "一张素材表图 + 「[来源: 原神观测枢]」。",
+      "returnsDetail": "图已存在则直接发；抓不到回「查询失败~>_<」。",
+      "timing": "3~20 秒（首次要下载图）。",
+      "cost": "走观测枢接口 + 下载图片。",
+      "keywords": [
+        "天赋素材",
+        "武器素材",
+        "周本素材",
+        "素材表",
+        "刷材料"
+      ],
+      "params": [
+        {
+          "name": "类型",
+          "required": true,
+          "desc": "只有 `天赋` / `武器` / `周本` 三种"
+        }
+      ],
+      "example": "#天赋素材",
+      "moreExamples": [
+        "#武器素材",
+        "#周本素材"
+      ],
+      "preconditions": [
+        "能访问米游社观测枢接口"
+      ],
+      "pitfalls": [
+        "**只认三种类型**（`天赋|武器|周本`），写「角色素材」不匹配",
+        "**正则是 `^#*(天赋|武器|周本)+素材+$`** —— 「素材」后面可以有多个「材」字（正则写成了 `素材+`）",
+        "**图片 URL 存 redis 30 天**，观测枢换图后要等缓存过期",
+        "**代码里有个 bug**：下载失败分支打印 `无法下载${type}素材表`，但 `type` 在该作用域不存在 → 抛 `ReferenceError`，用户侧看到的是框架报错而不是友好提示"
+      ],
+      "failures": [
+        {
+          "symptom": "回「查询失败~>_<」",
+          "cause": "接口取不到图或下载失败"
+        },
+        {
+          "symptom": "框架报 `type is not defined`",
+          "cause": "命中了上面那个 bug 分支"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "规划刷天赋书"
+      ],
+      "vs": [
+        {
+          "command": "#清心采集路线",
+          "diff": "那个是地图路线不是素材表"
+        }
+      ],
+      "related": [
+        "#清心采集路线",
+        "#希儿培养素材收集"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/primogems-expect",
+      "command": "#原石预估",
+      "aliases": [
+        "#5.1原石预估",
+        "#5.0原石预期"
+      ],
+      "title": "版本原石预估",
+      "summary": "读本地图片，不联网",
+      "what": "在 `resources/primogems_expect/` 里找对应版本号的 png 发出；不写版本时取文件名最大的那个。",
+      "returns": "一张原石预估图。",
+      "returnsDetail": "文件不存在时给提示。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读图。",
+      "keywords": [
+        "原石预估",
+        "原石预期",
+        "版本原石",
+        "能白嫖多少原石"
+      ],
+      "params": [
+        {
+          "name": "版本号",
+          "required": false,
+          "desc": "`x.y` 格式；不写则自动取最新"
+        }
+      ],
+      "example": "#原石预估",
+      "moreExamples": [
+        "#5.1原石预估"
+      ],
+      "preconditions": [
+        "`resources/primogems_expect/` 里有对应版本的 png"
+      ],
+      "pitfalls": [
+        "**不联网，全看本地图库** —— 新版本没人更新图就是旧的",
+        "**版本号必须 `x.y` 两位**（正则 `([1-9]\\.[0-9])?`）",
+        "**不写版本时按文件名排序取最大**，`10.0` 会排在 `9.0` 前面（字典序，可能取错）",
+        "**「预估」「预期」两个词都认**"
+      ],
+      "failures": [
+        {
+          "symptom": "没有反应或提示找不到",
+          "cause": "本地没有该版本的图"
+        }
+      ],
+      "edgeCases": [
+        "字典序排序在版本号跨两位数时会出错（如 9.0 vs 10.0）"
+      ],
+      "scenarios": [
+        "算这个版本能攒多少抽"
+      ],
+      "vs": [
+        {
+          "command": "#原石统计",
+          "diff": "那个是查已获得（genshin 插件的札记）"
+        }
+      ],
+      "related": [
+        "#天赋素材",
+        "#抽卡期望"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/not-rerun",
+      "command": "#未复刻",
+      "aliases": [
+        "#未复刻5星角色",
+        "#未复刻四星武器"
+      ],
+      "title": "查还没复刻的角色/武器",
+      "summary": "priority 200",
+      "what": "统计角色/武器上次 up 距今多久，列出未复刻名单。",
+      "returns": "一张排行图或文本。",
+      "returnsDetail": "按未复刻天数排序。",
+      "timing": "2~12 秒。",
+      "cost": "读卡池数据 + 渲染。",
+      "keywords": [
+        "未复刻",
+        "复刻间隔",
+        "多久没复刻",
+        "等复刻"
+      ],
+      "params": [
+        {
+          "name": "星级",
+          "required": false,
+          "desc": "`4星/四星/5星/五星`"
+        },
+        {
+          "name": "类别",
+          "required": false,
+          "desc": "`角色` / `武器`"
+        }
+      ],
+      "example": "#未复刻",
+      "moreExamples": [
+        "#未复刻5星角色",
+        "#未复刻四星武器"
+      ],
+      "preconditions": [
+        "`banner.data_source` / `banner.show_permanent` 影响数据源与是否含常驻"
+      ],
+      "pitfalls": [
+        "**priority 200**，比大多数规则先匹配",
+        "**星级和类别都是可选**，`#未复刻` 单发就是全量",
+        "**「4星」和「四星」都认**（正则里两种写法都列了）",
+        "**数据源由 `banner.data_source` 决定**，配置不同结果可能不同"
+      ],
+      "failures": [
+        {
+          "symptom": "数据明显不对",
+          "cause": "卡池数据源没更新"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想知道谁最久没复刻"
+      ],
+      "vs": [
+        {
+          "command": "#希儿复刻",
+          "diff": "那个查单个角色的复刻间隔"
+        }
+      ],
+      "related": [
+        "#希儿复刻",
+        "#windoge设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/single-banner",
+      "command": "#希儿复刻",
+      "aliases": [
+        "#希儿复刻间隔",
+        "#希儿up",
+        "#希儿UP"
+      ],
+      "title": "查单个角色的复刻情况",
+      "summary": "priority 300",
+      "what": "查该角色历次 up 记录与距上次的天数。",
+      "returns": "一段复刻信息。",
+      "returnsDetail": "含上次 up 时间与间隔天数，以及历史记录。",
+      "timing": "2~10 秒。",
+      "cost": "读卡池数据。",
+      "keywords": [
+        "复刻间隔",
+        "角色复刻",
+        "什么时候复刻",
+        "up记录"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在复刻/up 前面"
+        }
+      ],
+      "example": "#希儿复刻",
+      "moreExamples": [
+        "#雷电将军复刻间隔",
+        "#纳西妲up"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**priority 300**，是所有规则里最高的一档",
+        "**四种后缀**：`复刻`、`复刻间隔`、`up`、`UP`（正则里 `up|UP|Up` 都列了）",
+        "**正则是 `^#(.)+(复刻|复刻间隔|up|UP|Up)$`** —— 必须有 `#`，且角色名至少一个字",
+        "**角色名写错不会提示「不认识」，只会给不出数据**"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "少了 `#`，或名字含 `#` 之外的特殊字符"
+        }
+      ],
+      "edgeCases": [
+        "`#复刻`（不带角色名）不匹配，至少要一个字符"
+      ],
+      "scenarios": [
+        "等某个角色复刻"
+      ],
+      "vs": [
+        {
+          "command": "#未复刻",
+          "diff": "那个是看全部排名"
+        }
+      ],
+      "related": [
+        "#未复刻"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/material-route",
+      "command": "#清心采集路线",
+      "aliases": [
+        "#清心收集",
+        "#盗宝团讨伐",
+        "#清心采集"
+      ],
+      "title": "素材采集/讨伐路线",
+      "summary": "查米游社攻略帖",
+      "what": "按关键词在米游社合辑里搜路线攻略，取帖内图片发出。",
+      "returns": "路线图或转发消息。",
+      "returnsDetail": "搜索失败回「查询米游社攻略失败，请检查网络或稍后重试」；没有该素材回「暂未找到指定素材「X」的路线攻略，请等待作者更新」。",
+      "timing": "5~30 秒。",
+      "cost": "走米游社搜索。",
+      "keywords": [
+        "采集路线",
+        "收集路线",
+        "讨伐路线",
+        "素材在哪",
+        "刷素材"
+      ],
+      "params": [
+        {
+          "name": "素材名",
+          "required": true,
+          "desc": "写在「收集/采集/讨伐/…路线」前面"
+        }
+      ],
+      "example": "#清心采集路线",
+      "moreExamples": [
+        "#清心收集",
+        "#盗宝团讨伐"
+      ],
+      "preconditions": [
+        "能访问米游社"
+      ],
+      "pitfalls": [
+        "**后缀有五种**：`收集`、`采集`、`讨伐`、`收集路线`、`采集路线`、`讨伐路线`（正则 `(.+)(收集|采集|讨伐|收集路线|采集路线|讨伐路线)`）",
+        "**`.` 贪婪匹配**，素材名里带这些词可能被截错",
+        "**必须有 `#`**",
+        "**只查米游社已有攻略**，冷门素材会回「请等待作者更新」"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂未找到指定素材…」",
+          "cause": "米游社没这个素材的攻略"
+        },
+        {
+          "symptom": "回「查询米游社攻略失败」",
+          "cause": "网络或接口异常"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "找圣遗物狗粮路线"
+      ],
+      "vs": [
+        {
+          "command": "#希儿培养素材收集",
+          "diff": "那个是按角色算突破素材"
+        }
+      ],
+      "related": [
+        "#希儿培养素材收集",
+        "#天赋素材"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/char-material-route",
+      "command": "#希儿培养素材收集",
+      "aliases": [
+        "#希儿突破素材",
+        "#希儿养成材料收集",
+        "#希儿培养收集"
+      ],
+      "title": "角色培养素材攻略",
+      "summary": "按角色找突破材料攻略",
+      "what": "按角色名搜培养/突破素材攻略并渲染。",
+      "returns": "攻略图或转发消息。",
+      "returnsDetail": "找不到回「暂未找到角色「X」的突破素材攻略，请等待作者更新」。",
+      "timing": "5~30 秒。",
+      "cost": "走米游社搜索。",
+      "keywords": [
+        "培养素材",
+        "突破材料",
+        "养成材料",
+        "角色素材"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "写在「培养/突破/养成」前面"
+        }
+      ],
+      "example": "#希儿培养素材收集",
+      "moreExamples": [
+        "#希儿突破素材",
+        "#希儿养成材料收集"
+      ],
+      "preconditions": [
+        "能访问米游社"
+      ],
+      "pitfalls": [
+        "**必须以「收集」结尾**（正则 `(.+)(培养|突破|养成)(素材|材料)?收集$`）",
+        "**`#` 可省**（`^#?(.+)`）—— 这条是少数不需要 `#` 的",
+        "**「素材/材料」是可选的**，`#希儿培养收集` 也匹配",
+        "**和素材路线是两条不同规则**，一个按角色一个按素材"
+      ],
+      "failures": [
+        {
+          "symptom": "回「暂未找到角色「X」的突破素材攻略」",
+          "cause": "米游社没该角色攻略或名字不对"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "新抽到角色想知道要刷什么"
+      ],
+      "vs": [
+        {
+          "command": "#清心采集路线",
+          "diff": "那个按素材名查"
+        }
+      ],
+      "related": [
+        "#清心采集路线",
+        "#天赋素材"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/gacha-expect",
+      "command": "#抽卡期望",
+      "aliases": [
+        "#3命期望",
+        "#精1期望",
+        "#6命期望"
+      ],
+      "title": "抽卡期望表",
+      "summary": "按命座/精炼算期望抽数",
+      "what": "渲染抽卡期望表，可按命座或武器精炼档位筛选。",
+      "returns": "一张期望表图。",
+      "returnsDetail": "含达到该档位所需的期望抽数与原石数。",
+      "timing": "2~10 秒。",
+      "cost": "纯本地渲染 + 概率计算。",
+      "keywords": [
+        "抽卡期望",
+        "多少抽",
+        "命座期望",
+        "精炼期望",
+        "抽卡概率"
+      ],
+      "params": [
+        {
+          "name": "档位",
+          "required": false,
+          "desc": "`抽卡`（基础）/ `0`~`6` 命 / `精0`、`精1`、`精5`"
+        }
+      ],
+      "example": "#抽卡期望",
+      "moreExamples": [
+        "#3命期望",
+        "#精1期望"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**正则 `^#(抽卡|[0-6]命|精[(0|1|5)])+期望+$`** —— 只认 0~6 命、精 0/1/5，`精2` 不匹配",
+        "**「期望」后面可以有多个「望」**（`期望+`）",
+        "**必须有 `#`**",
+        "**结果基于内置概率模型**，不是你的实际记录"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#精2期望` 没反应",
+          "cause": "只支持精 0/1/5"
+        }
+      ],
+      "edgeCases": [
+        "`#抽卡期望` 是最基础的整表"
+      ],
+      "scenarios": [
+        "算满命要准备多少抽"
+      ],
+      "vs": [
+        {
+          "command": "#原石预估",
+          "diff": "那个算能攒多少，这个算要花多少"
+        }
+      ],
+      "related": [
+        "#原石预估"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "windoge/clear-cache",
+      "command": "#windoge清理缓存",
+      "aliases": [
+        "#windoge清空缓存",
+        "#windoge删除缓存"
+      ],
+      "title": "清空 windoge 的 Redis 缓存",
+      "summary": "主人专用，按前缀删 key",
+      "what": "删除所有 `windoge:*` 开头的 redis key。",
+      "returns": "清理结果。",
+      "returnsDetail": "回删除的 key 数量。",
+      "timing": "1~10 秒（key 多时更久）。",
+      "cost": "**批量删 redis key**。",
+      "keywords": [
+        "清理缓存",
+        "清空缓存",
+        "windoge缓存"
+      ],
+      "params": [],
+      "example": "#windoge清理缓存",
+      "moreExamples": [
+        "#windoge清空缓存"
+      ],
+      "preconditions": [
+        "**必须是主人**"
+      ],
+      "pitfalls": [
+        "**删的是 `windoge:*` 全部 key** —— 包括卡池缓存、活动缓存、兑换码缓存、便笺模板选择",
+        "**三种动词都认**：`清理/清空/删除`",
+        "**删完不会重建**，下次用各功能时会重新拉",
+        "**没有二次确认**"
+      ],
+      "failures": [
+        {
+          "symptom": "清理后某些功能第一次变慢",
+          "cause": "缓存没了要重新拉数据，正常现象"
+        }
+      ],
+      "edgeCases": [
+        "只影响 `windoge:` 前缀，不动其它插件的 key"
+      ],
+      "scenarios": [
+        "数据明显过期想强制刷新"
+      ],
+      "vs": [
+        {
+          "command": "#清空便签背景图",
+          "diff": "那个删的是本地图片不是 redis"
+        }
+      ],
+      "related": [
+        "#便签背景图更新",
+        "#清空便签背景图"
+      ],
+      "risk": "a",
+      "permission": "master"
+    }
+  ]
+}
