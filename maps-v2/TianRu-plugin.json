@@ -1,0 +1,942 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "TianRu-plugin",
+    "display": "天如插件（TianRu）",
+    "category": "工具",
+    "summary": "杂项工具箱：选择困难症抽签、模拟群友执行指令、伪造聊天记录、服务器上执行 sh/js、在线跑代码、提瓦特小助手抽卡记录导入、机场订阅流量、涩图、homo 梗、帮助与自更新",
+    "homepage": "https://github.com/TianRu-Cloud/TianRu-plugin",
+    "notes": "**高危插件**：`#执行sh` / `#执行js` 是**宿主机器上的任意命令执行**（`child_process.exec` / `eval`，仅 master）；`#我是` 会伪造事件以别人身份跑指令；`#伪造聊天` 能造聊天记录。**`#code` 反而安全**：它走 glot/piston/wandbox 远程沙箱，但**不做任何权限判断**，群里任何人都能用。**`#sub` 是个空壳**：`async sub(e)` 整段被注释掉，规则却还指向 `fnc: 'sub'` —— 真正干活的是 `accept()`：消息里出现任何 http 链接就发 HEAD 请求读 `subscription-userinfo` 头。priority 分布很散：`#帮我选`/`#homo` 5000、`#来N张涩图` 4000、`#执行sh`/`#伪造聊天` 3000、更新 1000、帮助 100、`#sub` 0、`#我是` -114514。",
+    "interactsWith": [
+      "genshin（`#获取小助手抽卡记录` 走它的 `model/gachaLog.js`）",
+      "xiaoyao-cvs-plugin（无链接导入时从它拿 cookie 换 authkey；没装就取不到）",
+      "框架更新器（`other/update.js` 或 `system/apps/update.ts`，`#天如更新` 依赖它）",
+      "远程沙箱（glot.io / emkc piston / wandbox，`#code` 用）",
+      "api.lolicon.app（`#来N张涩图`）",
+      "任意 http 链接（`#sub` 的 accept 会对消息里每个链接发 HEAD）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助",
+        "插件更新与日志",
+        "抽签与梗功能",
+        "身份伪造与聊天伪造",
+        "本机命令执行（sh/js）",
+        "在线跑代码",
+        "抽卡记录导入",
+        "订阅流量查询",
+        "涩图"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "tianru/help",
+      "command": "#天如帮助",
+      "aliases": [
+        "#tianru帮助",
+        "#TianRu帮助",
+        "#天如菜单",
+        "#天如指令",
+        "#天如功能"
+      ],
+      "title": "天如插件帮助图",
+      "summary": "主人看得更多",
+      "what": "渲染帮助图，条目来自 `config/help.js`；带 `auth: master` 的分组对非主人隐藏。",
+      "returns": "一张帮助图。",
+      "returnsDetail": "渲染失败无文字兜底。",
+      "timing": "1~3 秒。",
+      "cost": "只渲染。",
+      "keywords": [
+        "天如帮助",
+        "tianru 帮助",
+        "天如菜单"
+      ],
+      "params": [],
+      "example": "#天如帮助",
+      "moreExamples": [
+        "#tianru帮助",
+        "#天如菜单",
+        "#天如指令"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**「天如」和「tianru」都认，大小写敏感度也不一样**：`(T|t)ian(R|r)u` 允许 `tianru`/`TianRu`/`tianRu` 等 4 种组合，但 `TIANRU` 全大写不匹配",
+        "**`help`/`说明`/`功能`/`指令`/`使用说明` 都算**，但必须紧跟在名字后面（`^#?(天如|tianru)(命令|帮助|…)$`）",
+        "**非主人看不到 master 分组** —— 那些是 `#执行sh`、`#执行js`、`#伪造聊天` 这类高危功能"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "渲染资源缺失"
+        }
+      ],
+      "edgeCases": [
+        "`#天如说明` 与 `#天如帮助` 等价"
+      ],
+      "scenarios": [
+        "第一次装完看有哪些功能"
+      ],
+      "vs": [
+        {
+          "command": "#帮我选 a b c",
+          "diff": "那条是小工具，不在帮助的显眼位置"
+        }
+      ],
+      "related": [
+        "#天如更新",
+        "#帮我选 a b c"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "tianru/update",
+      "command": "#天如更新",
+      "aliases": [
+        "#更新天如",
+        "#天如插件更新",
+        "#天如强制更新",
+        "#更新天如插件"
+      ],
+      "title": "更新插件本体",
+      "summary": "成功后自动重启",
+      "what": "把消息改写成 `#更新TianRu-plugin`，再用框架的 `update` 类执行 `update()`（内部会 git pull 并按需重启）。",
+      "returns": "框架更新器的输出（「更新成功 / 已经是最新 / 冲突」等）。",
+      "returnsDetail": "非 master 直接 `return`（**静默**）；`Update` 没加载到时会抛错（日志里有 `未获取到更新js`）。",
+      "timing": "10~60 秒，有更新时重启。",
+      "cost": "**拉代码 + 重启 Bot**；带「强制」会丢本地改动。",
+      "keywords": [
+        "天如更新",
+        "更新天如",
+        "更新插件"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "丢弃本地修改后强拉"
+        }
+      ],
+      "example": "#天如更新",
+      "moreExamples": [
+        "#更新天如",
+        "#天如强制更新",
+        "#更新天如插件"
+      ],
+      "preconditions": [
+        "master",
+        "git 安装",
+        "框架有 `other/update.js` 或 `system/apps/update.ts`"
+      ],
+      "pitfalls": [
+        "**正则是「或」结构**：`^#*(天如|TianRu-plugin)(插件)?(强制)?更新` **或** `^#*(强制)?更新(天如|TianRu-plugin)(插件)?` —— 所以「天如更新」和「更新天如」两种语序都行",
+        "**`#` 是 `#*`（零个或多个）**，所以不带井号也能触发",
+        "**`Update` 为 null 时 `new Update()` 直接抛错**，用户侧没有提示（日志里才有「未获取到更新js」）",
+        "**它会自己再拼一次指令**（`e.msg = '#更新TianRu-plugin'`）然后调框架方法，不是「放行给别的插件」"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        },
+        {
+          "symptom": "日志报 TypeError",
+          "cause": "框架没有 update 模块（老版本/精简版）"
+        },
+        {
+          "symptom": "更新后掉线一会",
+          "cause": "更新完成会重启"
+        }
+      ],
+      "edgeCases": [
+        "`#强制更新天如插件` 与 `#天如插件强制更新` 都匹配"
+      ],
+      "scenarios": [
+        "上游发了新版本"
+      ],
+      "vs": [
+        {
+          "command": "#天如更新日志",
+          "diff": "那个只看不动"
+        }
+      ],
+      "related": [
+        "#天如更新日志",
+        "#天如帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "tianru/update-log",
+      "command": "#天如更新日志",
+      "aliases": [
+        "#天如插件更新日志",
+        "#tianru更新日志"
+      ],
+      "title": "看插件最近提交",
+      "summary": "只读",
+      "what": "调框架更新器的 `getLog('TianRu-plugin')`，输出提交列表。",
+      "returns": "合并转发的提交列表。",
+      "returnsDetail": "`Update` 为 null 时会抛错。",
+      "timing": "1~3 秒。",
+      "cost": "只读。",
+      "keywords": [
+        "天如更新日志"
+      ],
+      "params": [],
+      "example": "#天如更新日志",
+      "moreExamples": [
+        "#天如插件更新日志"
+      ],
+      "preconditions": [
+        "git 安装"
+      ],
+      "pitfalls": [
+        "**不需要 master**（这条没有权限判断）",
+        "**同样依赖框架的 update 模块**，没有就报错而不是提示"
+      ],
+      "failures": [
+        {
+          "symptom": "报错/没反应",
+          "cause": "没有 git 或没有 update 模块"
+        }
+      ],
+      "edgeCases": [
+        "日志条数由框架更新器决定"
+      ],
+      "scenarios": [
+        "更新前看看会变什么"
+      ],
+      "vs": [
+        {
+          "command": "#天如更新",
+          "diff": "那个会真拉代码并重启"
+        }
+      ],
+      "related": [
+        "#天如更新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "tianru/choose",
+      "command": "#帮我选 火锅 烤肉 面",
+      "aliases": [
+        "#帮我选 A B C",
+        "#帮我选"
+      ],
+      "title": "选择困难症：加权随机挑一个",
+      "summary": "会列出概率",
+      "what": "把「选」后面的词按空格切开，用 sha256 + 随机扰动算出权重，取权重最大的那个，并把每个选项的百分比列出来。",
+      "returns": "「我的选择是：<选项>」+ 逐项概率（保留两位小数）。",
+      "returnsDetail": "没有任何选项时回「请输入选项！」。",
+      "timing": "1 秒内。",
+      "cost": "纯本地计算。",
+      "keywords": [
+        "帮我选",
+        "选择困难",
+        "随便选一个"
+      ],
+      "params": [
+        {
+          "name": "选项",
+          "required": true,
+          "desc": "**用空格分隔**，至少一个"
+        }
+      ],
+      "example": "#帮我选 火锅 烤肉 面",
+      "moreExamples": [
+        "#帮我选 A B C"
+      ],
+      "preconditions": [
+        "无（谁都能用）"
+      ],
+      "pitfalls": [
+        "**选项必须用空格分隔**，`#帮我选火锅还是烤肉` 会被当成一个选项",
+        "**概率不是纯随机**：权重主体来自选项文本的 sha256 前 6 位，只加了一个 22 位随机扰动量 —— 同一组选项反复发，**结果和概率都偏向稳定**",
+        "**没有选项时只回「请输入选项！」**，不会给用法示例",
+        "**`#帮我选` 必须带 `#`**（正则 `^#帮我选`，没有 `#?`）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请输入选项！」",
+          "cause": "只发了指令没跟选项"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "漏了 `#`"
+        }
+      ],
+      "edgeCases": [
+        "选项里带标点会算进 hash，影响概率但不会报错",
+        "同一个词出现两次会各算一份"
+      ],
+      "scenarios": [
+        "中午吃什么",
+        "抽签决定谁去"
+      ],
+      "vs": [
+        {
+          "command": "#随机表情",
+          "diff": "那个是表情包插件的随机，不是抽选项"
+        }
+      ],
+      "related": [
+        "#天如帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "tianru/whoami",
+      "command": "#我是12345678\n签到",
+      "aliases": [
+        "#我是@某人\n签到"
+      ],
+      "title": "以群友身份执行一条指令（伪造私聊事件）",
+      "summary": "要 master",
+      "what": "构造一个 `user_id` 换成目标 QQ 的**私聊** message 事件，`Bot.em('message', ...)` 重新投递，让这条命令以对方身份走一遍分发。",
+      "returns": "没有自己的回复；后续回复来自被触发的插件（并且回给发起这条指令的人）。",
+      "returnsDetail": "没给 QQ 号回「请输入群友 QQ 号，或者直接 @群友」；没给命令回「请输入命令」。",
+      "timing": "取决于被触发的插件。",
+      "cost": "**等于替别人执行任意指令**（签到、绑定、点歌都算那个人的）。",
+      "keywords": [
+        "我是",
+        "模拟群友",
+        "以某人身份执行"
+      ],
+      "params": [
+        {
+          "name": "目标",
+          "required": true,
+          "desc": "`@某人` 或 QQ 号（5~13 位，不能以 0 开头）"
+        },
+        {
+          "name": "命令",
+          "required": true,
+          "desc": "**必须换行分隔**，写在下一行"
+        }
+      ],
+      "example": "#我是12345678\n签到",
+      "moreExamples": [
+        "#我是@小明\n#体力"
+      ],
+      "preconditions": [
+        "master（非主人 `return false` 放行，等于什么都不做）"
+      ],
+      "pitfalls": [
+        "**命令必须换行**：`\\r` 或 `\\n` 都行，同一行里写不算",
+        "**`@` 和 QQ 号两种写法**：@ 时取 `e.at`，否则用正则 `[1-9][0-9]{4,12}` 抓第一个数字",
+        "**伪造出来的是「私聊」事件**（`message_type: 'private'`），所以只认群聊的插件不会响应",
+        "**`priority: -114514`**：这条排最后，前面有插件认领就轮不到它",
+        "**非主人是静默放行**（`return false`），消息会继续给别的插件处理"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请输入群友 QQ 号，或者直接 @群友」",
+          "cause": "没 @ 也没写 QQ 号"
+        },
+        {
+          "symptom": "回「请输入命令」",
+          "cause": "没换行，或换行后是空的"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [
+        "目标 QQ 不在群里也不影响（伪造事件里 sender 是空字段）"
+      ],
+      "scenarios": [
+        "测试某个插件对普通用户的响应"
+      ],
+      "vs": [
+        {
+          "command": "#伪造聊天",
+          "diff": "那个是造一段聊天记录，不执行指令"
+        }
+      ],
+      "related": [
+        "#伪造聊天"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "tianru/exec-sh",
+      "command": "#执行sh ls -al",
+      "aliases": [
+        "#执行sh whoami"
+      ],
+      "title": "在服务器上执行 shell 命令",
+      "summary": "RCE，仅 master",
+      "what": "把 `#执行sh` 后面的内容原样交给 `child_process.exec` 在**宿主机器**上执行，输出合并转发回来。",
+      "returns": "「正在执行....」→ 合并转发（stdout / stderr / error）。",
+      "returnsDetail": "非 master 静默 `return true`（连提示都没有）。",
+      "timing": "取决于命令本身，**没有超时限制**。",
+      "cost": "**任意命令执行**：能读文件、删库、反弹 shell、装后门。",
+      "keywords": [
+        "执行sh",
+        "执行shell",
+        "跑命令"
+      ],
+      "params": [
+        {
+          "name": "命令",
+          "required": true,
+          "desc": "原样传给 `exec`，可以带管道和重定向"
+        }
+      ],
+      "example": "#执行sh ls -al",
+      "moreExamples": [
+        "#执行sh df -h"
+      ],
+      "preconditions": [
+        "master",
+        "`priority: 3000`（很靠后，前面的插件先认领）"
+      ],
+      "pitfalls": [
+        "**这是真正的远程命令执行**，不是沙箱。任何能拿到 master 权限的人都等于拿到服务器",
+        "**没有超时、没有输出长度限制**，`#执行sh yes` 会一直跑",
+        "**代码里有个 bug**：回调里写的是 `this.e.reply(await e.runtime.common.makeForwardMsg(this.e, msg))` —— 这里的 `e` 是 exec 的 error 参数，`e.runtime` 通常是 undefined，**很可能抛 TypeError 导致结果发不出来**",
+        "**非 master 完全静默**（源码里那句「还想执行shell？想得美哦～」被注释掉了）",
+        "**建议直接禁用这个 app**，或者至少确认只有你自己是 master"
+      ],
+      "failures": [
+        {
+          "symptom": "回了「正在执行....」但没有结果",
+          "cause": "回调里 `e.runtime` 那个 bug，结果发不出来"
+        },
+        {
+          "symptom": "没反应",
+          "cause": "不是 master"
+        }
+      ],
+      "edgeCases": [
+        "命令里的引号、管道都会由系统的 shell 解析，没有转义"
+      ],
+      "scenarios": [
+        "临时查服务器状态（不推荐，请用 SSH）"
+      ],
+      "vs": [
+        {
+          "command": "#执行js 1+1",
+          "diff": "那个在 Bot 进程内 eval，权限一样但影响面不同"
+        }
+      ],
+      "related": [
+        "#执行js 1+1"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "tianru/exec-js",
+      "command": "#执行js 1+1",
+      "aliases": [
+        "#执行js process.version"
+      ],
+      "title": "在 Bot 进程内 eval 一段 JS",
+      "summary": "RCE，仅 master",
+      "what": "把 `#执行js` 后面的内容直接 `eval()`，结果合并转发；能访问 Bot 进程里的所有变量（Bot、redis、全局配置）。",
+      "returns": "「正在执行....」→ 合并转发（eval 的返回值或错误）。",
+      "returnsDetail": "非 master 静默；结果为空时**什么都不发**（`msg.filter(...).length != 0` 才回复）。",
+      "timing": "取决于代码，可能卡死整个 Bot。",
+      "cost": "**任意代码执行，且在 Bot 进程内** —— 能改内存、发消息、读配置、写文件。",
+      "keywords": [
+        "执行js",
+        "跑js",
+        "eval"
+      ],
+      "params": [
+        {
+          "name": "代码",
+          "required": true,
+          "desc": "单行 JS 表达式或语句"
+        }
+      ],
+      "example": "#执行js 1+1",
+      "moreExamples": [
+        "#执行js process.version"
+      ],
+      "preconditions": [
+        "master"
+      ],
+      "pitfalls": [
+        "**在 Bot 主进程里 eval**：写个死循环就能把整个 Bot 卡死，写错一个变量就能改掉运行状态",
+        "**只能写单行**（消息里换行会被截断），复杂逻辑要写成 IIFE",
+        "**返回 undefined 或空字符串时不回复**，看起来像「没反应」",
+        "**非 master 静默**"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是 master / 表达式返回值是 undefined"
+        },
+        {
+          "symptom": "回了「执行错误: ...」",
+          "cause": "代码有语法或运行时错误"
+        }
+      ],
+      "edgeCases": [
+        "`await` 可以用（外面是 async 函数）"
+      ],
+      "scenarios": [
+        "临时看一个进程内变量"
+      ],
+      "vs": [
+        {
+          "command": "#执行sh ls",
+          "diff": "那个是子进程，崩了不影响 Bot"
+        }
+      ],
+      "related": [
+        "#执行sh ls -al"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "tianru/fake-forward",
+      "command": "#伪造聊天\n12345678|小明 早上好\n87654321 吃了吗",
+      "aliases": [
+        "#伪造聊天记录\n12345678 测试"
+      ],
+      "title": "伪造一段群聊/私聊记录",
+      "summary": "要 master",
+      "what": "按行解析「QQ|昵称 内容」，支持 `pic[图片url]` 和 `\\n` 转义，组装成合并转发发出去。",
+      "returns": "一条合并转发（群聊走 `sendGroupForwardMsg`，私聊走 `sendFriendForwardMsg`）。",
+      "returnsDetail": "不在群也不在私聊时只写日志「伪造失败」。",
+      "timing": "1~3 秒。",
+      "cost": "**伪造聊天记录**，容易被用来造谣/钓鱼。",
+      "keywords": [
+        "伪造聊天",
+        "伪造记录",
+        "假聊天记录"
+      ],
+      "params": [
+        {
+          "name": "每行格式",
+          "required": true,
+          "desc": "`QQ` 或 `QQ|昵称` + 空格 + 内容；`pic[url]` 表示图片"
+        },
+        {
+          "name": "换行",
+          "required": true,
+          "desc": "第一行之后每一行是一条消息"
+        }
+      ],
+      "example": "#伪造聊天\n12345678|小明 早上好",
+      "moreExamples": [
+        "#伪造聊天记录\n12345678 测试\n87654321 pic[https://example.com/a.png]"
+      ],
+      "preconditions": [
+        "master",
+        "适配器支持合并转发"
+      ],
+      "pitfalls": [
+        "**必须有换行**：`\\r` 或 `\\n`，否则 `reg_newline.exec(msg)` 是 null，后面取 `.index` 直接抛 TypeError",
+        "**昵称解析有 bug**：`if (qq.indexOf('|'))` 恒为真（`indexOf` 返回 -1 也是真值），所以**没写 `|` 时 `qq.split('|')` 只有一段，昵称是 undefined**，退回 `getName()` 兜底",
+        "**QQ 号写错不校验**，`Number(qq)` 是 NaN 也能塞进转发节点",
+        "**只能伪造文本和图片**，不支持 @、语音、表情"
+      ],
+      "failures": [
+        {
+          "symptom": "报 TypeError / 没反应",
+          "cause": "没换行"
+        },
+        {
+          "symptom": "昵称显示成 QQ 号",
+          "cause": "没写 `昵称`，且 `getName` 也拿不到"
+        }
+      ],
+      "edgeCases": [
+        "`pic[url]` 只认第一个匹配，一行只能一张图",
+        "内容里的 `\\n` 会被还原成真换行"
+      ],
+      "scenarios": [
+        "做段子图/整活"
+      ],
+      "vs": [
+        {
+          "command": "#我是12345678\\n签到",
+          "diff": "那个是执行指令，这个是造记录"
+        }
+      ],
+      "related": [
+        "#我是12345678\n签到"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "tianru/gacha-log",
+      "command": "#获取小助手抽卡记录",
+      "aliases": [
+        "#更新小助手抽卡记录",
+        "#获取提瓦特小助手抽卡记录",
+        "#更新小助手祈愿历史",
+        "#获取小助手抽卡记录 https://api.example.com/xxx"
+      ],
+      "title": "导入提瓦特小助手的抽卡记录",
+      "summary": "要链接或 xiaoyao",
+      "what": "把提瓦特小助手的抽卡记录链接解析后写入本地抽卡库（走 genshin 的 `GachaLog`）；不给链接时尝试从 xiaoyao 插件拿 authkey 自动取。",
+      "returns": "导入进度/结果（由 `GachaLog` 输出，通常是合并转发或统计文本）。",
+      "returnsDetail": "既没链接也没有 xiaoyao 插件时会走 else 分支（提示去装/去取链接）。",
+      "timing": "10 秒到几分钟（条数多时）。",
+      "cost": "**写本地抽卡数据库**，会覆盖同 uid 的旧记录。",
+      "keywords": [
+        "小助手抽卡记录",
+        "导入抽卡",
+        "祈愿历史"
+      ],
+      "params": [
+        {
+          "name": "链接",
+          "required": false,
+          "desc": "以 `https` 开头，写在指令后面"
+        }
+      ],
+      "example": "#获取小助手抽卡记录 https://api.example.com/xxx",
+      "moreExamples": [
+        "#更新小助手抽卡记录",
+        "#获取提瓦特小助手抽卡记录"
+      ],
+      "preconditions": [
+        "已绑 uid",
+        "genshin 插件（`model/gachaLog.js`）",
+        "无链接时需要 xiaoyao-cvs-plugin"
+      ],
+      "pitfalls": [
+        "**没有链接时依赖 xiaoyao-cvs-plugin**：`import('../../xiaoyao-cvs-plugin/model/user.js')` 拿 cookie 换 authkey，没装就取不到",
+        "**链接过期很快**（小助手的 authkey 有时效），旧链接会导入失败",
+        "**`获取`/`更新` 都认**，`提瓦特`、`抽卡`/`祈愿`、`记录`/`历史` 都是可选词",
+        "**会写库**：同一个 uid 反复导入时以最后一次为准"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "既没链接也没 xiaoyao，或 authkey 拿不到"
+        },
+        {
+          "symptom": "导入 0 条",
+          "cause": "链接过期 / 账号不匹配"
+        }
+      ],
+      "edgeCases": [
+        "链接可以带在指令同一行，也可以换行写在后面"
+      ],
+      "scenarios": [
+        "想用 miao 的抽卡统计，但数据在小助手那边"
+      ],
+      "vs": [
+        {
+          "command": "#天如更新",
+          "diff": "无关，只是提醒这条会写库"
+        }
+      ],
+      "related": [
+        "#天如帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "tianru/homo",
+      "command": "#homo 114514",
+      "aliases": [
+        "#Homo 1919810",
+        "#homo 3.14"
+      ],
+      "title": "把数字转成「恶臭」表达式",
+      "summary": "梗功能",
+      "what": "用 114514/1919810 等常数做分解，把输入的数字写成只含恶臭数字的算式。",
+      "returns": "一段文本（算式）。",
+      "returnsDetail": "`Infinity`/`NaN` 回「这么恶臭的xx有必要论证吗」。",
+      "timing": "1 秒内（大数会慢一点）。",
+      "cost": "纯本地计算。",
+      "keywords": [
+        "homo",
+        "恶臭数字",
+        "114514"
+      ],
+      "params": [
+        {
+          "name": "数字",
+          "required": true,
+          "desc": "整数或小数，可以带负号"
+        }
+      ],
+      "example": "#homo 114514",
+      "moreExamples": [
+        "#homo 3.14",
+        "#Homo 1919810"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**正则没有首尾锚点**：`#?(H|h)omo ?[0-9\\.-]+` —— 消息里任何位置出现「homo 数字」都会触发",
+        "**不认中文数字和科学计数法**，`#homo 一亿` 不匹配",
+        "**小数会被展开成 16 位精度**的分数形式，输出很长",
+        "负数会输出 `(⑨)*(...)` 形式"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "后面不是数字"
+        }
+      ],
+      "edgeCases": [
+        "`#homo114514`（无空格）也能匹配",
+        "超大数会算很久"
+      ],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [
+        {
+          "command": "#帮我选 a b c",
+          "diff": "无关，只是同为小工具"
+        }
+      ],
+      "related": [
+        "#天如帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "tianru/setu",
+      "command": "#来3张涩图",
+      "aliases": [
+        "#来1张色图",
+        "#来3张白丝涩图",
+        "#来20张涩图"
+      ],
+      "title": "从 lolicon 接口拉图（返回链接）",
+      "summary": "上限 20 张",
+      "what": "按数量与标签调 `api.lolicon.app/setu/v2`，把每张图的 pid/标题/作者/标签/链接整理成合并转发。",
+      "returns": "合并转发（第一行提示「请复制链接去浏览器打开」+ 每张图的元信息与链接）。",
+      "returnsDetail": "没找到回「没有找到关于<标签>的色图」；用到中文数字时回「请用阿拉伯数字表达数量」。",
+      "timing": "3~15 秒。",
+      "cost": "打第三方接口，**内容为 R18**（`r18Type` 写死 `1`）。",
+      "keywords": [
+        "涩图",
+        "色图",
+        "来图"
+      ],
+      "params": [
+        {
+          "name": "数量",
+          "required": true,
+          "desc": "阿拉伯数字，**超过 20 按 20 算**"
+        },
+        {
+          "name": "标签",
+          "required": false,
+          "desc": "空格分隔，会拼成 `&tag=` 传给接口"
+        }
+      ],
+      "example": "#来3张涩图",
+      "moreExamples": [
+        "#来1张色图",
+        "#来3张白丝涩图"
+      ],
+      "preconditions": [
+        "能访问 `api.lolicon.app`",
+        "**群里发有被举报风险**"
+      ],
+      "pitfalls": [
+        "**数量必须用阿拉伯数字**：`#来三张涩图` 会回「请用阿拉伯数字表达数量」",
+        "**上限 20 张**，写 100 也只给 20",
+        "**返回的是链接不是图片**（`picType: 'url'`），而且第一行就写着「请复制链接去浏览器打开」",
+        "**`r18` 参数写死为 1**，没有开关可关",
+        "**依赖 `e.runtime.common`**：非 TRSS 之类的环境可能直接报错",
+        "**涩/色/瑟 都认**（正则里是 `(涩|色)图`，但后续 exec 里还带了「瑟」）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请用阿拉伯数字表达数量」",
+          "cause": "用了中文数字"
+        },
+        {
+          "symptom": "回「没有找到关于xx的色图」",
+          "cause": "标签组合无结果"
+        },
+        {
+          "symptom": "回「涩图似乎被吞了」",
+          "cause": "合并转发发送失败（风控/权限）"
+        }
+      ],
+      "edgeCases": [
+        "标签里的空格会逐个变成 `&tag=`，多标签是「与」关系",
+        "结果消息 60 秒后撤回"
+      ],
+      "scenarios": [
+        "（不建议在公开群使用）"
+      ],
+      "vs": [
+        {
+          "command": "#随机表情",
+          "diff": "那个是表情包，这个是图站图片"
+        }
+      ],
+      "related": [
+        "#天如帮助"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "tianru/sub",
+      "command": "#sub",
+      "aliases": [],
+      "title": "订阅链接流量查询（靠贴链接自动触发）",
+      "summary": "指令本身是空壳",
+      "what": "真正的功能在 `accept()`：**消息里只要出现 http/https 链接**，就逐个发 `HEAD` 请求、读 `subscription-userinfo` 响应头，画出已用/剩余/到期。",
+      "returns": "一张订阅流量图（`sub/index` 模板）。",
+      "returnsDetail": "没有链接 / 响应头里没有 `subscription-userinfo` 时**什么都不回**。",
+      "timing": "2~10 秒（每个链接一次 HEAD）。",
+      "cost": "**对消息里出现的任何链接发请求**（HEAD，不发内容）。",
+      "keywords": [
+        "sub",
+        "订阅",
+        "机场流量"
+      ],
+      "params": [],
+      "example": "#sub",
+      "moreExamples": [
+        "#sub"
+      ],
+      "preconditions": [
+        "消息里有 http/https 链接",
+        "链接返回 `subscription-userinfo` 头"
+      ],
+      "pitfalls": [
+        "**`#sub` 这条指令本身已经废了**：`async sub(e)` 整段被注释掉，规则却还指向 `fnc: 'sub'` —— 发 `#sub` 会调用一个不存在的方法（报错或没反应）",
+        "**贴链接就触发**：在群里随便发个链接（哪怕不是订阅）它都会去 HEAD 一次；只有带 `subscription-userinfo` 头的才会出图",
+        "**等于把你的订阅链接暴露给 Bot 所在服务器**（服务器会主动去请求它）",
+        "**`priority: 0`，靠后的位置**，但 `accept()` 是每条消息都会跑的，跟优先级无关"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#sub` 没反应/报错",
+          "cause": "方法被注释掉了"
+        },
+        {
+          "symptom": "贴了订阅链接没出图",
+          "cause": "响应头里没有 `subscription-userinfo`（有些机场不返回）"
+        }
+      ],
+      "edgeCases": [
+        "一条消息里有多个链接会逐个查、逐个出图",
+        "过期时间 `expire` 为 0 时显示「永不过期」"
+      ],
+      "scenarios": [
+        "快速看机场还剩多少流量"
+      ],
+      "vs": [
+        {
+          "command": "#天如帮助",
+          "diff": "帮助里可能没写这条（因为指令是空壳）"
+        }
+      ],
+      "related": [
+        "#天如帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "tianru/code",
+      "command": "#code python\nprint(1)",
+      "aliases": [
+        "#code bash\nls",
+        "#code c\nint main(){}",
+        "#code cpp\nint main(){}"
+      ],
+      "title": "在线跑一段代码（走远程沙箱）",
+      "summary": "任何人可用",
+      "what": "把第一行的语言和后面的代码分开，提交到远程沙箱（glot / piston / wandbox，看配置 `backend`）执行，输出合并转发。",
+      "returns": "合并转发（stdout / stderr / 退出信息）。",
+      "returnsDetail": "没有换行时回用法提示；语言不认识回「未知语言xx」；执行异常回「执行出错：xxx」。",
+      "timing": "3~20 秒（取决于沙箱排队）。",
+      "cost": "打第三方沙箱服务，**不在本机执行**。",
+      "keywords": [
+        "code",
+        "跑代码",
+        "在线编译"
+      ],
+      "params": [
+        {
+          "name": "语言",
+          "required": true,
+          "desc": "bash/sh/py/python/c/c++/cpp 等（映射到沙箱的语言名）"
+        },
+        {
+          "name": "代码",
+          "required": true,
+          "desc": "**必须换行**写在第二行起"
+        }
+      ],
+      "example": "#code python\nprint(1)",
+      "moreExamples": [
+        "#code bash\nls",
+        "#code cpp\nint main(){}"
+      ],
+      "preconditions": [
+        "消息里必须有换行",
+        "能访问对应沙箱（glot.io / emkc piston / wandbox）"
+      ],
+      "pitfalls": [
+        "**没有任何权限检查** —— 群里任何人都能让 Bot 跑代码（虽然跑在远程沙箱，但配额和你的 IP 是共用的）",
+        "**必须换行分隔语言和代码**，`#code python print(1)` 只会回用法提示",
+        "**glot 的旧接口 `/run/{lang}` 已下线**，代码里改用了 `api/mux`（源码注释写明了），换后端要改配置",
+        "**不认识的语言直接回「未知语言xx」**，不会自动猜",
+        "**输出走 `e.runtime.common.makeForwardMsg`**，非 TRSS 环境可能报错"
+      ],
+      "failures": [
+        {
+          "symptom": "回用法提示",
+          "cause": "没换行"
+        },
+        {
+          "symptom": "回「未知语言xx」",
+          "cause": "语言名不在映射表里"
+        },
+        {
+          "symptom": "回「执行出错：…」",
+          "cause": "沙箱不可达 / 超时 / 代码编译失败"
+        }
+      ],
+      "edgeCases": [
+        "`(#|\\.)?code` —— 也认 `.code` 这种写法",
+        "三个后端的语言覆盖不一样，切后端可能导致某些语言突然不支持"
+      ],
+      "scenarios": [
+        "群里比一段代码的输出"
+      ],
+      "vs": [
+        {
+          "command": "#执行sh ls",
+          "diff": "那个在**本机**执行，要 master；这个是远程沙箱"
+        }
+      ],
+      "related": [
+        "#执行sh ls -al",
+        "#执行js 1+1"
+      ],
+      "risk": "w",
+      "permission": ""
+    }
+  ]
+}

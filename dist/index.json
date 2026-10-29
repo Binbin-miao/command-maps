@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 38,
-  "updated": "2026-10-29T00:52:53.000Z",
+  "revision": 39,
+  "updated": "2026-10-29T00:53:16.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -282,6 +282,20 @@
       "sha256": "3c7f860550f41594963db9415a3d38cc7229d59d4f3736f8145377e2ad28ede8",
       "bytes": 31390,
       "used": 0
+    },
+    "TianRu-plugin": {
+      "file": "maps/TianRu-plugin.json",
+      "display": "天如插件（TianRu）",
+      "category": "工具",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 13,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "8ceee681754a",
+      "sha256": "8d0c137ddd89e8bd4d14fb0818661e73b148721ac072f441a166a597cd245f00",
+      "bytes": 34053,
+      "used": 0
     }
   },
   "packages": {
@@ -462,6 +476,15 @@
       "command_count": 13,
       "units": [
         "meme-plugin"
+      ],
+      "used": 0
+    },
+    "TianRu-plugin": {
+      "display": "天如插件（TianRu）",
+      "category": "工具",
+      "command_count": 13,
+      "units": [
+        "TianRu-plugin"
       ],
       "used": 0
     }
