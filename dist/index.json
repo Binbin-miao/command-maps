@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 32,
-  "updated": "2026-10-29T00:50:32.000Z",
+  "revision": 33,
+  "updated": "2026-10-29T00:50:52.000Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -198,6 +198,20 @@
       "sha256": "70a64673a7be02332d6d0ca8ba6a9e8ee89d6f49a3ca07e437b8cd3312b1c7cd",
       "bytes": 59241,
       "used": 0
+    },
+    "xitian-plugin": {
+      "file": "maps/xitian-plugin.json",
+      "display": "西天插件管理器",
+      "category": "系统",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 23,
+      "default_off_count": 0,
+      "delegated_count": 0,
+      "fingerprint": "b964b0b21bf4",
+      "sha256": "7b82efd244873b2264c37f18d060fb0e95c4a5a76a61a085f6d00ed3568f9f2e",
+      "bytes": 46525,
+      "used": 0
     }
   },
   "packages": {
@@ -324,6 +338,15 @@
       "command_count": 28,
       "units": [
         "windoge-plugin"
+      ],
+      "used": 0
+    },
+    "xitian-plugin": {
+      "display": "西天插件管理器",
+      "category": "系统",
+      "command_count": 23,
+      "units": [
+        "xitian-plugin"
       ],
       "used": 0
     }

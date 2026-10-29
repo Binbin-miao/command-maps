@@ -1,0 +1,1439 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "xitian-plugin",
+    "display": "戏天插件管理器",
+    "category": "系统",
+    "summary": "Yunzai 插件管理器：查询/启停/删除/恢复/重命名插件、git 安装与 js 文件安装、分组管理、回收站、命令总览与命中测试、管理器自身更新",
+    "homepage": "https://gitee.com/xitianovo/xitian-plugin",
+    "notes": "**权限模型与其它插件不同**：不走 `permission: master`，而是每个函数里调 `config.auth(e)` —— 看 `config/auth.set.yaml` 的 `grade`（`master`/`owner`/`admin`/`everyone`）、`accredit`（QQ 白名单）与 `group`（是否允许群聊）。**未授权时函数直接 `return true`，一句提示都没有**。例外是 `#插件更新`，它单独用 `e.isMaster`，白名单用户用不了。回收站目录是 `config/group.set.yaml` 的 `bin`，默认 `./plugins/bin/`。",
+    "interactsWith": [
+      "所有已装插件（会实例化它们、改它们的状态与位置）",
+      "Yunzai loader（插件列表与命令总览都基于它的 priority 表）",
+      "git（安装与更新都走 git）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助",
+        "插件查询与查看",
+        "插件启停",
+        "插件删除与恢复",
+        "插件重命名",
+        "插件安装（git / js 文件 / 批量）",
+        "回收站",
+        "分组管理",
+        "命令总览与命中测试",
+        "管理器更新与版本"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "xitian/help",
+      "command": "#插件帮助",
+      "aliases": [
+        "#插件菜单",
+        "#插件管理器帮助",
+        "#插件管理器菜单"
+      ],
+      "title": "插件管理器帮助",
+      "summary": "带 md5 缓存的帮助图",
+      "what": "渲染插件管理器的使用说明图，内容不变时复用同一张图。",
+      "returns": "一张帮助图。",
+      "returnsDetail": "md5 相同直接返回缓存图，不重复渲染。",
+      "timing": "2~8 秒（命中缓存瞬时）。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "插件帮助",
+        "插件菜单",
+        "插件管理器",
+        "xitian"
+      ],
+      "params": [],
+      "example": "#插件帮助",
+      "moreExamples": [
+        "#插件管理器帮助",
+        "#插件菜单"
+      ],
+      "preconditions": [
+        "**“管理器”三字可省**（正则 `插件(管理器)?(菜单|帮助|help)`）",
+        "需要 `config.auth` 通过（默认仅主人）"
+      ],
+      "pitfalls": [
+        "**未授权时完全静默** —— 不是没装，是权限没过（`config.auth` 返回 false 就 `return true`）",
+        "**只认「菜单/帮助/help」三个词**，`#插件指令` 不匹配",
+        "帮助图有 md5 缓存，改了配置但内容 md5 没变时还是旧图"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "权限不足（默认只有主人能用）"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "第一次用不知道有哪些操作"
+      ],
+      "vs": [
+        {
+          "command": "#插件列表",
+          "diff": "那个是实际列出已装插件"
+        }
+      ],
+      "related": [
+        "#插件列表",
+        "#命令总览"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/find-plugin",
+      "command": "#查找插件 miao",
+      "aliases": [
+        "#查找插件miao-plugin"
+      ],
+      "title": "按关键字查插件",
+      "summary": "查出分组与启停状态",
+      "what": "在已装插件里模糊查找，回插件名、所在分组、当前状态。",
+      "returns": "一条或若干条信息（多个结果走合并转发）。",
+      "returnsDetail": "每个结果含「找到插件 / 位于分组 / 当前状态」。",
+      "timing": "1~5 秒。",
+      "cost": "纯本地扫插件目录。",
+      "keywords": [
+        "查找插件",
+        "搜插件",
+        "插件在哪",
+        "插件状态"
+      ],
+      "params": [
+        {
+          "name": "关键字",
+          "required": true,
+          "desc": "插件名的一部分，`.js`/`.bak` 后缀会被自动去掉"
+        }
+      ],
+      "example": "#查找插件 miao",
+      "moreExamples": [
+        "#查找插件miao-plugin"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**关键字是模糊匹配**，输入太短会命中一堆，然后改用合并转发",
+        "**会自动去掉 `.js` 和 `.bak`**，所以写全名也行",
+        "**未授权时静默**",
+        "只查已装插件，不会去线上搜索"
+      ],
+      "failures": [
+        {
+          "symptom": "回「没有找到该插件，请确认你是否安装了该插件」",
+          "cause": "关键字不对或该插件没装"
+        },
+        {
+          "symptom": "回「找到多个插件」",
+          "cause": "关键字太短，结果在合并转发里"
+        }
+      ],
+      "edgeCases": [
+        "插件被停用或已删除时，状态栏会显示对应状态"
+      ],
+      "scenarios": [
+        "确认某个插件装没装、在哪组"
+      ],
+      "vs": [
+        {
+          "command": "#查看插件 xxx",
+          "diff": "那个是看插件详情"
+        }
+      ],
+      "related": [
+        "#插件列表",
+        "#查看插件 xxx"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/disable-plugin",
+      "command": "#停用插件 miao",
+      "aliases": [
+        "#停用插件miao-plugin"
+      ],
+      "title": "停用插件（改名 .bak）",
+      "summary": "立即生效",
+      "what": "把插件文件重命名成 `.bak`，Yunzai 立即不再加载它。",
+      "returns": "「已停用< 插件名 >立即生效」",
+      "returnsDetail": "已停用回「该插件已经处于停用状态」；已删除回「该插件处于已删除状态，请先恢复插件」；找不到回「没有找到该插件」。",
+      "timing": "1~5 秒。",
+      "cost": "**改文件名**，影响插件加载。",
+      "keywords": [
+        "停用插件",
+        "禁用插件",
+        "关闭插件",
+        "bak"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "模糊匹配，多个结果时会让你选序号"
+        }
+      ],
+      "example": "#停用插件 miao",
+      "moreExamples": [
+        "#停用插件miao-plugin"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**匹配到多个插件时会进入上下文要序号**（「请发送序号数字」），序号从 0 开始，越界回「序号需要在0-N内」",
+        "**上下文里发「取消」可以退出**，回「操作已取消」",
+        "**「立即生效」是真的** —— 不用重启，下一次消息分发就不加载了",
+        "**停用的插件仍在 `plugins/` 目录里**，只是后缀变了，`#查找插件` 还能看到",
+        "**停用配置类插件可能导致依赖它的插件报错**"
+      ],
+      "failures": [
+        {
+          "symptom": "回「该插件已经处于停用状态」",
+          "cause": "已经停过了"
+        },
+        {
+          "symptom": "回「该插件处于已删除状态，请先恢复插件」",
+          "cause": "在回收站里，要先 `#恢复插件`"
+        },
+        {
+          "symptom": "发了没反应",
+          "cause": "权限不足"
+        }
+      ],
+      "edgeCases": [
+        "同名的 `.js` 与 `.bak` 同时存在时以状态判断"
+      ],
+      "scenarios": [
+        "某个插件出错想临时关掉"
+      ],
+      "vs": [
+        {
+          "command": "#启用插件 miao",
+          "diff": "反过来恢复加载"
+        }
+      ],
+      "related": [
+        "#启用插件 miao",
+        "#删除插件 miao",
+        "#查找插件 miao"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/enable-plugin",
+      "command": "#启用插件 miao",
+      "aliases": [
+        "#启用插件miao-plugin"
+      ],
+      "title": "重新启用插件",
+      "summary": "把 .bak 改回来",
+      "what": "把 `.bak` 后缀去掉，插件立即恢复加载。",
+      "returns": "「已启用：< 插件名 >立即生效」",
+      "returnsDetail": "已启用回「该插件已经处于启用状态」；已删除回「请先恢复插件」。",
+      "timing": "1~5 秒。",
+      "cost": "改文件名。",
+      "keywords": [
+        "启用插件",
+        "恢复插件",
+        "打开插件"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "模糊匹配"
+        }
+      ],
+      "example": "#启用插件 miao",
+      "moreExamples": [
+        "#启用插件miao-plugin"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**只能启用「被停用」的**，在回收站里的要用 `#恢复插件`",
+        "**匹配多个时同样进上下文选序号**",
+        "**依赖的插件没装时，启用后可能直接报错**，注意日志"
+      ],
+      "failures": [
+        {
+          "symptom": "回「该插件已经处于启用状态」",
+          "cause": "本来就是启用的"
+        },
+        {
+          "symptom": "回「该插件处于已删除状态，请先恢复插件」",
+          "cause": "在回收站"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "修好插件后重新打开"
+      ],
+      "vs": [
+        {
+          "command": "#恢复插件 miao",
+          "diff": "那个是从回收站捞回来"
+        }
+      ],
+      "related": [
+        "#停用插件 miao",
+        "#恢复插件 miao"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/delete-plugin",
+      "command": "#删除插件 miao",
+      "aliases": [
+        "#彻底删除插件 miao"
+      ],
+      "title": "删除插件（进回收站/彻底删）",
+      "summary": "有二次确认",
+      "what": "普通删除把插件移进 `plugins/bin/`（辣姬箱）；带「彻底」则真删。",
+      "returns": "「已删除：< 插件名 >立即生效」，彻底删除前会问「(是|否)确认删除该插件？」",
+      "returnsDetail": "已经是删除状态回「该插件已经是删除状态」；找不到回「没有找到该插件」。",
+      "timing": "1~10 秒。",
+      "cost": "**移动或删除插件文件**。",
+      "keywords": [
+        "删除插件",
+        "彻底删除",
+        "移除插件",
+        "辣姬箱"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "模糊匹配，多个时选序号"
+        },
+        {
+          "name": "彻底",
+          "required": false,
+          "desc": "写 `#彻底删除插件 xxx` 会真删，不进回收站"
+        }
+      ],
+      "example": "#删除插件 miao",
+      "moreExamples": [
+        "#彻底删除插件 miao"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**不带「彻底」是移进回收站**（`plugins/bin/`），还能 `#恢复插件` 捞回来",
+        "**带「彻底」会二次确认**，回「是」才真删，回「否」取消，其它输入会再问一次",
+        "**彻底删除不可恢复**",
+        "**删除立即生效**，依赖它的插件可能马上报错",
+        "匹配多个时同样进上下文选序号"
+      ],
+      "failures": [
+        {
+          "symptom": "回「该插件已经是删除状态」",
+          "cause": "已经在回收站"
+        },
+        {
+          "symptom": "回「没有找到该插件」",
+          "cause": "名字不对"
+        }
+      ],
+      "edgeCases": [
+        "回收站目录由 `config/group.set.yaml` 的 `bin` 决定，默认 `./plugins/bin/`"
+      ],
+      "scenarios": [
+        "插件不要了"
+      ],
+      "vs": [
+        {
+          "command": "#停用插件 miao",
+          "diff": "那个只是改名，不挪位置"
+        },
+        {
+          "command": "#清空回收站",
+          "diff": "那个是把回收站整个清空"
+        }
+      ],
+      "related": [
+        "#恢复插件 miao",
+        "#查看回收站",
+        "#清空回收站"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/restore-plugin",
+      "command": "#恢复插件 miao",
+      "aliases": [
+        "#恢复插件miao-plugin"
+      ],
+      "title": "从回收站恢复插件",
+      "summary": "把插件挪回 plugins/",
+      "what": "从 `plugins/bin/` 移回原分组目录。",
+      "returns": "恢复结果。",
+      "returnsDetail": "找不到回插件不存在的提示。",
+      "timing": "1~5 秒。",
+      "cost": "移动文件。",
+      "keywords": [
+        "恢复插件",
+        "还原插件",
+        "从回收站恢复"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "回收站里的插件名，模糊匹配"
+        }
+      ],
+      "example": "#恢复插件 miao",
+      "moreExamples": [
+        "#恢复插件miao-plugin"
+      ],
+      "preconditions": [
+        "`config.auth` 通过",
+        "该插件在回收站里"
+      ],
+      "pitfalls": [
+        "**只能恢复进回收站的**，被 `#停用插件` 改名的不在这条的处理范围",
+        "**恢复后默认回到 `default_group`**（配置里是 `example`），不一定回到原来那个分组",
+        "**恢复后可能需要重新装依赖**"
+      ],
+      "failures": [
+        {
+          "symptom": "提示找不到",
+          "cause": "名字不对或不在回收站"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "误删了插件要捞回来"
+      ],
+      "vs": [
+        {
+          "command": "#清空回收站",
+          "diff": "那个是把回收站清空，删了就真没了"
+        }
+      ],
+      "related": [
+        "#删除插件 miao",
+        "#查看回收站",
+        "#清空回收站"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/rename-plugin",
+      "command": "#插件miao重命名miao2",
+      "aliases": [
+        "#插件 miao 重命名 miao2"
+      ],
+      "title": "重命名插件文件",
+      "summary": "改的是文件名",
+      "what": "把插件文件改成新名字。",
+      "returns": "重命名结果。",
+      "timing": "1~5 秒。",
+      "cost": "改文件名。",
+      "keywords": [
+        "重命名插件",
+        "插件改名",
+        "改插件名"
+      ],
+      "params": [
+        {
+          "name": "原名",
+          "required": true,
+          "desc": "写在「插件」和「重命名」之间"
+        },
+        {
+          "name": "新名",
+          "required": true,
+          "desc": "写在「重命名」之后"
+        }
+      ],
+      "example": "#插件miao重命名miao2",
+      "moreExamples": [
+        "#插件 miao 重命名 miao2"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**正则 `^#插件(.*)重命名(.*)$` 很宽** —— 两个 `(.*)` 都可能吞掉多余字符，名字带空格时容易切错",
+        "**改名后插件的 `name` 字段没变**，界面里还叫老名字",
+        "**改名可能破坏依赖关系**（别的插件按文件名找它时）",
+        "配置里有 `auto_rename` 智能重命名开关，但那是安装时的行为，和这条无关"
+      ],
+      "failures": [
+        {
+          "symptom": "改名后插件不加载了",
+          "cause": "新名字导致路径/依赖失配"
+        }
+      ],
+      "edgeCases": [
+        "新名字不含 `.js` 时是否自动补全由实现决定，建议写全"
+      ],
+      "scenarios": [
+        "两个同名插件冲突时改名区分"
+      ],
+      "vs": [
+        {
+          "command": "#停用插件 miao",
+          "diff": "那个是加 `.bak` 后缀"
+        }
+      ],
+      "related": [
+        "#查找插件 miao",
+        "#插件列表"
+      ],
+      "risk": "a",
+      "permission": "master",
+      "returnsDetail": "成功回改名结果；原名不存在或新名冲突时给对应提示。"
+    },
+    {
+      "id": "xitian/view-plugin",
+      "command": "#查看插件 miao",
+      "aliases": [
+        "#查看插件miao-plugin"
+      ],
+      "title": "查看插件内容",
+      "summary": "把插件文件发出来",
+      "what": "读插件文件内容并以文件形式发送。",
+      "returns": "一个 `.js` 文件。",
+      "returnsDetail": "找不到回插件不存在的提示。",
+      "timing": "1~10 秒。",
+      "cost": "读文件 + 上传。",
+      "keywords": [
+        "查看插件",
+        "看插件代码",
+        "导出插件",
+        "插件源码"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "模糊匹配"
+        }
+      ],
+      "example": "#查看插件 miao",
+      "moreExamples": [
+        "#查看插件miao-plugin"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**是发文件不是发文本**，群文件/私聊文件形态取决于适配器",
+        "**大插件可能超平台大小限制**",
+        "**能导出别人插件的完整源码**，属于敏感操作"
+      ],
+      "failures": [
+        {
+          "symptom": "找不到插件",
+          "cause": "名字不对"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "排查某个插件的实现"
+      ],
+      "vs": [
+        {
+          "command": "#查找插件 miao",
+          "diff": "那个只看状态不发文件"
+        }
+      ],
+      "related": [
+        "#查找插件 miao",
+        "#插件列表"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/install-plugin",
+      "command": "#安装插件https://github.com/user/repo",
+      "aliases": [
+        "#新增插件https://gitee.com/user/repo",
+        "#安装插件"
+      ],
+      "title": "安装插件（git 或 js 文件）",
+      "summary": "两种入口：URL 克隆 / 发 js 文件",
+      "what": "带 git URL 时 `git clone` 到默认分组；不带 URL 时进上下文等用户发 `.js` 文件，校验后安装。",
+      "returns": "「请发送js插件」或安装结果。",
+      "returnsDetail": "非 js 文件回「发送非js文件，已取消本次安装」；文件超过 `maxSize`（默认 6MB）回「文件过大，已取消本次安装」。",
+      "timing": "10~120 秒（克隆依赖网络）。",
+      "cost": "**从网络拉取并落盘可执行代码**。",
+      "keywords": [
+        "安装插件",
+        "新增插件",
+        "装插件",
+        "clone插件"
+      ],
+      "params": [
+        {
+          "name": "仓库地址",
+          "required": false,
+          "desc": "必须是 `https://github.com/xxx/yyy` 或 `https://gitee.com/xxx/yyy`，可带 `.git`"
+        }
+      ],
+      "example": "#安装插件https://github.com/user/repo",
+      "moreExamples": [
+        "#新增插件https://gitee.com/user/repo",
+        "#安装插件"
+      ],
+      "preconditions": [
+        "`config.auth` 通过",
+        "服务器装了 git（URL 方式）"
+      ],
+      "pitfalls": [
+        "**URL 必须紧贴「插件」二字，中间不能有空格** —— `#安装插件 https://github.com/u/r` 不匹配，要写 `#安装插件https://github.com/u/r`",
+        "**URL 正则是硬限制**：必须是 `https://` + `github.com`/`gitee.com` + 用户名 + 仓库名，其它托管站（gitlab、自建 gitea）一律不匹配",
+        "**等于给机器人装任意可执行代码** —— 装之前最好自己 review",
+        "**`#安装插件` 不带参数会进上下文**，等下一条消息当文件；不发文件会等到超时（`timeout` 默认 60 秒）",
+        "**只收 `.js` 单文件**，不支持 zip/多文件插件",
+        "**默认装到 `default_group`**（配置里是 `example`）",
+        "**`auto_install` / `auto_check` / `install_package` 会顺带装依赖**，行为由配置决定"
+      ],
+      "failures": [
+        {
+          "symptom": "URL 装了没反应",
+          "cause": "「插件」和 URL 之间有空格，或链接不是 github/gitee"
+        },
+        {
+          "symptom": "发 `#安装插件` 后没动静",
+          "cause": "进了上下文在等你发 js 文件（60 秒超时）"
+        },
+        {
+          "symptom": "回「发送非js文件，已取消本次安装」",
+          "cause": "发的不是 .js"
+        },
+        {
+          "symptom": "回「文件过大，已取消本次安装」",
+          "cause": "超过 `maxSize`（6MB）"
+        }
+      ],
+      "edgeCases": [
+        "`.git` 后缀可有可无"
+      ],
+      "scenarios": [
+        "临时装个工具插件"
+      ],
+      "vs": [
+        {
+          "command": "#开始批量安装插件",
+          "diff": "那个是连续装多个"
+        }
+      ],
+      "related": [
+        "#开始批量安装插件",
+        "#插件列表",
+        "#删除插件 xxx"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/batch-install",
+      "command": "#开始批量安装插件",
+      "aliases": [],
+      "title": "批量安装插件",
+      "summary": "连续发 js 文件",
+      "what": "进批量安装上下文，之后每发一个 `.js` 文件就装一个，直到发 `#结束批量安装`。",
+      "returns": "「已开始批量安装，请发送js插件…」/「已结束批量安装」。",
+      "returnsDetail": "每个文件独立校验文件名与大小。",
+      "timing": "每个文件 10~60 秒。",
+      "cost": "**批量落盘可执行代码**。",
+      "keywords": [
+        "批量安装",
+        "连续安装",
+        "装多个插件"
+      ],
+      "params": [],
+      "example": "#开始批量安装插件",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**上下文有超时**（`timeout` 默认 60 秒），超时自动结束，需要重新开",
+        "**结束要用 `#结束批量安装`**（也认 `#结束批量安装插件`）",
+        "**中途可以发 `#取消安装`** 退出",
+        "**每个文件都要是 `.js` 且不超过 6MB**"
+      ],
+      "failures": [
+        {
+          "symptom": "发文件没反应",
+          "cause": "上下文已超时结束"
+        }
+      ],
+      "edgeCases": [
+        "批量安装期间其它消息可能被上下文吃掉，注意别在群里闲聊"
+      ],
+      "scenarios": [
+        "一次装好几个小工具"
+      ],
+      "vs": [
+        {
+          "command": "#安装插件 https://github.com/user/repo",
+          "diff": "那个一次装一个仓库"
+        }
+      ],
+      "related": [
+        "#安装插件 https://github.com/user/repo",
+        "#插件列表"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/clear-bin",
+      "command": "#清空回收站",
+      "aliases": [],
+      "title": "清空插件回收站",
+      "summary": "二次确认后递归强删",
+      "what": "问「是/否」，回「是」则对 `plugins/bin/` 下每个条目 `fs.rmSync({recursive:true,force:true})`。",
+      "returns": "「警告！此操作会清空回收站内的全部插件且无法找回！是否继续（是/否）」→「插件回收站已清空」。",
+      "returnsDetail": "回「否」回「操作已取消」；其它输入回「请发送（是/否）进行选择」。",
+      "timing": "1~10 秒。",
+      "cost": "**递归强制删除，不可恢复**。",
+      "keywords": [
+        "清空回收站",
+        "删除回收站",
+        "清空辣姬箱"
+      ],
+      "params": [],
+      "example": "#清空回收站",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**`rmSync` 带 `force: true`**，权限不足也不报错，直接跳过",
+        "**回收站目录来自 `config/group.set.yaml` 的 `bin`**，默认 `./plugins/bin/` —— 如果它被改成 `./plugins`，这一步会删掉**所有插件**",
+        "**正则是 `^#清空回收站` 无结尾锚点**，后面跟字也算命中",
+        "**没有备份**，删完无法恢复"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请发送（是/否）进行选择」",
+          "cause": "回的不是「是」或「否」"
+        },
+        {
+          "symptom": "清完插件全没了",
+          "cause": "`bin` 配置指向了插件根目录"
+        }
+      ],
+      "edgeCases": [
+        "空回收站也会回「插件回收站已清空」"
+      ],
+      "scenarios": [
+        "确认不要了想腾空间"
+      ],
+      "vs": [
+        {
+          "command": "#删除插件 miao",
+          "diff": "那个只会删一个，且可以恢复"
+        }
+      ],
+      "related": [
+        "#删除插件 miao",
+        "#查看回收站"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/plugin-list",
+      "command": "#插件列表",
+      "aliases": [],
+      "title": "插件列表图",
+      "summary": "按分组可视化",
+      "what": "渲染一张插件列表图，按分组展示已装插件与状态。",
+      "returns": "一张列表图。",
+      "returnsDetail": "含插件名、分组、启停状态。",
+      "timing": "2~10 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "插件列表",
+        "已装插件",
+        "插件总览"
+      ],
+      "params": [],
+      "example": "#插件列表",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**必须完整写 `#插件列表`**（正则 `^#插件列表$`）",
+        "**是图片不是文本**，插件多时要翻",
+        "**只列 `plugins/` 下的 js 插件**，不含 npm 包"
+      ],
+      "failures": [
+        {
+          "symptom": "发了没反应",
+          "cause": "权限不足"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看装了些什么"
+      ],
+      "vs": [
+        {
+          "command": "#命令总览",
+          "diff": "那个看的是命令正则，不是插件"
+        }
+      ],
+      "related": [
+        "#查找插件 miao",
+        "#命令总览"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/view-bin",
+      "command": "#查看回收站",
+      "aliases": [],
+      "title": "看回收站里的插件",
+      "summary": "纯文本列表",
+      "what": "列出 `plugins/bin/` 下的条目。",
+      "returns": "「回收站的插件：…\\n恢复请用：#恢复插件+名字」。",
+      "timing": "1~3 秒。",
+      "cost": "纯本地读目录。",
+      "keywords": [
+        "查看回收站",
+        "回收站插件",
+        "已删除插件"
+      ],
+      "params": [],
+      "example": "#查看回收站",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**只列名字，不显示删除时间**",
+        "**文件名就是恢复时要写的名字**",
+        "回收站目录变了（`bin` 配置）这里看到的也会跟着变"
+      ],
+      "failures": [],
+      "edgeCases": [
+        "回收站为空时只回一句标题"
+      ],
+      "scenarios": [
+        "误删后确认在不在回收站"
+      ],
+      "vs": [
+        {
+          "command": "#清空回收站",
+          "diff": "那个是删光"
+        }
+      ],
+      "related": [
+        "#恢复插件 miao",
+        "#清空回收站"
+      ],
+      "risk": "q",
+      "permission": "master",
+      "returnsDetail": "每行一个插件文件名；回收站为空时只回标题那一行。"
+    },
+    {
+      "id": "xitian/group-list",
+      "command": "#分组列表",
+      "aliases": [],
+      "title": "列插件分组",
+      "summary": "文本列表",
+      "what": "读 `config/group.set.yaml` 的 `group` 数组并列出。",
+      "returns": "一段分组名列表。",
+      "returnsDetail": "每组一行。",
+      "timing": "1~2 秒。",
+      "cost": "纯本地读。",
+      "keywords": [
+        "分组列表",
+        "插件分组",
+        "有哪些分组"
+      ],
+      "params": [],
+      "example": "#分组列表",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**分组就是 `plugins/` 下的子目录名**，配置与目录要一致（不一致用 `#同步分组` 修）",
+        "默认只有一个 `example` 分组",
+        "**只列配置里的，不扫描实际目录** —— 新目录要同步才出现"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "确认分组名再设置分组"
+      ],
+      "vs": [
+        {
+          "command": "#同步分组",
+          "diff": "那个是把目录同步进配置"
+        }
+      ],
+      "related": [
+        "#创建分组test",
+        "#同步分组"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/group-create",
+      "command": "#创建分组test",
+      "aliases": [
+        "#创建分组 test"
+      ],
+      "title": "新建插件分组",
+      "summary": "建目录 + 写配置",
+      "what": "在 `plugins/` 下建同名目录，并写入 `group.set.yaml` 的 `group` 数组。",
+      "returns": "「创建分组成功」",
+      "returnsDetail": "已存在回「已经存在该分组了」。",
+      "timing": "1~3 秒。",
+      "cost": "建目录 + 写配置。",
+      "keywords": [
+        "创建分组",
+        "新建分组",
+        "插件分组"
+      ],
+      "params": [
+        {
+          "name": "分组名",
+          "required": true,
+          "desc": "会作为 `plugins/` 下的目录名"
+        }
+      ],
+      "example": "#创建分组test",
+      "moreExamples": [
+        "#创建分组 test"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**正则是 `^#创建分组(.*)$`** —— 名字里有空格会连空格一起当目录名",
+        "**目录名直接来自用户输入**，不做非法字符过滤（含 `/` 会建出嵌套路径）",
+        "**只建空目录**，里面不会有任何插件"
+      ],
+      "failures": [
+        {
+          "symptom": "回「已经存在该分组了」",
+          "cause": "同名分组已存在"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "按用途给插件分类"
+      ],
+      "vs": [
+        {
+          "command": "#同步分组",
+          "diff": "那个是已有目录反向写配置"
+        }
+      ],
+      "related": [
+        "#分组列表",
+        "#同步分组",
+        "#插件miao设置分组test"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/group-delete",
+      "command": "#删除分组test",
+      "aliases": [
+        "#删除分组 test"
+      ],
+      "title": "删除空分组",
+      "summary": "非空会拒绝",
+      "what": "确认分组为空后删目录并从配置移除。",
+      "returns": "「删除成功！」",
+      "returnsDetail": "非空回「该分组内不为空，请清理分组内插件后重试」；目录不存在回「不存在该分组文件夹哦~」；配置里没有回「不存在该分组配置」。",
+      "timing": "1~3 秒。",
+      "cost": "删目录 + 改配置。",
+      "keywords": [
+        "删除分组",
+        "移除分组"
+      ],
+      "params": [
+        {
+          "name": "分组名",
+          "required": true,
+          "desc": "要删的分组"
+        }
+      ],
+      "example": "#删除分组test",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过",
+        "分组内没有插件"
+      ],
+      "pitfalls": [
+        "**非空直接拒绝** —— 要先 `#删除插件` 或把插件挪走",
+        "**目录和配置是两处**：目录不存在和配置不存在给的是不同提示",
+        "删分组**不会删里面的插件**（因为要求非空就不让删）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「该分组内不为空，请清理分组内插件后重试」",
+          "cause": "分组里还有插件"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "清理多余分组"
+      ],
+      "vs": [
+        {
+          "command": "#同步分组",
+          "diff": "那个是修复配置与目录不一致"
+        }
+      ],
+      "related": [
+        "#分组列表",
+        "#删除插件 miao"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/group-set",
+      "command": "#miao设置分组test",
+      "aliases": [
+        "#插件miao设置分组test"
+      ],
+      "title": "把插件移进某个分组",
+      "summary": "移动文件 + 改配置",
+      "what": "把指定插件文件移动到目标分组目录。",
+      "returns": "「成功设置插件< 插件 >为分组< 分组 >」",
+      "returnsDetail": "分组不存在回「不存在分组< xxx >」；插件找不到回「没有找到插件：xxx」；多个匹配时进上下文选序号。",
+      "timing": "1~5 秒。",
+      "cost": "移动插件文件。",
+      "keywords": [
+        "设置分组",
+        "移动插件",
+        "插件分组"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "写在「设置分组」前面"
+        },
+        {
+          "name": "分组名",
+          "required": true,
+          "desc": "写在「设置分组」后面"
+        }
+      ],
+      "example": "#miao设置分组test",
+      "moreExamples": [
+        "#插件miao设置分组test"
+      ],
+      "preconditions": [
+        "`config.auth` 通过",
+        "分组必须已存在"
+      ],
+      "pitfalls": [
+        "**正则是 `^#(.*)设置分组(.*)$`，两个 `(.*)` 都很贪** —— 一条消息里出现两次「设置分组」会切错",
+        "**分组必须先创建**，否则直接回「不存在分组」",
+        "**移动文件可能破坏依赖**（有插件按相对路径找同伴时）",
+        "**匹配多个插件时进上下文选序号**（序号从 0 开始）"
+      ],
+      "failures": [
+        {
+          "symptom": "回「不存在分组< xxx >」",
+          "cause": "分组没建"
+        },
+        {
+          "symptom": "回「没有找到插件：xxx」",
+          "cause": "插件名不对"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "整理插件目录"
+      ],
+      "vs": [
+        {
+          "command": "#停用插件 miao",
+          "diff": "那个是停用不是挪分组"
+        }
+      ],
+      "related": [
+        "#创建分组test",
+        "#查找插件 miao"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/group-sync",
+      "command": "#同步分组",
+      "aliases": [],
+      "title": "把实际目录同步进配置",
+      "summary": "修配置与磁盘不一致",
+      "what": "扫描 `plugins/` 下的子目录，把 `group.set.yaml` 的 `group` 数组对齐成实际目录，并回当前分组列表。",
+      "returns": "「同步完成！当前分组列表：」+ 列表。",
+      "returnsDetail": "以磁盘为准，多出来的目录会加进配置。",
+      "timing": "1~5 秒。",
+      "cost": "写配置文件。",
+      "keywords": [
+        "同步分组",
+        "刷新分组",
+        "分组修复"
+      ],
+      "params": [],
+      "example": "#同步分组",
+      "moreExamples": [],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**以磁盘为准** —— 你手动删了目录，同步后配置里的分组也会消失",
+        "**会把所有 `plugins/` 子目录都当成分组**，包括 node_modules 之类（取决于实现过滤）",
+        "同步不移动任何插件文件，只改配置"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "手动建了目录但 `#分组列表` 里没有"
+      ],
+      "vs": [
+        {
+          "command": "#创建分组test",
+          "diff": "那个是配置与目录一起建"
+        }
+      ],
+      "related": [
+        "#分组列表",
+        "#创建分组test"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/rule-overview",
+      "command": "#命令总览",
+      "aliases": [
+        "#命令列表"
+      ],
+      "title": "列出所有插件的命令正则",
+      "summary": "排查指令冲突的利器",
+      "what": "遍历 `loader.priority` 里所有插件，逐个实例化并输出插件名、路径、优先级与每条命令正则。",
+      "returns": "一个很大的合并转发消息。",
+      "returnsDetail": "每个插件一段：「插件名 / 路径 / 优先级 / 命令正则<1>：…」；无规则的插件写「无命令正则」。",
+      "timing": "5~30 秒（要实例化所有插件）。",
+      "cost": "**把全部插件都 new 一遍**，有副作用的插件可能被意外触发。",
+      "keywords": [
+        "命令总览",
+        "命令列表",
+        "所有指令",
+        "正则总览"
+      ],
+      "params": [],
+      "example": "#命令总览",
+      "moreExamples": [
+        "#命令列表"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**会实例化每个插件类** —— 构造函数里如果有网络请求或文件写入，这一次全都会跑一遍",
+        "**输出非常长**，一定是合并转发，且在群里发会很显眼",
+        "**优先级 500**，比插件管理类（5）低，所以不会被别的规则抢",
+        "**正则原文直接展示**，能一眼看出谁在抢哪条指令"
+      ],
+      "failures": [
+        {
+          "symptom": "卡很久",
+          "cause": "插件多，逐个实例化慢"
+        },
+        {
+          "symptom": "某个插件报错导致中断",
+          "cause": "它的构造函数抛异常"
+        }
+      ],
+      "edgeCases": [
+        "插件越少越快；装了 chatgpt-plugin 这种会明显变慢"
+      ],
+      "scenarios": [
+        "查某条指令到底被谁接走了"
+      ],
+      "vs": [
+        {
+          "command": "#测试命令 xxx",
+          "diff": "那个是测一条具体消息命中谁"
+        }
+      ],
+      "related": [
+        "#测试命令 xxx",
+        "#插件列表"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/test-rule",
+      "command": "#测试命令 #体力",
+      "aliases": [
+        "#测试执行命令 #体力"
+      ],
+      "title": "测某条消息会命中哪些插件",
+      "summary": "按优先级排序输出",
+      "what": "拿你给的文本模拟一次消息分发，列出会命中的插件与优先级。",
+      "returns": "命中列表（文本或合并转发）。",
+      "returnsDetail": "含插件名与命中的正则。",
+      "timing": "2~10 秒。",
+      "cost": "遍历插件做正则匹配。",
+      "keywords": [
+        "测试命令",
+        "指令冲突",
+        "谁抢了指令",
+        "命中测试"
+      ],
+      "params": [
+        {
+          "name": "待测文本",
+          "required": true,
+          "desc": "写完整消息，含 `#`"
+        }
+      ],
+      "example": "#测试命令 #体力",
+      "moreExamples": [
+        "#测试执行命令 #签到"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**「执行」两字可省**（`测试(执行)?命令`）",
+        "**只做正则匹配，不真的执行** —— 命中不代表插件会响应（函数内部可能再判断权限/开关）",
+        "**要带上 `#`**，否则很多规则匹配不到",
+        "结果按优先级顺序列出，越靠前越先拿到消息"
+      ],
+      "failures": [
+        {
+          "symptom": "结果为空",
+          "cause": "没有插件匹配这条文本"
+        }
+      ],
+      "edgeCases": [
+        "测 `#帮助` 这种同名指令，能一次看到好几个插件都命中"
+      ],
+      "scenarios": [
+        "排查「为什么我的指令没反应」"
+      ],
+      "vs": [
+        {
+          "command": "#命令总览",
+          "diff": "那个是看全部正则，不是测命中"
+        }
+      ],
+      "related": [
+        "#命令总览",
+        "#插件列表"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/update-log",
+      "command": "#插件更新日志",
+      "aliases": [
+        "#插件管理器更新日志"
+      ],
+      "title": "插件管理器更新日志",
+      "summary": "版本卡片",
+      "what": "渲染插件管理器的更新日志图。",
+      "returns": "一张更新日志图。",
+      "returnsDetail": "内容来自 `defSet/version`。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地渲染。",
+      "keywords": [
+        "插件更新日志",
+        "更新记录",
+        "CHANGELOG"
+      ],
+      "params": [],
+      "example": "#插件更新日志",
+      "moreExamples": [
+        "#插件管理器更新日志"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**和 `#插件更新` 是一对**：这条只看日志，那条真拉代码",
+        "**「管理器」三字可省**",
+        "日志来自 `defSet` 里的静态配置，不是 git log"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "看看新版改了什么"
+      ],
+      "vs": [
+        {
+          "command": "#插件更新",
+          "diff": "那个是执行更新"
+        }
+      ],
+      "related": [
+        "#插件更新",
+        "#插件版本"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/update",
+      "command": "#插件更新",
+      "aliases": [
+        "#插件管理器更新",
+        "#插件强制更新",
+        "#插件管理器强制更新"
+      ],
+      "title": "更新插件管理器并自动重启",
+      "summary": "主人专用，2 秒后重启",
+      "what": "`git pull`（强制模式先 `git checkout .`），有更新时 2 秒后自动重启 Yunzai。",
+      "returns": "多条进度文本 + git log。",
+      "returnsDetail": "已最新回「插件管理器已经是最新\\n最后更新时间：…」；成功回「插件管理器更新成功\\n更新时间：…」；冲突会提示「请解决冲突后再更新，或者执行#强制更新，放弃本地修改」。",
+      "timing": "10~120 秒后重启。",
+      "cost": "走 git + **重启进程**。",
+      "keywords": [
+        "插件更新",
+        "插件管理器更新",
+        "强制更新"
+      ],
+      "params": [
+        {
+          "name": "强制",
+          "required": false,
+          "desc": "先 `git checkout .` 丢弃本地改动"
+        }
+      ],
+      "example": "#插件更新",
+      "moreExamples": [
+        "#插件强制更新",
+        "#插件管理器更新"
+      ],
+      "preconditions": [
+        "**`e.isMaster` 为真**（注意这条用的是 `isMaster`，不是 `config.auth`）",
+        "服务器装了 git（没装回「请先安装git」）"
+      ],
+      "pitfalls": [
+        "**权限判断和别的指令不一样**：这条只看 `isMaster`，白名单 QQ 用不了",
+        "**有全局 `uping` 互斥**，重复发回「已有命令更新中..请勿重复操作」",
+        "**消息里含「详细/详情/面板/面版」会直接放行**（避免抢别的插件的查询指令）",
+        "**更新成功 2 秒后自动重启**，不会有二次确认",
+        "**强制模式只 `git checkout .`**，不清未跟踪文件"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "不是主人（`isMaster` 为假）"
+        },
+        {
+          "symptom": "回「请先安装git」",
+          "cause": "服务器没有 git"
+        },
+        {
+          "symptom": "回「存在冲突」",
+          "cause": "本地改过代码，需手动处理或强制更新"
+        }
+      ],
+      "edgeCases": [
+        "发 `#插件更新详情` 不会触发更新（含「详情」被放行）"
+      ],
+      "scenarios": [
+        "管理器发新版了"
+      ],
+      "vs": [
+        {
+          "command": "#插件版本",
+          "diff": "那个只看版本"
+        }
+      ],
+      "related": [
+        "#插件版本",
+        "#插件更新日志"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "xitian/version",
+      "command": "#插件版本",
+      "aliases": [
+        "#插件管理器版本"
+      ],
+      "title": "插件管理器版本",
+      "summary": "版本卡片",
+      "what": "渲染当前版本与运行环境信息。",
+      "returns": "一张版本图。",
+      "returnsDetail": "含 Yunzai 类型（Miao/TRSS/A）与版本号、插件版本号。",
+      "timing": "2~8 秒。",
+      "cost": "纯本地。",
+      "keywords": [
+        "插件版本",
+        "管理器版本",
+        "版本号"
+      ],
+      "params": [],
+      "example": "#插件版本",
+      "moreExamples": [
+        "#插件管理器版本"
+      ],
+      "preconditions": [
+        "`config.auth` 通过"
+      ],
+      "pitfalls": [
+        "**「管理器」可省**（`插件(管理器)?版本`）",
+        "版本号来自 `defSet/version` 的静态配置",
+        "会顺带显示当前跑的是 Miao-Yunzai / TRSS-Yunzai / A-Yunzai"
+      ],
+      "failures": [],
+      "edgeCases": [],
+      "scenarios": [
+        "确认环境与版本"
+      ],
+      "vs": [
+        {
+          "command": "#插件更新",
+          "diff": "那个是拉代码"
+        }
+      ],
+      "related": [
+        "#插件更新",
+        "#插件更新日志"
+      ],
+      "risk": "q",
+      "permission": "master"
+    }
+  ]
+}
