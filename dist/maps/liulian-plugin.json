@@ -1,0 +1,5197 @@
+{
+  "schema": 2,
+  "plugin": {
+    "key": "liulian-plugin",
+    "display": "榴莲插件（liulian）",
+    "category": "娱乐",
+    "summary": "群聊娱乐大杂烩：娶群友、随机表情、话痨统计、星座运势与发病文学、五款游戏猜角色、原神地下地图 57 张、热搜榜与订阅推送、B站动态推送、插件管理、榴莲 AI 对话，外加会员体系",
+    "homepage": "https://github.com/flyingmangocat/liulian-plugin",
+    "notes": "**一大批功能默认是关的**：`sys.qqy`（娶群友）、`sys.dk`（打卡）、`sys.bq`（随机表情）、`sys.dw`（打我）、`sys.forge`（伪造消息）、`sys.jtm`（小黑子）、`sys.shutup`（群聊闭嘴）、`sys.xx`（群友强制休息）、`sys.aiEnabled`（榴莲 AI）在代码里都是 `Cfg.get(key, false)`——必须在 `#榴莲设置` 里打开才响应，而 `#榴莲状态` 面板上显示「开」是 `getStatus(key, true)` 的显示口径，别拿它当依据。**帮助要带「榴莲」**：`sys.help` 默认 false，`help.js` 里 `if (!/榴莲/.test(e.msg) && !Cfg.get('sys.help', false)) return false`，所以 `#帮助` 不会进这里。**两套插件管理并存**：`#v2插件列表` 那套带 `#`，`插件列表` 那套**不带** `#`，环境不同走不同那套。**地下地图是 57 条独立正则**（`1001xx` 雨林 / `1002-1004xx` 沙漠），编号写错直接静默无响应；`XMmap.js` 里那 57 条 `reg` 就是纯数字，本图合并成一条说明。**`apps/admin.js` 的 `#榴莲面板` 是死规则**：`apps/index.js` 第 27 行 `import { rule as adminRule }` 之后全文没再引用，那 4 条只有 3 条被 `index.js` 重新注册，`#榴莲面板` 没有任何入口会触发，故标 `enabled_by_default: false`。**猜歌名依赖 ffmpeg**，没装完全用不了。热搜有一整套审批流（订阅 → 申请 → 通过才推），推送平台/时间要单独设。**本图条数低于 `_rule-counts` 里的 406，是刻意合并的结果**：57 条地图编号并成 1 条、v2/v3 两套插件管理各并为 1~2 条、`apps/index.js` 对子模块规则的大量重复登记只保留一份、`apps/ai.js` 与 `replace.js` 这类 `^.*$` 宽匹配按「无固定写法」收成一条。",
+    "interactsWith": [
+      "王者营地 / 米游社 / B站 / 微博 等第三方接口（早报、运势、热搜、B站推送的数据源）",
+      "ffmpeg（`#猜歌名` 切音频，没装这一块完全不可用）",
+      "nodemjieba（`#热搜词云` 分词）",
+      "puppeteer（所有出图功能都走渲染）",
+      "锅巴插件（`guoba.support.js`，部分配置从这里改）",
+      "榴莲官方后端（AI 云大脑、记忆服务、会员校验，都要单独部署或买）",
+      "redis（话痨统计、猜角色会话、订阅表都存在这里）"
+    ],
+    "batches": {
+      "covered": [
+        "帮助与分区帮助",
+        "版本 / 状态 / 设置 / 更新",
+        "会员绑定与查询",
+        "群聊互动（娶群友、打卡、伪造、话痨、神之眼、休息、闭嘴）",
+        "猫猫小游戏与头像",
+        "运势 / 早报 / 发病 / 段子 / 彩虹屁",
+        "随机表情与图库上传",
+        "天气 / 广播 / 带话",
+        "文字工具（翻译、base64、二维码、网易云解析）",
+        "玄学（答案之书、观音灵签、节假日、历史上的今天）",
+        "五款游戏猜角色与作答",
+        "猜头像 / 猜歌名 / 猜谜语",
+        "原神地下地图（57 张编号合并说明）",
+        "热搜榜与订阅推送审批",
+        "插件管理（v2 / v3 两套）",
+        "B站动态推送全套",
+        "榴莲 AI 与记忆重置",
+        "被动触发类（戳一戳、脏话接茬、文本替换、随机表情）"
+      ],
+      "pending": [],
+      "complete": true
+    }
+  },
+  "instructions": [
+    {
+      "id": "liulian/help",
+      "command": "#榴莲帮助",
+      "aliases": [
+        "#留恋帮助",
+        "#榴莲help"
+      ],
+      "title": "榴莲插件帮助图",
+      "summary": "**消息里必须出现「榴莲」**，否则不出",
+      "what": "渲染帮助长图，条目来自 `resources/help/help-cfg_default.js`。带 `auth: master` 的分组（管理命令）只对主人渲染。有一个 `sys.help` 开关（默认 false）：关了之后只有消息里含「榴莲」二字才会响应。",
+      "returns": "一张图。",
+      "returnsDetail": "渲染失败时无文字兜底。",
+      "timing": "1~3 秒",
+      "cost": "只渲染模板",
+      "keywords": [
+        "榴莲帮助",
+        "榴莲菜单",
+        "榴莲功能"
+      ],
+      "params": [],
+      "example": "#榴莲帮助",
+      "moreExamples": [
+        "#榴莲help",
+        "榴莲帮助"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**默认要求消息里含「榴莲」** —— 发 `#帮助` 不会进榴莲的图，那是别的插件的",
+        "管理命令那一组只在**主人**身份下渲染",
+        "帮助列表是静态配置，可能落后于实际规则（`说明.txt` 里不少条目已过期）"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#帮助` 出的是别人的图",
+          "cause": "没带「榴莲」关键词"
+        },
+        {
+          "symptom": "图里条目很少",
+          "cause": "不是主人，管理组被跳过"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "刚装完想看有哪些功能"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲版本",
+        "#榴莲状态",
+        "#地下地图帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/sub-help",
+      "command": "#地下地图帮助",
+      "aliases": [
+        "#插件管理帮助",
+        "#汤圆帮助",
+        "#B站推送帮助",
+        "#热搜帮助",
+        "#表情帮助"
+      ],
+      "title": "各子功能的独立帮助",
+      "summary": "六个分区帮助，各出自己那块的说明",
+      "what": "榴莲把大块功能拆成独立帮助：地下地图、插件管理、汤圆小功能、B站推送、热搜、表情。其余功能仍收在 `#榴莲帮助` 里。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只渲染",
+      "keywords": [
+        "地下地图帮助",
+        "插件管理帮助",
+        "热搜帮助",
+        "B站推送帮助",
+        "汤圆帮助"
+      ],
+      "params": [],
+      "example": "#地下地图帮助",
+      "moreExamples": [
+        "#B站推送帮助",
+        "#热搜帮助"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "这六条**不带「榴莲」也认**，和主帮助的触发条件不同",
+        "`#表情帮助` 只在表情模块开着时有意义"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "对应模块被关掉了（如 `sys.bq` 关着时表情相关一律静默）"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想查某一块的详细用法"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/version",
+      "command": "#榴莲版本",
+      "aliases": [
+        "#留恋版本",
+        "#版本"
+      ],
+      "title": "插件版本信息",
+      "summary": "带更新日志",
+      "what": "输出当前插件版本与最近几条更新日志（数据来自 `components/Changelog.js`）。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "榴莲版本",
+        "版本号"
+      ],
+      "params": [],
+      "example": "#榴莲版本",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "`#版本` 这类裸词也能命中，可能和别的插件抢",
+        "日志只保留最近几条"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "发的是 `#版本` 但被更高优先级插件吃掉"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "确认更新有没有生效"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲更新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/status",
+      "command": "#榴莲状态",
+      "aliases": [
+        "#榴莲状态"
+      ],
+      "title": "插件运行状态",
+      "summary": "各功能开关、AI 是否启用、版本与资源",
+      "what": "输出一张状态面板：各功能开关的当前状态（娶群友 / 打卡 / 随机表情 / 小黑子 / 伪造信息 / 群聊闭嘴 / 群友强制休息等）、AI 是否启用、版本号。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读配置",
+      "keywords": [
+        "榴莲状态",
+        "功能开关",
+        "插件状态"
+      ],
+      "params": [],
+      "example": "#榴莲状态",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "**面板上显示的「开」不一定真生效** —— 部分项读的是 `getStatus(key, true)`（缺省显示开），而实际代码用的是 `Cfg.get(key, false)`，以实际表现为准",
+        "AI 那行常显示未启用（`sys.aiEnabled` 默认 false）"
+      ],
+      "failures": [
+        {
+          "symptom": "全显示关",
+          "cause": "还没跑过 `#榴莲设置` 初始化配置"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "排查某个功能为什么不响应"
+      ],
+      "vs": [
+        {
+          "command": "#榴莲设置",
+          "diff": "那个能改开关，这个只看"
+        }
+      ],
+      "related": [
+        "#榴莲设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/settings",
+      "command": "#榴莲设置",
+      "aliases": [
+        "#留恋设置"
+      ],
+      "title": "功能开关面板",
+      "summary": "**大部分互动功能默认关，都从这里开**",
+      "what": "打开设置面板，逐项开关功能。常用键：`sys.qqy` 娶群友、`sys.dk` 打卡、`sys.bq` 随机表情、`sys.dw` 打我、`sys.forge` 伪造信息、`sys.jtm` 小黑子、`sys.shutup` 群聊闭嘴、`sys.xx` 群友强制休息、`sys.aiEnabled` 榴莲 AI、`sys.help` 帮助关键词限制、`sys.gl` 随机概率、`sys.expression` 表情图库数量。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "2~6 秒",
+      "cost": "改运行配置",
+      "keywords": [
+        "榴莲设置",
+        "开关功能",
+        "打开随机表情"
+      ],
+      "params": [],
+      "example": "#榴莲设置",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**这些键默认都是 false**（`Cfg.get(key, false)`），面板上显示「开」不代表生效",
+        "改完清空配置或重装会重置回默认关",
+        "不是主人时这条会被拦，回一句权限提示"
+      ],
+      "failures": [
+        {
+          "symptom": "回「权限不足」",
+          "cause": "不是主人"
+        },
+        {
+          "symptom": "改了不生效",
+          "cause": "改的是面板显示的键，实际读的是另一个默认值"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想把随机表情打开"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲状态",
+        "#榴莲帮助"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/update",
+      "command": "#榴莲更新",
+      "aliases": [
+        "#榴莲强制更新",
+        "#留恋更新"
+      ],
+      "title": "更新榴莲插件",
+      "summary": "强制版会丢弃本地改动",
+      "what": "拉取上游最新代码并安装依赖。「强制」会丢弃本地改动。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "10 秒~数分钟",
+      "cost": "改代码目录，通常需重启",
+      "keywords": [
+        "榴莲更新",
+        "升级插件"
+      ],
+      "params": [],
+      "example": "#榴莲更新",
+      "moreExamples": [
+        "#榴莲强制更新"
+      ],
+      "preconditions": [
+        "主人身份",
+        "机器能连 Gitee/GitHub"
+      ],
+      "pitfalls": [
+        "**强制更新丢弃本地改动**",
+        "更新后不重启时新代码不生效",
+        "这个插件资源包很大（约 670MB），首次拉取会很久"
+      ],
+      "failures": [
+        {
+          "symptom": "回拉取失败",
+          "cause": "网络不通或仓库被墙"
+        },
+        {
+          "symptom": "更新完没变化",
+          "cause": "需要重启 Bot"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "上游发新版"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲更新图像",
+        "#榴莲版本"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/update-image",
+      "command": "#榴莲更新图像",
+      "aliases": [
+        "#榴莲图像更新",
+        "#留恋更新图像"
+      ],
+      "title": "更新图像资源",
+      "summary": "只补图片，不动代码",
+      "what": "单独拉取图像资源包（地图、表情、模板图），不更新代码。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "数十秒~数分钟",
+      "cost": "写资源目录",
+      "keywords": [
+        "更新图像",
+        "资源更新"
+      ],
+      "params": [],
+      "example": "#榴莲更新图像",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "体积很大，慢且占磁盘",
+        "只补资源，功能 bug 不会因此修好"
+      ],
+      "failures": [
+        {
+          "symptom": "卡住不动",
+          "cause": "网络或磁盘空间不足"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "地图图裂了、表情缺图"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲更新"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/member-bind",
+      "command": "#榴莲会员绑定",
+      "aliases": [
+        "#榴莲会员绑定"
+      ],
+      "title": "绑定榴莲会员",
+      "summary": "按提示发密钥完成绑定",
+      "what": "进入会员绑定流程，机器人提示你发送密钥完成绑定。会员能解锁云端课表、猜角色全网排名等。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~5 秒",
+      "cost": "写会员凭证",
+      "keywords": [
+        "会员绑定",
+        "榴莲会员"
+      ],
+      "params": [],
+      "example": "#榴莲会员绑定",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "**密钥等同凭证**，别在群里贴出来",
+        "绑定依赖官方后端，后端挂了会提示稍后再试"
+      ],
+      "failures": [
+        {
+          "symptom": "回「密钥无效」",
+          "cause": "抄错或已过期"
+        },
+        {
+          "symptom": "绑定后功能没变",
+          "cause": "部分功能需要重启或等云端同步"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "买了会员要开通"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲会员状态"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/member-status",
+      "command": "#榴莲会员状态",
+      "aliases": [
+        "#榴莲会员状态"
+      ],
+      "title": "查会员剩余时长",
+      "summary": "到期时间一目了然",
+      "what": "查询当前 QQ 的榴莲会员剩余时长与到期时间。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读云端记录",
+      "keywords": [
+        "会员状态",
+        "会员到期"
+      ],
+      "params": [],
+      "example": "#榴莲会员状态",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "只能查自己绑的那个号",
+        "云端不可达时会回查询失败"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未绑定」",
+          "cause": "还没发过 `#榴莲会员绑定`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "会员快到期了"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲会员绑定"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/wife",
+      "command": "#娶群友",
+      "aliases": [
+        "#拐群友",
+        "#绑架群友",
+        "#娶老婆",
+        "#抽管理",
+        "#拐走群友",
+        "#哪个群友是我老婆"
+      ],
+      "title": "按发言时间抽一个群友当老婆",
+      "summary": "**默认关**（`sys.qqy`），要先在设置里开",
+      "what": "按群成员的发言时间抽一个人出来，做成一妻一妻（或抽管理）的结果图。这是个纯娱乐功能，不改任何真实数据。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读群成员与发言记录",
+      "keywords": [
+        "娶群友",
+        "抽老婆",
+        "拐群友"
+      ],
+      "params": [],
+      "example": "#娶群友",
+      "moreExamples": [
+        "#抽管理",
+        "#娶老婆"
+      ],
+      "preconditions": [
+        "群聊",
+        "`sys.qqy` 已开启"
+      ],
+      "pitfalls": [
+        "**默认关着** —— 不开的话回一句「该功能已被关闭，请通过榴莲设置开启」",
+        "冷场群（最近没人说话）会抽不出来",
+        "判定在模块加载时做一次，改了设置要重启才彻底生效"
+      ],
+      "failures": [
+        {
+          "symptom": "回「该功能已被关闭」",
+          "cause": "`sys.qqy` 是 false"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里活跃气氛"
+      ],
+      "vs": [
+        {
+          "command": "#抽老婆",
+          "diff": "那个抽的是图（`#抽色图`/`#抽老婆`），不是群友"
+        }
+      ],
+      "related": [
+        "#榴莲设置",
+        "#抽老婆"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/checkin",
+      "command": "打卡",
+      "aliases": [
+        "打卡"
+      ],
+      "title": "私聊打卡给自己点赞",
+      "summary": "**默认关**（`sys.dk`）；只认私聊",
+      "what": "在私聊里发「打卡」，机器人给你的资料卡点赞。**没有 `#` 前缀**。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "调协议端点赞接口",
+      "keywords": [
+        "打卡",
+        "点赞"
+      ],
+      "params": [],
+      "example": "打卡",
+      "moreExamples": [],
+      "preconditions": [
+        "私聊",
+        "`sys.dk` 已开启"
+      ],
+      "pitfalls": [
+        "**只认私聊**，群里发不算",
+        "**正则只有 `打卡$`**，前面带 `#` 不命中",
+        "默认关着，开了才有反应"
+      ],
+      "failures": [
+        {
+          "symptom": "群里发没反应",
+          "cause": "设计如此"
+        },
+        {
+          "symptom": "私聊发也没反应",
+          "cause": "`sys.dk` 没开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "每天点个赞"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲设置"
+      ],
+      "risk": "w",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/fake-message",
+      "command": "#伪造消息",
+      "aliases": [
+        "#伪造信息"
+      ],
+      "title": "伪造一条群友发言",
+      "summary": "**默认关**（`sys.forge`）",
+      "what": "按指令里 @ 的人和内容，生成一张「某人说了这句话」的假消息截图。内容里可以写 @ 和文本。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "2~6 秒",
+      "cost": "只生成图片",
+      "keywords": [
+        "伪造消息",
+        "伪造信息",
+        "假聊天"
+      ],
+      "params": [],
+      "example": "#伪造消息 @张三 我不玩了",
+      "moreExamples": [],
+      "preconditions": [
+        "`sys.forge` 已开启"
+      ],
+      "pitfalls": [
+        "**默认关**，开了才响应",
+        "伪造出来的只是图，不会真发消息，但很容易被当真拿去误导人",
+        "群里用要 @ 到人，纯文字会缺头像"
+      ],
+      "failures": [
+        {
+          "symptom": "回「功能已关闭」",
+          "cause": "`sys.forge` 没开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "做梗图"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲设置"
+      ],
+      "risk": "a",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/chatterbox",
+      "command": "#话痨统计",
+      "aliases": [
+        "#话痨检测",
+        "#水逼检测",
+        "#水逼统计"
+      ],
+      "title": "统计群里谁最话痨",
+      "summary": "按发言条数排名",
+      "what": "统计本群成员的发言条数并排名出图。数据来自插件自己记的计数（redis），不是协议端全量。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~5 秒",
+      "cost": "只读 redis 计数",
+      "keywords": [
+        "话痨统计",
+        "谁话最多",
+        "水逼检测"
+      ],
+      "params": [],
+      "example": "#话痨统计",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊",
+        "插件已经记录过一段时间的发言"
+      ],
+      "pitfalls": [
+        "**只统计装了插件之后的消息**，历史记录统计不到",
+        "刚装上时数据很少，图会很难看",
+        "私聊不统计"
+      ],
+      "failures": [
+        {
+          "symptom": "图上全是 0",
+          "cause": "刚装，还没积累数据"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里互相调侃"
+      ],
+      "vs": [],
+      "related": [
+        "#神之眼"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/god-eyes",
+      "command": "#神之眼",
+      "aliases": [
+        "#神之眼@张三"
+      ],
+      "title": "看自己 / 群友的神之眼",
+      "summary": "随机生成一张属性卡",
+      "what": "按随机种子给目标生成一张「神之眼」卡：元素、命座、属性。@ 别人就看别人的。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~5 秒",
+      "cost": "只渲染",
+      "keywords": [
+        "神之眼",
+        "属性卡"
+      ],
+      "params": [],
+      "example": "#神之眼",
+      "moreExamples": [
+        "#神之眼 @张三"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "结果是随机生成的，没有真实依据",
+        "不填 @ 时看自己"
+      ],
+      "failures": [
+        {
+          "symptom": "图出不来",
+          "cause": "渲染资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#看头像"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/rest",
+      "command": "#我要休息",
+      "aliases": [
+        "#我要休息30分钟",
+        "#我要休息2小时"
+      ],
+      "title": "让机器人休息一段时间",
+      "summary": "**默认关**（`sys.xx`）；支持分钟/小时/天",
+      "what": "让机器人在指定时长内不响应本群（或本人）的消息，到点自动恢复。参数写法 `#我要休息 30分钟` / `2小时` / `1天`。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写静音状态，会影响一段时间内的响应",
+      "keywords": [
+        "我要休息",
+        "别回我",
+        "静音"
+      ],
+      "params": [],
+      "example": "#我要休息 30分钟",
+      "moreExamples": [
+        "#我要休息 2小时"
+      ],
+      "preconditions": [
+        "`sys.xx` 已开启"
+      ],
+      "pitfalls": [
+        "**默认关**，开了才生效",
+        "休息期间机器人基本不说话，别以为是掉线了",
+        "没写时长时不会默认一个值，要写清楚"
+      ],
+      "failures": [
+        {
+          "symptom": "回「功能已关闭」",
+          "cause": "`sys.xx` 没开"
+        },
+        {
+          "symptom": "一直不恢复",
+          "cause": "时长写成了很大的数"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "夜里不想被刷"
+      ],
+      "vs": [],
+      "related": [
+        "#闭嘴",
+        "#榴莲设置"
+      ],
+      "risk": "w",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/shutup",
+      "command": "#闭嘴",
+      "aliases": [
+        "#自爆"
+      ],
+      "title": "让机器人闭嘴",
+      "summary": "**默认关**（`sys.shutup`）",
+      "what": "让机器人停止接话（`#自爆` 是同义写法）。恢复用 `#张嘴` / `#复活`。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "改群级状态",
+      "keywords": [
+        "闭嘴",
+        "别说话",
+        "自爆"
+      ],
+      "params": [],
+      "example": "#闭嘴",
+      "moreExamples": [
+        "#自爆",
+        "#张嘴"
+      ],
+      "preconditions": [
+        "`sys.shutup` 已开启"
+      ],
+      "pitfalls": [
+        "**默认关**",
+        "闭嘴状态是群级的，群里其他人也会发现机器人不说话",
+        "`#张嘴`/`#色色`/`#复活` 都能解除"
+      ],
+      "failures": [
+        {
+          "symptom": "回「功能已关闭」",
+          "cause": "`sys.shutup` 没开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里聊天不想被插话"
+      ],
+      "vs": [],
+      "related": [
+        "#张嘴",
+        "#我要休息"
+      ],
+      "risk": "a",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/open-mouth",
+      "command": "#张嘴",
+      "aliases": [
+        "#复活",
+        "#色色"
+      ],
+      "title": "解除闭嘴",
+      "summary": "和 `#闭嘴` 配对",
+      "what": "解除机器人的闭嘴状态，恢复接话。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "改群级状态",
+      "keywords": [
+        "张嘴",
+        "复活",
+        "解除闭嘴"
+      ],
+      "params": [],
+      "example": "#张嘴",
+      "moreExamples": [],
+      "preconditions": [
+        "之前发过 `#闭嘴`"
+      ],
+      "pitfalls": [
+        "`sys.shutup` 关着时这一条也不响应",
+        "`#色色` 是同义写法，别在其他语境乱发"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "`sys.shutup` 没开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "刚才静音了想恢复"
+      ],
+      "vs": [],
+      "related": [
+        "#闭嘴"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/cat",
+      "command": "#抱走猫猫",
+      "aliases": [
+        "#猫猫突袭",
+        "#重置猫猫",
+        "#猫猫反弹"
+      ],
+      "title": "猫猫小游戏",
+      "summary": "抱走 / 突袭 / 反弹 / 重置",
+      "what": "一组围绕「猫猫」的小互动：`#抱走猫猫` 把猫抱走、`#猫猫突袭 xxx` 突袭某人、`#猫猫反弹` 反弹、`#重置猫猫` 复位。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地计数",
+      "keywords": [
+        "猫猫",
+        "抱走猫猫",
+        "猫猫突袭"
+      ],
+      "params": [],
+      "example": "#抱走猫猫",
+      "moreExamples": [
+        "#猫猫突袭 @张三",
+        "#猫猫反弹"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "纯娱乐计数，不改真实数据",
+        "`#猫猫突袭` 后面不跟目标时会突袭自己"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "被更高优先级插件抢走或模块未加载"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里逗猫"
+      ],
+      "vs": [],
+      "related": [
+        "#神之眼"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/avatar",
+      "command": "#看头像",
+      "aliases": [
+        "#看头像@张三"
+      ],
+      "title": "看某个人的头像",
+      "summary": "出一张头像大图",
+      "what": "把 @ 的人（不 @ 就是自己）的 QQ 头像放大出图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读",
+      "keywords": [
+        "看头像",
+        "头像"
+      ],
+      "params": [],
+      "example": "#看头像 @张三",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "取的是 QQ 头像，不是游戏头像",
+        "对方设置了不可见时可能拿不到"
+      ],
+      "failures": [
+        {
+          "symptom": "图是空白",
+          "cause": "头像接口不可达"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看看头像细节"
+      ],
+      "vs": [],
+      "related": [
+        "#神之眼"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/morning-paper",
+      "command": "#早报",
+      "aliases": [
+        "#新闻"
+      ],
+      "title": "当天新闻早报",
+      "summary": "一张早报图",
+      "what": "抓当天新闻简报并渲染成早报图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读外网数据",
+      "keywords": [
+        "早报",
+        "新闻"
+      ],
+      "params": [],
+      "example": "#早报",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "数据源是第三方聚合，可能延迟一天",
+        "`#新闻` 也能命中",
+        "早晚各发一次内容基本一样"
+      ],
+      "failures": [
+        {
+          "symptom": "图空白",
+          "cause": "数据源挂了"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "早上发个简报"
+      ],
+      "vs": [],
+      "related": [
+        "#历史上的今天"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/constellation",
+      "command": "#水瓶座运势",
+      "aliases": [
+        "#今日运势",
+        "#运势"
+      ],
+      "title": "星座运势 / 今日运势",
+      "summary": "`#xx座运势` 与 `#今日运势` 两种写法",
+      "what": "按星座出当日运势图。写 `#水瓶座运势` 看指定星座；写 `#今日运势` 或 `#运势` 看随机/当前星座。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读外网",
+      "keywords": [
+        "星座运势",
+        "今日运势",
+        "水瓶座"
+      ],
+      "params": [],
+      "example": "#水瓶座运势",
+      "moreExamples": [
+        "#今日运势",
+        "#运势"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "**`#运势` 和 `#xx座运势` 是两条不同的正则**，输出也可能不是同一个模板",
+        "星座名写错（如「水平座」）匹配不到",
+        "运势是娱乐性质的随机内容"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "星座名不认识"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "每天看一眼"
+      ],
+      "vs": [],
+      "related": [
+        "#观音灵签",
+        "#答案之书"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/illness",
+      "command": "#发病",
+      "aliases": [
+        "#发病文学",
+        "#发病xxx"
+      ],
+      "title": "发病文学",
+      "summary": "把后面的话扩写成发病文",
+      "what": "把 `#发病` 后面的内容扩写成一段「发病文学」输出。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读模板",
+      "keywords": [
+        "发病",
+        "发病文学"
+      ],
+      "params": [],
+      "example": "#发病 我想打游戏",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "后面不跟内容时只出一段空模板",
+        "内容是模板拼接，不是 AI 生成"
+      ],
+      "failures": [
+        {
+          "symptom": "回空白",
+          "cause": "没带内容"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#土味情话",
+        "#毒鸡汤"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/joke",
+      "command": "#讲个笑话",
+      "aliases": [
+        "#讲笑话",
+        "#来个笑话"
+      ],
+      "title": "随机讲个笑话",
+      "summary": "从本地库里抽一条",
+      "what": "从内置笑话库里随机抽一条发出来。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "讲个笑话",
+        "来个笑话"
+      ],
+      "params": [],
+      "example": "#讲个笑话",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "库是固定文本，会重复",
+        "无 `#` 也能命中（正则不强制前缀）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "库文件缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "冷场救场"
+      ],
+      "vs": [],
+      "related": [
+        "#毒鸡汤",
+        "#舔狗日记"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/dog-diary",
+      "command": "#舔狗日记",
+      "aliases": [
+        "#舔狗日记"
+      ],
+      "title": "随机舔狗日记",
+      "summary": "从本地库抽一条",
+      "what": "随机输出一条「舔狗日记」文本。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "舔狗日记"
+      ],
+      "params": [],
+      "example": "#舔狗日记",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "固定库，会重复",
+        "内容偏梗，介意可关文本库"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "库缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#土味情话"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/love-words",
+      "command": "#土味情话",
+      "aliases": [
+        "#土味",
+        "#情话"
+      ],
+      "title": "土味情话",
+      "summary": "随机一条",
+      "what": "随机输出一条土味情话。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "土味情话",
+        "情话"
+      ],
+      "params": [],
+      "example": "#土味情话",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "固定库会重复",
+        "无 `#` 前缀也能命中"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "库缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "撩人玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#彩虹屁",
+        "#舔狗日记"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/poison-soup",
+      "command": "#毒鸡汤",
+      "aliases": [
+        "#毒鸡汤"
+      ],
+      "title": "随机毒鸡汤",
+      "summary": "一针见血那种",
+      "what": "随机输出一条毒鸡汤。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "毒鸡汤"
+      ],
+      "params": [],
+      "example": "#毒鸡汤",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "固定库会重复",
+        "无 `#` 也能命中"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "库缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里互相扎心"
+      ],
+      "vs": [],
+      "related": [
+        "#讲个笑话"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/flatter",
+      "command": "#夸夸我",
+      "aliases": [
+        "#彩虹屁"
+      ],
+      "title": "彩虹屁 / 夸夸我",
+      "summary": "随机夸一句",
+      "what": "随机输出一句彩虹屁夸人。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "彩虹屁",
+        "夸夸我"
+      ],
+      "params": [],
+      "example": "#夸夸我",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "固定库会重复",
+        "夸的是发指令的人"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "库缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "求夸"
+      ],
+      "vs": [],
+      "related": [
+        "#土味情话"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hit-me",
+      "command": "#打我",
+      "aliases": [
+        "#打我"
+      ],
+      "title": "按人品随机禁言自己",
+      "summary": "**默认关**（`sys.dw`），要管理员权限才能真禁言",
+      "what": "按随机人品给发指令的人一个随机时长的禁言。Bot 需要有管理员权限；没有权限时只出图不禁言。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "可能真实禁言",
+      "keywords": [
+        "打我",
+        "随机禁言"
+      ],
+      "params": [],
+      "example": "#打我",
+      "moreExamples": [],
+      "preconditions": [
+        "`sys.dw` 已开启",
+        "Bot 在该群有管理员权限（要真禁言）"
+      ],
+      "pitfalls": [
+        "**默认关**",
+        "Bot 没管理员权限时不会真禁言，只回一张图",
+        "运气不好可能被禁很久，别在正经群里试"
+      ],
+      "failures": [
+        {
+          "symptom": "回「功能已关闭」",
+          "cause": "`sys.dw` 没开"
+        },
+        {
+          "symptom": "没被禁言",
+          "cause": "Bot 不是管理员"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩惩罚游戏"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲设置",
+        "#闭嘴"
+      ],
+      "risk": "a",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/broadcast",
+      "command": "#广播内容",
+      "aliases": [
+        "#广播内容 明天维护",
+        "#广播帮助"
+      ],
+      "title": "多群广播",
+      "summary": "一次发到所有已接入的群",
+      "what": "`#广播内容 <文本>` 把这段文本发到机器人所在的所有群（或配置的群列表）。`#广播帮助` 看用法。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "5~60 秒（群多更久）",
+      "cost": "真实群发，不可撤回",
+      "keywords": [
+        "广播",
+        "群发",
+        "通知所有群"
+      ],
+      "params": [],
+      "example": "#广播内容 明天 22 点维护",
+      "moreExamples": [
+        "#广播帮助"
+      ],
+      "preconditions": [
+        "主人身份（一般）"
+      ],
+      "pitfalls": [
+        "**一次发很多群，发错了收不回来**",
+        "协议端有频率限制，群多时会被风控",
+        "内容里带链接容易被吞"
+      ],
+      "failures": [
+        {
+          "symptom": "只发出去一部分",
+          "cause": "触了协议端频率限制"
+        },
+        {
+          "symptom": "回「权限不足」",
+          "cause": "不是主人"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "通知所有群停机维护"
+      ],
+      "vs": [],
+      "related": [
+        "#带话"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/weather",
+      "command": "#北京天气",
+      "aliases": [
+        "#上海天气"
+      ],
+      "title": "查城市天气",
+      "summary": "`#城市+天气`",
+      "what": "按城市名查当日天气并出图（温度、天气、风力、湿度）。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~6 秒",
+      "cost": "只读外网",
+      "keywords": [
+        "天气",
+        "北京天气"
+      ],
+      "params": [],
+      "example": "#北京天气",
+      "moreExamples": [
+        "#上海天气"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "城市名必须能识别，写区县名可能查不到",
+        "数据来自第三方接口，偶尔延迟"
+      ],
+      "failures": [
+        {
+          "symptom": "回「查不到该城市」",
+          "cause": "城市名写错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "出门前看一眼"
+      ],
+      "vs": [],
+      "related": [
+        "#早报"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/random-emoji",
+      "command": "",
+      "aliases": [],
+      "title": "随机表情（无固定写法）",
+      "summary": "**默认关**（`sys.bq`）；内容与触发都随机",
+      "what": "开了之后机器人会按概率（`sys.gl`）在群聊/私聊里随机甩表情包，**没有指令写法**，纯被动触发。图库数量由 `sys.expression` 控制，也可用 `#上传随机表情` 自己加。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "随机触发",
+      "cost": "只读本地图库",
+      "keywords": [
+        "随机表情",
+        "表情包"
+      ],
+      "params": [],
+      "example": "（无需指令：开启后在聊天中按概率自动触发）",
+      "moreExamples": [],
+      "preconditions": [
+        "`sys.bq` 已开启",
+        "群聊或私聊"
+      ],
+      "pitfalls": [
+        "**默认关**，帮助里也写着「默认关闭」",
+        "**没有指令能主动发** —— 想手动要图得用上传后的关键词",
+        "触发是随机的，别指望发某句话必出图"
+      ],
+      "failures": [
+        {
+          "symptom": "一直不出图",
+          "cause": "`sys.bq` 关着，或概率 `sys.gl` 太低"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想让群里热闹点"
+      ],
+      "vs": [],
+      "related": [
+        "#上传随机表情",
+        "#榴莲设置"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/upload-emoji",
+      "command": "#上传随机表情",
+      "aliases": [
+        "#上传表情包"
+      ],
+      "title": "给随机表情库加图",
+      "summary": "引用图片发这条即可",
+      "what": "引用一张图（或带图）发这条指令，把图加进随机表情库，之后随机触发时有可能甩出来。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "写本地图片文件",
+      "keywords": [
+        "上传表情",
+        "加表情包"
+      ],
+      "params": [],
+      "example": "（引用一张表情图）\n#上传随机表情",
+      "moreExamples": [],
+      "preconditions": [
+        "`sys.bq` 或表情模块已启用"
+      ],
+      "pitfalls": [
+        "**必须带图或引用图**，纯文字会回用法提示",
+        "图片会存到本地资源目录，占磁盘"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请引用图片」",
+          "cause": "没带图"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "建自己的表情池"
+      ],
+      "vs": [],
+      "related": [
+        "#随机表情"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/upload-fan-art",
+      "command": "#上传真爱粉图",
+      "aliases": [
+        "#上传black图",
+        "#上传图片"
+      ],
+      "title": "上传真爱粉 / black 图",
+      "summary": "按分类存进图库",
+      "what": "把图按分类（真爱粉图 / black 图 / 普通图片）存进图库，供抽图类功能使用。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "写本地文件",
+      "keywords": [
+        "上传真爱粉图",
+        "上传black图"
+      ],
+      "params": [],
+      "example": "（引用图片）#上传真爱粉图",
+      "moreExamples": [],
+      "preconditions": [
+        "带图或引用图"
+      ],
+      "pitfalls": [
+        "分类名写错不会被识别",
+        "图片存本地，长期会占空间"
+      ],
+      "failures": [
+        {
+          "symptom": "回「请引用图片」",
+          "cause": "没带图"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "补充图库"
+      ],
+      "vs": [],
+      "related": [
+        "#抽老婆",
+        "#抽色图"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/draw-wife",
+      "command": "#抽老婆",
+      "aliases": [
+        "#今日老婆",
+        "#抽色图",
+        "#今日色图"
+      ],
+      "title": "抽一张老婆 / 色图",
+      "summary": "**默认关**（`sys.xx` 系列开关影响）",
+      "what": "从图库随机抽一张图发出来（老婆图 / 色图两个池子）。图源来自本地上传与内置资源。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "只读本地图库",
+      "keywords": [
+        "抽老婆",
+        "抽色图",
+        "随机图片"
+      ],
+      "params": [],
+      "example": "#抽老婆",
+      "moreExamples": [
+        "#抽色图",
+        "#今日老婆"
+      ],
+      "preconditions": [
+        "对应开关已开启",
+        "图库里有图"
+      ],
+      "pitfalls": [
+        "**内容不适合所有群**，建议只在熟人小群用",
+        "没图时会回一句提示而不是报错",
+        "`#今日老婆` 与 `#抽老婆` 是同一实现的两种写法"
+      ],
+      "failures": [
+        {
+          "symptom": "回「图库为空」",
+          "cause": "没人上传过图"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里抽图玩"
+      ],
+      "vs": [],
+      "related": [
+        "#上传真爱粉图",
+        "#娶群友"
+      ],
+      "risk": "a",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/translate",
+      "command": "#翻译",
+      "aliases": [
+        "#翻译 hello world"
+      ],
+      "title": "翻译文本",
+      "summary": "中英互译",
+      "what": "把后面的文本翻译成另一种语言（中↔英按输入自动判断或按默认方向）。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~5 秒",
+      "cost": "只读外部接口",
+      "keywords": [
+        "翻译",
+        "中英互译"
+      ],
+      "params": [],
+      "example": "#翻译 hello world",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "长文本会被截断",
+        "依赖第三方翻译接口，挂了就回失败"
+      ],
+      "failures": [
+        {
+          "symptom": "回「翻译失败」",
+          "cause": "接口不可达或超长"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看不懂的英文"
+      ],
+      "vs": [],
+      "related": [
+        "#二维码"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/base64",
+      "command": "#base64加密",
+      "aliases": [
+        "#base64解密"
+      ],
+      "title": "Base64 编解码",
+      "summary": "加密 / 解密两个方向",
+      "what": "`#base64加密 <文本>` 做编码，`#base64解密 <密文>` 做解码。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~2 秒",
+      "cost": "纯本地计算",
+      "keywords": [
+        "base64",
+        "加密",
+        "解密"
+      ],
+      "params": [],
+      "example": "#base64加密 hello",
+      "moreExamples": [
+        "#base64解密 aGVsbG8="
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "解密非法 Base64 会回错误",
+        "中文要先确认编码，UTF-8 才对"
+      ],
+      "failures": [
+        {
+          "symptom": "解密报错",
+          "cause": "密文被截断或不是 Base64"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "临时编码一段文本"
+      ],
+      "vs": [],
+      "related": [
+        "#二维码"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/netease",
+      "command": "#网易云解析",
+      "aliases": [
+        "#网易云解析 https://music.163.com/song?id=123"
+      ],
+      "title": "网易云链接解析",
+      "summary": "发链接直接解析也行",
+      "what": "把网易云音乐链接解析成可播放/可下载的信息。**消息里直接出现 `music.163.com` 且带 `id=` 也会自动解析**，不用加指令。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~6 秒",
+      "cost": "只读外网接口",
+      "keywords": [
+        "网易云",
+        "解析音乐"
+      ],
+      "params": [],
+      "example": "#网易云解析 https://music.163.com/song?id=1901371647",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "VIP/版权曲可能拿不到直链",
+        "链接里必须有 `id=`",
+        "自动解析那条规则对群里所有网易云链接生效"
+      ],
+      "failures": [
+        {
+          "symptom": "回「解析失败」",
+          "cause": "该曲需要会员或无版权"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把网易云链接转成能听的"
+      ],
+      "vs": [],
+      "related": [
+        "#二维码"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/qrcode",
+      "command": "#二维码",
+      "aliases": [
+        "#二维码 https://example.com"
+      ],
+      "title": "把文本 / 链接转二维码",
+      "summary": "扫码即得",
+      "what": "把后面的文本或链接渲染成二维码图片。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "纯本地生成",
+      "keywords": [
+        "二维码",
+        "生成二维码"
+      ],
+      "params": [],
+      "example": "#二维码 https://example.com",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "内容太长时二维码密度过高，手机可能扫不出",
+        "不带内容会回用法提示"
+      ],
+      "failures": [
+        {
+          "symptom": "扫不出来",
+          "cause": "内容过长或含特殊字符"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "把长链接发到群里"
+      ],
+      "vs": [],
+      "related": [
+        "#翻译"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/answer-book",
+      "command": "#答案之书",
+      "aliases": [
+        "#答案之书 我该不该学这个"
+      ],
+      "title": "答案之书",
+      "summary": "给个玄学答案",
+      "what": "把问题丢给「答案之书」，回一句随机答案。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "答案之书",
+        "玄学答案"
+      ],
+      "params": [],
+      "example": "#答案之书 我该不该学这个",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "随机文本，没有逻辑",
+        "不带问题也能出答案（但没意义）"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "纠结时求个心安"
+      ],
+      "vs": [],
+      "related": [
+        "#观音灵签",
+        "#今日运势"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guanyin",
+      "command": "#观音灵签",
+      "aliases": [
+        "#观音灵签"
+      ],
+      "title": "抽一支观音灵签",
+      "summary": "带签文与解签",
+      "what": "随机抽一支观音灵签，出签文和解签图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "观音灵签",
+        "抽签"
+      ],
+      "params": [],
+      "example": "#观音灵签",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "娱乐性质，别当真",
+        "签库固定，会重复"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "求个签"
+      ],
+      "vs": [],
+      "related": [
+        "#答案之书"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/holiday",
+      "command": "#节假日",
+      "aliases": [
+        "#2026节假日",
+        "#假期"
+      ],
+      "title": "节假日与调休",
+      "summary": "可指定年份",
+      "what": "查今年的法定节假日与调休安排；带四位年份看指定年。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读本地数据",
+      "keywords": [
+        "节假日",
+        "放假安排",
+        "调休"
+      ],
+      "params": [],
+      "example": "#节假日",
+      "moreExamples": [
+        "#2026节假日"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "年份没录数据时回空",
+        "国务院临时调整的调休可能还没更新"
+      ],
+      "failures": [
+        {
+          "symptom": "回「无数据」",
+          "cause": "该年份还没录"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "算放假"
+      ],
+      "vs": [],
+      "related": [
+        "#历史上的今天"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/today-history",
+      "command": "#历史上的今天",
+      "aliases": [
+        "#历史上的今天"
+      ],
+      "title": "历史上的今天",
+      "summary": "当天发生的几件事",
+      "what": "列出历史上同一天发生的若干事件。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~6 秒",
+      "cost": "只读外网",
+      "keywords": [
+        "历史上的今天"
+      ],
+      "params": [],
+      "example": "#历史上的今天",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "按自然日算，跨零点是新的一天",
+        "数据源偶发不可达"
+      ],
+      "failures": [
+        {
+          "symptom": "图空白",
+          "cause": "数据源挂了"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "每天一条冷知识"
+      ],
+      "vs": [],
+      "related": [
+        "#早报"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/my-composition",
+      "command": "#我的成分",
+      "aliases": [
+        "#二次元的我"
+      ],
+      "title": "成分分析 / 二次元的我",
+      "summary": "生成一张成分饼图",
+      "what": "按本地随机（或统计）给你生成一张「成分」饼图，`#二次元的我` 是同类的另一张卡。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~5 秒",
+      "cost": "只渲染",
+      "keywords": [
+        "我的成分",
+        "二次元的我"
+      ],
+      "params": [],
+      "example": "#我的成分",
+      "moreExamples": [
+        "#二次元的我"
+      ],
+      "preconditions": [],
+      "pitfalls": [
+        "成分是随机/模板生成，没有真实分析",
+        "同一个人每次结果可能不同"
+      ],
+      "failures": [
+        {
+          "symptom": "图出不来",
+          "cause": "渲染资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩人设"
+      ],
+      "vs": [],
+      "related": [
+        "#神之眼",
+        "#看头像"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/poke",
+      "command": "",
+      "aliases": [],
+      "title": "戳一戳回应",
+      "summary": "被动触发：有人戳机器人就有反应",
+      "what": "群里有人「戳一戳」机器人时，机器人按随机文案回一句。**没有指令写法**，纯被动。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "即时",
+      "cost": "只回文本",
+      "keywords": [
+        "戳一戳",
+        "拍一拍"
+      ],
+      "params": [],
+      "example": "（在群里戳一戳机器人）",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "**没有指令能触发**，只能靠协议端的戳一戳事件",
+        "部分协议端不上报戳一戳，就完全没反应"
+      ],
+      "failures": [
+        {
+          "symptom": "怎么戳都没反应",
+          "cause": "协议端不上报 poke 事件"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "有人手欠戳机器人"
+      ],
+      "vs": [],
+      "related": [
+        "#随机表情"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/relay",
+      "command": "带话",
+      "aliases": [
+        "带话明天见"
+      ],
+      "title": "带一句话",
+      "summary": "把话带到下一次",
+      "what": "`#带话 <内容>` 记下一句话，在后续互动里替你说出来（具体时机由实现决定）。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写本地记录",
+      "keywords": [
+        "带话",
+        "捎句话"
+      ],
+      "params": [],
+      "example": "带话 明天见",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "只记一句，再发会覆盖",
+        "不是可靠的消息中继，别用来传重要信息"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "内容为空"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "人不在时留句话"
+      ],
+      "vs": [],
+      "related": [
+        "#广播内容"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/swear-detect",
+      "command": "",
+      "aliases": [],
+      "title": "骂人词自动接茬",
+      "summary": "被动触发：消息里出现脏话就回",
+      "what": "消息里出现「傻逼 / 淦 / 你妈 / 卧槽 / woc」这类词时机器人接一句。**没有指令写法**，纯被动正则。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "即时",
+      "cost": "只回文本",
+      "keywords": [
+        "骂人",
+        "脏话检测"
+      ],
+      "params": [],
+      "example": "（在群里说「卧槽」）",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "**正则没有锚点**，任何包含这些词的消息都会触发，容易误伤正常聊天",
+        "在正经群建议把这套文案清掉"
+      ],
+      "failures": [
+        {
+          "symptom": "不接茬",
+          "cause": "文案库为空"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里有人爆粗"
+      ],
+      "vs": [],
+      "related": [
+        "#随机表情"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/repeat",
+      "command": "",
+      "aliases": [],
+      "title": "复读 / 文本替换",
+      "summary": "被动触发：按配置替换或复读",
+      "what": "按 `replace` 配置里登记的规则，对消息做文本替换或复读。**没有指令写法**，规则来自配置文件。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "即时",
+      "cost": "只读配置",
+      "keywords": [
+        "复读",
+        "替换",
+        "自动回复"
+      ],
+      "params": [],
+      "example": "（触发配置里登记的词时自动替换/复读）",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "规则在配置文件里，聊天里改不了",
+        "配置写错会整段不生效且没有报错"
+      ],
+      "failures": [
+        {
+          "symptom": "不触发",
+          "cause": "配置为空或格式错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "固定关键词自动接话"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲设置"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-genshin",
+      "command": "猜角色",
+      "aliases": [
+        "#猜角色",
+        "猜角色普通",
+        "猜角色困难"
+      ],
+      "title": "原神猜角色",
+      "summary": "**默认模式**；回答用 `我猜XX`",
+      "what": "发 `#猜角色`（或不带 #）开一局原神猜角色，出角色剪影，群友用 `我猜<角色名>` 作答。可带难度词 `普通/困难/地狱`。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒（要出图）",
+      "cost": "只读本地题库",
+      "keywords": [
+        "猜角色",
+        "原神猜图",
+        "我猜"
+      ],
+      "params": [],
+      "example": "#猜角色",
+      "moreExamples": [
+        "猜角色困难",
+        "#猜角色 地狱"
+      ],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "**作答写法是 `我猜XX`**，不是 `#我猜` 也不是直接发名字",
+        "难度 `炼狱` 只有部分游戏支持，原神这条用的是 普通/困难/地狱",
+        "一局只能一个答案，答错可以继续猜"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#猜角色` 没反应",
+          "cause": "模块没加载，或消息被 AI 模块先拦了"
+        },
+        {
+          "symptom": "答对了不算",
+          "cause": "发的是角色别名，题库没收录"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩猜图"
+      ],
+      "vs": [
+        {
+          "command": "#星铁猜角色",
+          "diff": "题库换成星铁"
+        }
+      ],
+      "related": [
+        "#我猜",
+        "#绝区零猜角色",
+        "#鸣潮猜角色"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-starrail",
+      "command": "#星铁猜角色",
+      "aliases": [
+        "*猜角色",
+        "星铁猜角色"
+      ],
+      "title": "星铁猜角色",
+      "summary": "前缀 `*` 或直接说星铁",
+      "what": "开一局星铁题库的猜角色。识别方式有三种：`*` 前缀、`#星铁`、或消息里出现「星铁」。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地题库",
+      "keywords": [
+        "星铁猜角色",
+        "崩铁猜图"
+      ],
+      "params": [],
+      "example": "#星铁猜角色",
+      "moreExamples": [
+        "*猜角色"
+      ],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "**`*` 开头的写法别在群里随手发** —— 任何以 `*猜角色` 开头的都会被当成开局",
+        "作答同样是 `我猜XX`"
+      ],
+      "failures": [
+        {
+          "symptom": "开成原神题",
+          "cause": "前缀没写对，落到了默认题库"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "星铁玩家群"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#我猜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-zzz",
+      "command": "#绝区零猜角色",
+      "aliases": [
+        "%猜角色",
+        "ZZZ猜角色"
+      ],
+      "title": "绝区零猜角色",
+      "summary": "前缀 `%` 或说绝区零",
+      "what": "绝区零题库的猜角色，可用 `%`、`#绝区零`、`ZZZ` 或消息里出现「绝区零/ZZZ/%」触发。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地题库",
+      "keywords": [
+        "绝区零猜角色",
+        "ZZZ猜图"
+      ],
+      "params": [],
+      "example": "#绝区零猜角色",
+      "moreExamples": [
+        "%猜角色"
+      ],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "`%` 也是命令前缀，和别的插件可能有冲突",
+        "题库比原神小，容易重复出同一张"
+      ],
+      "failures": [
+        {
+          "symptom": "开成别的题",
+          "cause": "前缀识别错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "绝区零玩家群"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#我猜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-wuwa",
+      "command": "#鸣潮猜角色",
+      "aliases": [
+        "~猜角色",
+        "ww猜角色",
+        "#猜角色鸣潮"
+      ],
+      "title": "鸣潮猜角色",
+      "summary": "前缀 `~` 或说鸣潮",
+      "what": "鸣潮题库的猜角色，支持 `~`、`#鸣潮`、`ww` 前缀，另有 `#猜角色鸣潮` 的写法。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地题库",
+      "keywords": [
+        "鸣潮猜角色",
+        "ww猜角色"
+      ],
+      "params": [],
+      "example": "#鸣潮猜角色",
+      "moreExamples": [
+        "~猜角色"
+      ],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "角色名以别名库为准，新角色可能还没收录",
+        "`~` 前缀容易和表情/颜文字冲突"
+      ],
+      "failures": [
+        {
+          "symptom": "说对了不算",
+          "cause": "别名没收录，去提 issue"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "鸣潮群"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#我猜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-nte",
+      "command": "#异环猜角色",
+      "aliases": [
+        "nte猜角色",
+        "#猜角色异环"
+      ],
+      "title": "异环猜角色",
+      "summary": "前缀 `nte` 或说异环",
+      "what": "异环题库的猜角色，支持 `#异环`、`nte` 前缀，另有 `#猜角色异环` 写法。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地题库",
+      "keywords": [
+        "异环猜角色",
+        "nte"
+      ],
+      "params": [],
+      "example": "#异环猜角色",
+      "moreExamples": [
+        "nte猜角色"
+      ],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "异环角色库最小，容易重复",
+        "作者在 README 里明说不熟异环/鸣潮角色，别名缺漏可以直接提 PR"
+      ],
+      "failures": [
+        {
+          "symptom": "说对了不算",
+          "cause": "别名未收录"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "异环群"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#我猜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-answer",
+      "command": "我猜雷神",
+      "aliases": [
+        "#我猜雷神",
+        "*我猜雷神"
+      ],
+      "title": "提交猜角色答案",
+      "summary": "五套题库共用的作答写法",
+      "what": "在猜角色/猜头像进行中发 `我猜<名字>` 提交答案。前面可带 `#` `*` `~` `%` 任意一个前缀。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~2 秒",
+      "cost": "只读会话状态",
+      "keywords": [
+        "我猜",
+        "猜角色答案"
+      ],
+      "params": [
+        {
+          "name": "角色名",
+          "required": true,
+          "desc": "支持别名",
+          "example": "雷神"
+        }
+      ],
+      "example": "我猜雷神",
+      "moreExamples": [],
+      "preconditions": [
+        "当前有一局猜角色在进行"
+      ],
+      "pitfalls": [
+        "**没有 `我猜` 前缀就不是作答**，直接发角色名不算",
+        "别名库不认的写法会被当成答错",
+        "同一局里连发会被限速"
+      ],
+      "failures": [
+        {
+          "symptom": "答对了被判错",
+          "cause": "别名没收录"
+        },
+        {
+          "symptom": "提示没有进行中的游戏",
+          "cause": "上一局已结束"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "猜出来了提交"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-avatar",
+      "command": "猜头像",
+      "aliases": [
+        "#猜头像",
+        "猜头像困难"
+      ],
+      "title": "猜头像",
+      "summary": "打码头像认人",
+      "what": "出一张打码的头像，让群友猜是谁。可带难度。作答同样 `我猜XX`。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地资源",
+      "keywords": [
+        "猜头像",
+        "猜头像游戏"
+      ],
+      "params": [],
+      "example": "#猜头像",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "题库是群成员/角色头像，取决于实现与资源",
+        "难度越高打码越狠"
+      ],
+      "failures": [
+        {
+          "symptom": "图出不来",
+          "cause": "资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩认人"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#看头像"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-song",
+      "command": "#猜歌名",
+      "aliases": [
+        "猜歌名"
+      ],
+      "title": "猜歌名（要 ffmpeg）",
+      "summary": "听一小段猜歌",
+      "what": "切一小段音频发出来让群友猜歌名，答对统计积分。**机器上必须有 ffmpeg** 才能切音频。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "3~10 秒",
+      "cost": "本地转码切片",
+      "keywords": [
+        "猜歌名",
+        "听歌猜名"
+      ],
+      "params": [],
+      "example": "#猜歌名",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊",
+        "机器装了 ffmpeg"
+      ],
+      "pitfalls": [
+        "**没装 ffmpeg 就完全用不了**（帮助里明确写了「需要 ffmpeg」）",
+        "音频消息部分协议端发不出去",
+        "结束/放弃用 `#结束猜歌名` 或 `投降`"
+      ],
+      "failures": [
+        {
+          "symptom": "回「ffmpeg 未安装」",
+          "cause": "机器缺 ffmpeg"
+        },
+        {
+          "symptom": "发了但听不到",
+          "cause": "协议端不支持语音"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩听歌"
+      ],
+      "vs": [],
+      "related": [
+        "#结束猜歌名"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/guess-song-end",
+      "command": "#结束猜歌名",
+      "aliases": [
+        "投降"
+      ],
+      "title": "结束当前猜歌",
+      "summary": "公布答案并结束",
+      "what": "结束进行中的猜歌名对局，公布答案。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~2 秒",
+      "cost": "改会话状态",
+      "keywords": [
+        "结束猜歌",
+        "投降"
+      ],
+      "params": [],
+      "example": "#结束猜歌名",
+      "moreExamples": [
+        "投降"
+      ],
+      "preconditions": [
+        "当前有一局猜歌在进行"
+      ],
+      "pitfalls": [
+        "没有进行中的局时回一句提示",
+        "`投降` 这个词很短，别的插件也可能抢"
+      ],
+      "failures": [
+        {
+          "symptom": "提示没有进行中的游戏",
+          "cause": "上一局已结束"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "猜不出来放弃了"
+      ],
+      "vs": [],
+      "related": [
+        "#猜歌名"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/riddle",
+      "command": "#猜谜语",
+      "aliases": [
+        "猜谜语"
+      ],
+      "title": "猜谜语",
+      "summary": "出一题，答案按提示回",
+      "what": "随机出一道谜语，按提示回复答案。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "猜谜语",
+        "谜语"
+      ],
+      "params": [],
+      "example": "#猜谜语",
+      "moreExamples": [],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "谜语库固定，会重复",
+        "答案匹配比较死，同义写法可能不认"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/map-number",
+      "command": "#原神地下地图编号",
+      "aliases": [
+        "#原神地下地图编号"
+      ],
+      "title": "地下地图编号清单",
+      "summary": "57 个编号的索引",
+      "what": "输出原神地下地图的编号清单（须弥雨林 + 沙漠，共 57 张），照着编号发 `#地下地图 <编号>` 取图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地资源",
+      "keywords": [
+        "地下地图编号",
+        "地图清单"
+      ],
+      "params": [],
+      "example": "#原神地下地图编号",
+      "moreExamples": [],
+      "preconditions": [],
+      "pitfalls": [
+        "**编号是插件自己的流水号**，不是游戏内坐标",
+        "清单很长，出图要等"
+      ],
+      "failures": [
+        {
+          "symptom": "图出不来",
+          "cause": "地图资源没下载，先 `#榴莲更新图像`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "找某个地下区域怎么走"
+      ],
+      "vs": [
+        {
+          "command": "#地下地图 100101",
+          "diff": "那个是直接取某一张图"
+        }
+      ],
+      "related": [
+        "#地下地图 100101",
+        "#地下地图帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/map-image",
+      "command": "#地下地图 100101",
+      "aliases": [
+        "地下地图100101",
+        "#地下地图 100401"
+      ],
+      "title": "取某张地下地图",
+      "summary": "57 个编号，1001xx 雨林 / 1002-1004xx 沙漠",
+      "what": "按编号发地下地图大图。编号规则：`1001xx` 须弥雨林、`1002xx`/`1003xx`/`1004xx` 沙漠各区。带不带 `#`、中间有没有空格都认。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地图片",
+      "keywords": [
+        "地下地图",
+        "须弥地图",
+        "沙漠地图"
+      ],
+      "params": [
+        {
+          "name": "编号",
+          "required": true,
+          "desc": "从 `#原神地下地图编号` 清单里取",
+          "example": "100101"
+        }
+      ],
+      "example": "#地下地图 100101",
+      "moreExamples": [
+        "地下地图100401"
+      ],
+      "preconditions": [
+        "地图资源已下载"
+      ],
+      "pitfalls": [
+        "**57 个编号是一张张独立的规则**，编号写错不会提示，直接没反应",
+        "资源没下过时回「图片不存在」，先 `#榴莲更新图像`",
+        "这是插件内置图，不随游戏版本自动更新"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "编号不在 57 个之内"
+        },
+        {
+          "symptom": "回「图片不存在」",
+          "cause": "资源包没下载"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "带新人找地下入口"
+      ],
+      "vs": [],
+      "related": [
+        "#原神地下地图编号",
+        "#地下地图帮助"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hot",
+      "command": "#热搜",
+      "aliases": [
+        "#热搜榜",
+        "#热点",
+        "#微博热搜"
+      ],
+      "title": "各平台热搜榜",
+      "summary": "默认榜；也能 `#<平台>热搜`",
+      "what": "拉当前热搜榜出图。`#热搜` 出默认平台榜；`#B站热搜` / `#微博热搜` 这种「平台+热搜」写法走另一条正则。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读外网",
+      "keywords": [
+        "热搜",
+        "热搜榜",
+        "热点"
+      ],
+      "params": [],
+      "example": "#热搜",
+      "moreExamples": [
+        "#微博热搜",
+        "#热搜榜"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "两种写法（`#热搜xx` 与 `#xx热搜`）是**两条不同正则**，输出平台可能不同",
+        "第三方聚合源挂了就整块不可用",
+        "热搜榜有缓存，短时间内多次查询结果一样"
+      ],
+      "failures": [
+        {
+          "symptom": "图空白",
+          "cause": "数据源不可达"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看看今天发生什么"
+      ],
+      "vs": [],
+      "related": [
+        "#热搜趋势",
+        "#热搜词云",
+        "#热搜订阅"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hot-subscribe",
+      "command": "#热搜订阅",
+      "aliases": [
+        "#订阅关键词",
+        "#添加订阅"
+      ],
+      "title": "订阅热搜关键词",
+      "summary": "命中关键词就推给你",
+      "what": "`#热搜订阅 <关键词>` 把这个词加进订阅，之后该词上榜会推送。可同时订阅多个词。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "写订阅表",
+      "keywords": [
+        "热搜订阅",
+        "订阅关键词"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "要盯的词",
+          "example": "原神"
+        }
+      ],
+      "example": "#热搜订阅 原神",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "订阅数有上限，超了会提示",
+        "关键词是精确匹配，太长太偏的词基本不会命中"
+      ],
+      "failures": [
+        {
+          "symptom": "回「订阅已达上限」",
+          "cause": "先取消几个"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "盯自己关心的词"
+      ],
+      "vs": [],
+      "related": [
+        "#热搜取消订阅",
+        "#热搜查看订阅",
+        "#开启热搜推送"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hot-unsubscribe",
+      "command": "#热搜取消订阅",
+      "aliases": [
+        "#取消订阅",
+        "#删除订阅"
+      ],
+      "title": "取消热搜订阅",
+      "summary": "按关键词删",
+      "what": "`#热搜取消订阅 <关键词>` 把该词从订阅里移除。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "改订阅表",
+      "keywords": [
+        "取消订阅",
+        "删除订阅"
+      ],
+      "params": [
+        {
+          "name": "关键词",
+          "required": true,
+          "desc": "要删的词",
+          "example": "原神"
+        }
+      ],
+      "example": "#热搜取消订阅 原神",
+      "moreExamples": [],
+      "preconditions": [
+        "之前订阅过"
+      ],
+      "pitfalls": [
+        "关键词必须与订阅时完全一致",
+        "不带关键词时不会批量清空，只回用法"
+      ],
+      "failures": [
+        {
+          "symptom": "回「未订阅」",
+          "cause": "词写错"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "不关心了"
+      ],
+      "vs": [],
+      "related": [
+        "#热搜订阅",
+        "#热搜查看订阅"
+      ],
+      "risk": "w",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hot-my-subs",
+      "command": "#热搜查看订阅",
+      "aliases": [
+        "#查看订阅",
+        "#我的订阅",
+        "#订阅列表"
+      ],
+      "title": "看自己订阅了哪些词",
+      "summary": "四种写法等价",
+      "what": "列出当前会话/用户订阅的全部热搜关键词。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读",
+      "keywords": [
+        "查看订阅",
+        "我的订阅",
+        "订阅列表"
+      ],
+      "params": [],
+      "example": "#热搜查看订阅",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "订阅是**按用户还是按群**取决于实现，换群看可能不一样",
+        "列表空表示一个都没订"
+      ],
+      "failures": [
+        {
+          "symptom": "列表空",
+          "cause": "确实没订阅"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "忘了订过什么"
+      ],
+      "vs": [],
+      "related": [
+        "#热搜订阅",
+        "#热搜取消订阅"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hot-block-global",
+      "command": "#添加全局屏蔽词",
+      "aliases": [
+        "#删除全局屏蔽词",
+        "#查看全局屏蔽词"
+      ],
+      "title": "全局屏蔽词管理",
+      "summary": "所有群都不推这些词",
+      "what": "`#添加全局屏蔽词 <词>` / `#删除全局屏蔽词 <词>` / `#查看全局屏蔽词` 三条，管理对全部群生效的屏蔽词。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "写全局配置",
+      "keywords": [
+        "全局屏蔽词",
+        "屏蔽词"
+      ],
+      "params": [],
+      "example": "#添加全局屏蔽词 抽奖",
+      "moreExamples": [
+        "#查看全局屏蔽词",
+        "#删除全局屏蔽词 抽奖"
+      ],
+      "preconditions": [
+        "主人或管理员身份"
+      ],
+      "pitfalls": [
+        "**全局的会影响所有群**，加错了别的群也看不到相关热搜",
+        "屏蔽词是包含匹配，写太短会误伤"
+      ],
+      "failures": [
+        {
+          "symptom": "回「权限不足」",
+          "cause": "不是管理员"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "屏蔽广告类热搜"
+      ],
+      "vs": [],
+      "related": [
+        "#添加群屏蔽词"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/hot-block-group",
+      "command": "#添加群屏蔽词",
+      "aliases": [
+        "#删除群屏蔽词",
+        "#查看屏蔽词",
+        "#群屏蔽词"
+      ],
+      "title": "本群屏蔽词管理",
+      "summary": "只影响当前群",
+      "what": "管理只对当前群生效的热搜屏蔽词，增删查三条。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "写本群配置",
+      "keywords": [
+        "群屏蔽词",
+        "本群屏蔽"
+      ],
+      "params": [],
+      "example": "#添加群屏蔽词 抽奖",
+      "moreExamples": [
+        "#查看屏蔽词"
+      ],
+      "preconditions": [
+        "群管理员"
+      ],
+      "pitfalls": [
+        "只影响当前群",
+        "和全局屏蔽词是两份表，排查时两边都要看"
+      ],
+      "failures": [
+        {
+          "symptom": "回「权限不足」",
+          "cause": "不是管理员"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "本群不想看某类"
+      ],
+      "vs": [],
+      "related": [
+        "#添加全局屏蔽词"
+      ],
+      "risk": "a",
+      "permission": "admin"
+    },
+    {
+      "id": "liulian/hot-request",
+      "command": "#查看订阅申请",
+      "aliases": [
+        "#通过订阅申请 12",
+        "#拒绝订阅申请 12"
+      ],
+      "title": "热搜订阅申请审批",
+      "summary": "通过的才会进推送池",
+      "what": "查看待审批的订阅申请，`#通过订阅申请 <编号> [备注]` 或 `#拒绝订阅申请 <编号> [备注]` 处理。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "改审批状态",
+      "keywords": [
+        "订阅申请",
+        "审批订阅"
+      ],
+      "params": [
+        {
+          "name": "编号",
+          "required": false,
+          "desc": "申请单号",
+          "example": "12"
+        },
+        {
+          "name": "备注",
+          "required": false,
+          "desc": "给申请人的说明",
+          "example": "太宽泛"
+        }
+      ],
+      "example": "#查看订阅申请",
+      "moreExamples": [
+        "#通过订阅申请 12",
+        "#拒绝订阅申请 12 太宽泛"
+      ],
+      "preconditions": [
+        "管理员身份"
+      ],
+      "pitfalls": [
+        "**通过之后才真正开始推**，只订阅不审批是不会推的",
+        "编号来自申请列表，过期会变"
+      ],
+      "failures": [
+        {
+          "symptom": "回「无待处理申请」",
+          "cause": "没人申请或已被处理"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群友申请订阅热门词"
+      ],
+      "vs": [],
+      "related": [
+        "#热搜订阅",
+        "#开启热搜推送"
+      ],
+      "risk": "a",
+      "permission": "admin"
+    },
+    {
+      "id": "liulian/hot-trend",
+      "command": "#热搜趋势",
+      "aliases": [
+        "#热搜词云"
+      ],
+      "title": "热搜趋势 / 词云",
+      "summary": "看词条热度变化",
+      "what": "`#热搜趋势` 出热度变化曲线，`#热搜词云` 出词云图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~8 秒",
+      "cost": "只读本地历史",
+      "keywords": [
+        "热搜趋势",
+        "热搜词云",
+        "热度"
+      ],
+      "params": [],
+      "example": "#热搜趋势",
+      "moreExamples": [
+        "#热搜词云"
+      ],
+      "preconditions": [
+        "插件已积累一段时间的热搜数据"
+      ],
+      "pitfalls": [
+        "**趋势需要历史数据**，刚装上看不出东西",
+        "词云依赖分词（nodejieba），分词词典没装会影响效果"
+      ],
+      "failures": [
+        {
+          "symptom": "图是空的",
+          "cause": "历史数据不足"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看什么话题在升温"
+      ],
+      "vs": [],
+      "related": [
+        "#热搜",
+        "#热搜更新"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/hot-push-on",
+      "command": "#开启热搜推送",
+      "aliases": [
+        "#关闭热搜推送"
+      ],
+      "title": "开关热搜推送",
+      "summary": "开了才会定时推",
+      "what": "`#开启热搜推送` / `#关闭热搜推送` 控制本群的定时热搜播报。推送时间与平台由另外两条指令设置。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写本群推送配置",
+      "keywords": [
+        "热搜推送",
+        "开启推送"
+      ],
+      "params": [],
+      "example": "#开启热搜推送",
+      "moreExamples": [
+        "#关闭热搜推送"
+      ],
+      "preconditions": [
+        "群管理员",
+        "已通过订阅申请"
+      ],
+      "pitfalls": [
+        "只开关不设时间时用的是默认时间",
+        "推送平台要先设，不然可能推到不关心的平台"
+      ],
+      "failures": [
+        {
+          "symptom": "开了没收到",
+          "cause": "时间未设或平台为空"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "每天定时播报"
+      ],
+      "vs": [],
+      "related": [
+        "#设置热搜推送时间",
+        "#设置热搜推送平台",
+        "#热搜推送列表"
+      ],
+      "risk": "w",
+      "permission": "admin"
+    },
+    {
+      "id": "liulian/hot-push-time",
+      "command": "#设置热搜推送时间",
+      "aliases": [
+        "#设置热搜推送时间 08:00"
+      ],
+      "title": "设置热搜推送时间",
+      "summary": "支持多个时间点",
+      "what": "`#设置热搜推送时间 08:00 20:00` 设置每天推送的时间点（可多个）。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写定时配置",
+      "keywords": [
+        "推送时间",
+        "热搜时间"
+      ],
+      "params": [
+        {
+          "name": "时间",
+          "required": true,
+          "desc": "HH:MM，可写多个用空格隔开",
+          "example": "08:00"
+        }
+      ],
+      "example": "#设置热搜推送时间 08:00",
+      "moreExamples": [
+        "#设置热搜推送时间 08:00 20:00"
+      ],
+      "preconditions": [
+        "群管理员"
+      ],
+      "pitfalls": [
+        "**格式必须是 HH:MM**，写「早八点」不认",
+        "改了时间要确认推送开关是开的"
+      ],
+      "failures": [
+        {
+          "symptom": "回「时间格式错误」",
+          "cause": "没按 HH:MM 写"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "改到早上推"
+      ],
+      "vs": [],
+      "related": [
+        "#开启热搜推送",
+        "#设置热搜推送平台"
+      ],
+      "risk": "w",
+      "permission": "admin"
+    },
+    {
+      "id": "liulian/hot-push-platform",
+      "command": "#设置热搜推送平台",
+      "aliases": [
+        "#设置热搜推送平台 微博"
+      ],
+      "title": "设置推送平台",
+      "summary": "微博 / B站 / 知乎 等",
+      "what": "`#设置热搜推送平台 <平台名>` 指定定时推送抓哪个平台的热搜。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写本群配置",
+      "keywords": [
+        "推送平台",
+        "热搜平台"
+      ],
+      "params": [
+        {
+          "name": "平台名",
+          "required": true,
+          "desc": "平台中文名",
+          "example": "微博"
+        }
+      ],
+      "example": "#设置热搜推送平台 微博",
+      "moreExamples": [],
+      "preconditions": [
+        "群管理员"
+      ],
+      "pitfalls": [
+        "平台名写错会回「不支持的平台」",
+        "平台名不是 URL，别贴链接"
+      ],
+      "failures": [
+        {
+          "symptom": "回「不支持的平台」",
+          "cause": "名字不在支持列表"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "只关心 B站热搜"
+      ],
+      "vs": [],
+      "related": [
+        "#开启热搜推送",
+        "#设置热搜推送时间"
+      ],
+      "risk": "w",
+      "permission": "admin"
+    },
+    {
+      "id": "liulian/hot-list",
+      "command": "#热搜推送列表",
+      "aliases": [
+        "#热搜更新",
+        "#测试热搜推送"
+      ],
+      "title": "推送配置一览 / 手动刷新与测试",
+      "summary": "`#热搜更新` 强刷数据，`#测试热搜推送` 立刻推一条",
+      "what": "`#热搜推送列表` 列出本群推送配置；`#热搜更新` 强制刷新热搜缓存；`#测试热搜推送` 立即发一条看看效果。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "2~10 秒",
+      "cost": "刷新缓存 / 真实发一条消息",
+      "keywords": [
+        "推送列表",
+        "热搜更新",
+        "测试推送"
+      ],
+      "params": [],
+      "example": "#热搜推送列表",
+      "moreExamples": [
+        "#热搜更新",
+        "#测试热搜推送"
+      ],
+      "preconditions": [
+        "管理员（更新/测试）"
+      ],
+      "pitfalls": [
+        "**`#热搜更新` 会打破缓存**，频繁发会被数据源限流",
+        "`#测试热搜推送` 是立刻真发一条，别在正经群乱试"
+      ],
+      "failures": [
+        {
+          "symptom": "回「限流」",
+          "cause": "更新太频繁"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "排查推送为什么没来"
+      ],
+      "vs": [],
+      "related": [
+        "#开启热搜推送",
+        "#热搜趋势"
+      ],
+      "risk": "w",
+      "permission": "admin"
+    },
+    {
+      "id": "liulian/pm-v2-list",
+      "command": "#v2插件列表",
+      "aliases": [
+        "#v2插件列表",
+        "井v2插件列表"
+      ],
+      "title": "列出已装插件（v2 语法）",
+      "summary": "老版云崽的插件管理写法",
+      "what": "列出当前已安装的插件。`#v2` 系列是老版（Yunzai v2 风格）管理指令，`井` 也能当 `#` 用。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读目录",
+      "keywords": [
+        "v2插件列表",
+        "插件列表"
+      ],
+      "params": [],
+      "example": "#v2插件列表",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**v2 与 v3 是两套并行指令**，v3 环境里发 v2 的可能没反应",
+        "列表只列 `plugins/` 下的，不列内核插件"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "当前是 v3 环境，用 `插件列表`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "看装了什么"
+      ],
+      "vs": [],
+      "related": [
+        "#插件列表",
+        "#v2插件管理帮助"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/pm-v2-repo",
+      "command": "#v2仓库列表",
+      "aliases": [
+        "#v2仓库列表"
+      ],
+      "title": "列出可用插件仓库（v2）",
+      "summary": "装插件前先看有哪些",
+      "what": "列出配置里登记的插件仓库清单。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读配置",
+      "keywords": [
+        "v2仓库列表",
+        "插件仓库"
+      ],
+      "params": [],
+      "example": "#v2仓库列表",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "仓库清单来自配置文件，不是实时搜索",
+        "仓库挂了也能列出来，装的时候才报错"
+      ],
+      "failures": [
+        {
+          "symptom": "列表空",
+          "cause": "配置文件里没登记仓库"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想装个新插件"
+      ],
+      "vs": [],
+      "related": [
+        "#v2添加插件",
+        "#v2插件列表"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/pm-v2-add",
+      "command": "#v2添加插件",
+      "aliases": [
+        "#v2添加插件 仓库地址"
+      ],
+      "title": "装一个插件（v2）",
+      "summary": "会真的 clone 到 plugins/",
+      "what": "`#v2添加插件 <仓库地址或名称>` 把插件克隆到 `plugins/` 并装依赖。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "10 秒~数分钟",
+      "cost": "写磁盘、装依赖",
+      "keywords": [
+        "v2添加插件",
+        "安装插件"
+      ],
+      "params": [
+        {
+          "name": "仓库",
+          "required": true,
+          "desc": "git 地址或登记过的名称",
+          "example": "https://github.com/xxx/yyy-plugin"
+        }
+      ],
+      "example": "#v2添加插件 https://github.com/xxx/yyy-plugin",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份",
+        "机器能访问 git 源"
+      ],
+      "pitfalls": [
+        "**装完要重启才加载**",
+        "仓库地址带私有 token 会被写进 `.git/config`",
+        "依赖装失败时目录已经在了，看起来像装了一半"
+      ],
+      "failures": [
+        {
+          "symptom": "回「克隆失败」",
+          "cause": "网络/权限问题"
+        },
+        {
+          "symptom": "装完没反应",
+          "cause": "没重启"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "加个新插件"
+      ],
+      "vs": [],
+      "related": [
+        "#v2移除插件",
+        "#v2删除插件"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/pm-v2-remove",
+      "command": "#v2移除插件",
+      "aliases": [
+        "#v2移除插件 yyy-plugin"
+      ],
+      "title": "停用插件但不删文件（v2）",
+      "summary": "可恢复",
+      "what": "把插件从加载列表里移出（目录保留），之后可用 `#v2恢复插件` 加回来。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~5 秒",
+      "cost": "改加载列表",
+      "keywords": [
+        "v2移除插件",
+        "停用插件"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "`plugins/` 下的目录名",
+          "example": "yyy-plugin"
+        }
+      ],
+      "example": "#v2移除插件 yyy-plugin",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**名字写错会静默失败**，不会报「没找到」",
+        "移除后建议重启确认已不加载"
+      ],
+      "failures": [
+        {
+          "symptom": "没变化",
+          "cause": "插件名不对"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "临时停掉一个插件"
+      ],
+      "vs": [
+        {
+          "command": "#v2删除插件",
+          "diff": "那个会真删目录，不可恢复"
+        }
+      ],
+      "related": [
+        "#v2恢复插件",
+        "#v2删除插件"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/pm-v2-delete",
+      "command": "#v2删除插件",
+      "aliases": [
+        "#v2删除插件 yyy-plugin"
+      ],
+      "title": "删掉插件目录（v2）",
+      "summary": "**不可恢复**",
+      "what": "把插件目录整个删掉。和「移除」不同，这个删文件。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~10 秒",
+      "cost": "删目录，不可逆",
+      "keywords": [
+        "v2删除插件",
+        "卸载插件"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "要删的目录名",
+          "example": "yyy-plugin"
+        }
+      ],
+      "example": "#v2删除插件 yyy-plugin",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**目录删了就没了**，插件里的配置和缓存一并消失",
+        "删错名字可能删不了（安全），但也可能删到别的同名目录"
+      ],
+      "failures": [
+        {
+          "symptom": "回「删除失败」",
+          "cause": "权限不足或目录被占用"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "彻底卸载"
+      ],
+      "vs": [],
+      "related": [
+        "#v2移除插件"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/pm-v3-list",
+      "command": "插件列表",
+      "aliases": [
+        "仓库列表",
+        "插件管理帮助"
+      ],
+      "title": "插件管理（v3 语法，无 #）",
+      "summary": "**不带 `#` 前缀**",
+      "what": "老版与 v2 语法并存的一套：`插件列表` / `仓库列表` / `添加插件 <x>` / `移除插件 <x>` / `删除插件 <x>` / `插件管理帮助`，**全部不带 `#`**。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读",
+      "keywords": [
+        "插件列表",
+        "插件管理"
+      ],
+      "params": [],
+      "example": "插件列表",
+      "moreExamples": [
+        "仓库列表",
+        "插件管理帮助"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**这些指令没有 `#`** —— 发 `#插件列表` 不命中",
+        "和 `#v2插件列表` 是两套，环境不同走不同的那套",
+        "`插件列表` 这种词在群里极易被别的插件抢"
+      ],
+      "failures": [
+        {
+          "symptom": "发 `#插件列表` 没反应",
+          "cause": "这条正则不带 `#`"
+        },
+        {
+          "symptom": "被别的插件抢",
+          "cause": "优先级冲突"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "v3 环境管理插件"
+      ],
+      "vs": [],
+      "related": [
+        "#v2插件列表",
+        "#v2插件管理帮助"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/pm-v3-modify",
+      "command": "添加插件",
+      "aliases": [
+        "移除插件 yyy-plugin",
+        "删除插件 yyy-plugin"
+      ],
+      "title": "插件增删（v3 语法，无 #）",
+      "summary": "同样不带 `#`",
+      "what": "`添加插件 <仓库>` / `移除插件 <名>` / `删除插件 <名>`，语义同 v2 那三条，只是不带 `#`。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~10 秒",
+      "cost": "写/删目录",
+      "keywords": [
+        "添加插件",
+        "删除插件"
+      ],
+      "params": [],
+      "example": "添加插件 https://github.com/xxx/yyy-plugin",
+      "moreExamples": [
+        "移除插件 yyy-plugin",
+        "删除插件 yyy-plugin"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**`删除插件` 不可恢复**",
+        "不带 `#` 的写法在群里很容易和普通发言混淆"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "带了 `#`"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "v3 环境装插件"
+      ],
+      "vs": [],
+      "related": [
+        "#v2添加插件",
+        "#v2删除插件"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-help",
+      "command": "#B站推送帮助",
+      "aliases": [
+        "#b站推送帮助",
+        "#小破站推送帮助"
+      ],
+      "title": "B站推送帮助",
+      "summary": "B站这一块的完整用法",
+      "what": "出 B站推送模块的帮助图：订阅、群权限、推送时间、转发、扫码登录等全套指令。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只渲染",
+      "keywords": [
+        "B站推送帮助",
+        "b站帮助"
+      ],
+      "params": [],
+      "example": "#B站推送帮助",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "帮助图是静态的，新增的推送参数可能没写进去",
+        "功能本身要 Cookie 才能跑"
+      ],
+      "failures": [
+        {
+          "symptom": "图出不来",
+          "cause": "渲染资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "配 B站推送前先看说明"
+      ],
+      "vs": [],
+      "related": [
+        "#开启B站推送",
+        "#B站扫码登录"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/bili-on",
+      "command": "#开启B站推送",
+      "aliases": [
+        "#关闭B站推送"
+      ],
+      "title": "开关 B站推送总闸",
+      "summary": "总开关，关了整个模块不推",
+      "what": "`#开启B站推送` / `#关闭B站推送` 控制 B站动态推送的总开关。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写总开关",
+      "keywords": [
+        "开启B站推送",
+        "关闭推送"
+      ],
+      "params": [],
+      "example": "#开启B站推送",
+      "moreExamples": [
+        "#关闭B站推送"
+      ],
+      "preconditions": [
+        "主人身份",
+        "已扫码登录或配好 Cookie"
+      ],
+      "pitfalls": [
+        "总闸开了但没订阅任何 UP 时不会有推送",
+        "Cookie 失效时整个模块静默失败"
+      ],
+      "failures": [
+        {
+          "symptom": "开了没推送",
+          "cause": "没订阅 UP，或 Cookie 过期"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想让群里看到 UP 动态"
+      ],
+      "vs": [],
+      "related": [
+        "#订阅B站推送",
+        "#B站扫码登录",
+        "#检查B站Cookie"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-sub",
+      "command": "#订阅B站推送",
+      "aliases": [
+        "#取消B站推送",
+        "#添加B站推送",
+        "#移除B站推送"
+      ],
+      "title": "订阅 / 取消订阅 UP 主",
+      "summary": "订阅、增加、新增、移除、去除、取消 六个动词都认",
+      "what": "`#订阅B站推送 <UID 或主页链接>` 订阅一个 UP，之后他发动态会推。取消用 `#取消B站推送 ...`。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "2~6 秒",
+      "cost": "写订阅表",
+      "keywords": [
+        "订阅B站",
+        "取消订阅B站",
+        "订阅UP"
+      ],
+      "params": [
+        {
+          "name": "UID/链接",
+          "required": true,
+          "desc": "UP 主的 UID 或空间链接",
+          "example": "12345678"
+        }
+      ],
+      "example": "#订阅B站推送 12345678",
+      "moreExamples": [
+        "#取消B站推送 12345678"
+      ],
+      "preconditions": [
+        "B站推送总闸已开"
+      ],
+      "pitfalls": [
+        "**六个动词映射到同一条正则**，语义靠后面的参数区分",
+        "UID 写错会订阅到一个不存在的号，不报错",
+        "订阅数有上限"
+      ],
+      "failures": [
+        {
+          "symptom": "订阅了没推",
+          "cause": "总闸关着或 Cookie 失效"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "追某个 UP"
+      ],
+      "vs": [],
+      "related": [
+        "#开启B站推送",
+        "#B站推送列表"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-list",
+      "command": "#B站推送列表",
+      "aliases": [
+        "#B站推送群列表"
+      ],
+      "title": "看订阅了哪些 UP",
+      "summary": "带最后检查时间",
+      "what": "列出当前订阅的 UP 主、最后检查时间与失效状态。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读",
+      "keywords": [
+        "B站推送列表",
+        "订阅了谁"
+      ],
+      "params": [],
+      "example": "#B站推送列表",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "只列不删，取消要发 `#取消B站推送`",
+        "「失效」标记表示该 UID 查不到"
+      ],
+      "failures": [
+        {
+          "symptom": "列表空",
+          "cause": "还没订阅过"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "核对订阅"
+      ],
+      "vs": [],
+      "related": [
+        "#订阅B站推送",
+        "#刷新B站推送列表"
+      ],
+      "risk": "q",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-group",
+      "command": "#允许群B站推送",
+      "aliases": [
+        "#禁止群B站推送",
+        "#开启B站推送群权限",
+        "#关闭B站推送群权限"
+      ],
+      "title": "群级推送权限",
+      "summary": "按群号允许或禁止",
+      "what": "`#允许群B站推送 <群号>` / `#禁止群B站推送 <群号>` 控制某个群能不能收推送；`#开启/关闭B站推送群权限` 是这套机制的总闸。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~4 秒",
+      "cost": "写群权限表",
+      "keywords": [
+        "群B站推送",
+        "推送群权限"
+      ],
+      "params": [
+        {
+          "name": "群号",
+          "required": true,
+          "desc": "目标群号",
+          "example": "123456789"
+        }
+      ],
+      "example": "#允许群B站推送 123456789",
+      "moreExamples": [
+        "#禁止群B站推送 123456789"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**群权限总闸关着时逐群设置无效**",
+        "群号写错会允许一个不存在的群（无害但没意义）"
+      ],
+      "failures": [
+        {
+          "symptom": "设了还是收不到",
+          "cause": "群权限总闸没开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "只让某几个群收推送"
+      ],
+      "vs": [],
+      "related": [
+        "#允许B站私聊推送",
+        "#开启B站推送"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-private",
+      "command": "#允许B站私聊推送",
+      "aliases": [
+        "#禁止B站私聊推送"
+      ],
+      "title": "私聊推送开关",
+      "summary": "要不要往私聊推",
+      "what": "控制 B站动态是否允许推到私聊（而不是只在群里推）。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写配置",
+      "keywords": [
+        "私聊推送",
+        "B站私聊"
+      ],
+      "params": [],
+      "example": "#允许B站私聊推送",
+      "moreExamples": [
+        "#禁止B站私聊推送"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "开了之后私聊可能被刷屏",
+        "私聊推送仍受总闸控制"
+      ],
+      "failures": [
+        {
+          "symptom": "私聊没收到",
+          "cause": "总闸关着"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "只自己看不想打扰群"
+      ],
+      "vs": [],
+      "related": [
+        "#允许群B站推送"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-time",
+      "command": "#B站推送时间",
+      "aliases": [
+        "#B站推送时间 30",
+        "#B站推送过期时间 7"
+      ],
+      "title": "推送间隔与过期时间",
+      "summary": "分钟为单位",
+      "what": "`#B站推送时间 <分钟>` 设置轮询间隔；`#B站推送过期时间 <天/分钟>` 设置动态的时效窗口，超期不再推。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写轮询配置",
+      "keywords": [
+        "推送时间",
+        "推送间隔",
+        "过期时间"
+      ],
+      "params": [
+        {
+          "name": "数值",
+          "required": true,
+          "desc": "纯数字，单位分钟/天",
+          "example": "30"
+        }
+      ],
+      "example": "#B站推送时间 30",
+      "moreExamples": [
+        "#B站推送过期时间 7"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**间隔太小会撞 B站风控**，建议 10 分钟以上",
+        "只认纯数字，带单位（`30分钟`）不匹配"
+      ],
+      "failures": [
+        {
+          "symptom": "回「格式错误」",
+          "cause": "带了单位文字"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "嫌推得慢"
+      ],
+      "vs": [],
+      "related": [
+        "#开启B站推送",
+        "#刷新B站推送列表"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-forward",
+      "command": "#开启B站转发推送",
+      "aliases": [
+        "#关闭B站转发推送"
+      ],
+      "title": "转发动态要不要推",
+      "summary": "默认不推转发",
+      "what": "控制 UP 主的「转发」类动态是否也推送。关掉能显著减少噪音。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写配置",
+      "keywords": [
+        "转发推送",
+        "B站转发"
+      ],
+      "params": [],
+      "example": "#开启B站转发推送",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "开了之后抽奖转发会刷屏",
+        "只影响转发类，原创动态照推"
+      ],
+      "failures": [
+        {
+          "symptom": "还是收到转发",
+          "cause": "这条设置没保存成功"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "不想看抽奖转发"
+      ],
+      "vs": [],
+      "related": [
+        "#设置B站推送默认",
+        "#订阅B站推送"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-format",
+      "command": "#设置B站推送合并",
+      "aliases": [
+        "#设置B站推送默认",
+        "#设置B站推送图片",
+        "#设置全局B站推送合并"
+      ],
+      "title": "推送形态：默认 / 合并 / 图片",
+      "summary": "三选一",
+      "what": "设置动态推送的呈现形态：默认（逐条文字）、合并（同一 UP 多条合成一条）、图片（渲染成图）。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "写配置",
+      "keywords": [
+        "推送形态",
+        "合并推送",
+        "图片推送"
+      ],
+      "params": [],
+      "example": "#设置B站推送合并",
+      "moreExamples": [
+        "#设置B站推送图片",
+        "#设置全局B站推送默认"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "图片模式要起浏览器渲染，慢且吃内存",
+        "合并模式会延迟推送（等攒够几条）"
+      ],
+      "failures": [
+        {
+          "symptom": "还是老样子",
+          "cause": "配置没写入成功"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "嫌刷屏要合并"
+      ],
+      "vs": [],
+      "related": [
+        "#开启B站推送"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-test",
+      "command": "#测试B站推送",
+      "aliases": [
+        "#刷新B站推送列表",
+        "#刷新全部B站推送列表"
+      ],
+      "title": "测试推送 / 刷新列表",
+      "summary": "`#测试` 真发一条，`#刷新` 重查全部订阅",
+      "what": "`#测试B站推送` 立刻发一条示例推送；`#刷新B站推送列表` 重新检查订阅的 UP（全量用 `...全部...`）。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "2~20 秒（全量更久）",
+      "cost": "真实请求 B站接口 / 发消息",
+      "keywords": [
+        "测试推送",
+        "刷新推送"
+      ],
+      "params": [],
+      "example": "#测试B站推送",
+      "moreExamples": [
+        "#刷新B站推送列表",
+        "#刷新全部B站推送列表"
+      ],
+      "preconditions": [
+        "主人身份"
+      ],
+      "pitfalls": [
+        "**`#测试` 是真实发群消息**，别在大群乱试",
+        "`#刷新全部` 会一次性请求所有订阅，容易撞风控",
+        "刷新只更新列表状态，不会补发历史动态"
+      ],
+      "failures": [
+        {
+          "symptom": "刷新后标记失效",
+          "cause": "该 UID 已被封或注销"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "验证配置对不对"
+      ],
+      "vs": [],
+      "related": [
+        "#检查B站Cookie",
+        "#B站推送列表"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/bili-login",
+      "command": "#B站扫码登录",
+      "aliases": [
+        "#检查B站Cookie"
+      ],
+      "title": "扫码登录 / 检查 Cookie",
+      "summary": "不登录很多接口拿不到",
+      "what": "`#B站扫码登录` 出二维码完成登录并保存 Cookie；`#检查B站Cookie` 看当前 Cookie 是否还有效。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "扫码期间不定",
+      "cost": "写 Cookie 凭证",
+      "keywords": [
+        "B站登录",
+        "B站Cookie"
+      ],
+      "params": [],
+      "example": "#B站扫码登录",
+      "moreExamples": [
+        "#检查B站Cookie"
+      ],
+      "preconditions": [
+        "主人身份",
+        "手机上有 B站 App"
+      ],
+      "pitfalls": [
+        "**不登录时很多动态拿不到**（尤其关注流）",
+        "Cookie 会过期，过期后推送静默失效",
+        "扫码结果只在私聊/主人可见，别在群里发"
+      ],
+      "failures": [
+        {
+          "symptom": "扫码后仍提示未登录",
+          "cause": "扫的号和要用的不一致"
+        },
+        {
+          "symptom": "检查显示失效",
+          "cause": "Cookie 过期，重新扫"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "刚装好要配 B站推送"
+      ],
+      "vs": [],
+      "related": [
+        "#开启B站推送",
+        "#检查B站Cookie"
+      ],
+      "risk": "w",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/ai-chat",
+      "command": "",
+      "aliases": [],
+      "title": "榴莲 AI 对话",
+      "summary": "**默认关**（`sys.aiEnabled=false`）；无指令，按概率接话",
+      "what": "非指令消息会被 AI 模块接管：私聊默认 100% 回复、群聊 40%（`config/config/liulian/ai.yaml` 可调）。被 @ 或被叫呼叫名（默认「绿斗/绿豆/阿斗」）一定回复。以 `#` `/` 等符号开头的消息和榴莲自己的指令一律不拦。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "3~30 秒（取决于模型）",
+      "cost": "调外部模型，会产生费用",
+      "keywords": [
+        "榴莲AI",
+        "AI对话",
+        "聊天"
+      ],
+      "params": [],
+      "example": "（在私聊里直接说话，或被 @）",
+      "moreExamples": [],
+      "preconditions": [
+        "`sys.aiEnabled` 已开启",
+        "已配 `ai.api` 或云大脑地址"
+      ],
+      "pitfalls": [
+        "**默认是关的** —— `apps/ai.js` 里读的是 `Cfg.get('sys.aiEnabled', false)`",
+        "云大脑 `brain.mode` 默认 `local`（已不维护），正式用要配 `base_url` + `api_key`",
+        "群聊 40% 概率回复意味着「有时不回」是正常的，不是坏了",
+        "记忆模式 `memory.mode` 默认 `off`，不记上下文"
+      ],
+      "failures": [
+        {
+          "symptom": "完全不理人",
+          "cause": "`sys.aiEnabled` 没开"
+        },
+        {
+          "symptom": "回了但答非所问",
+          "cause": "模型/接口配错或 `persona_id` 不存在"
+        },
+        {
+          "symptom": "模型报 401",
+          "cause": "`api_key` 错误"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想在群里有个会聊天的机器人"
+      ],
+      "vs": [
+        {
+          "command": "#榴莲ai设置",
+          "diff": "那条在帮助里写了但源码里没有对应注册规则，实际改配置要动 ai.yaml"
+        }
+      ],
+      "related": [
+        "#榴莲重置记忆",
+        "#榴莲状态",
+        "#榴莲设置"
+      ],
+      "risk": "w",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/panel",
+      "command": "#榴莲面板",
+      "aliases": [
+        "#留恋面板设置"
+      ],
+      "title": "面板设置（规则已声明但未挂载）",
+      "summary": "**发这条不会有任何反应** —— 源码里是死规则",
+      "what": "`apps/admin.js` 里声明了 `^#榴莲面板(?:设置)?.*`，但 `apps/index.js` 第 27 行 `import { rule as adminRule }` 之后**全文没再引用 adminRule**，所以这条规则从来没被注册到框架。要改设置请用 `#榴莲设置`。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "无响应",
+      "cost": "无",
+      "keywords": [
+        "榴莲面板",
+        "面板设置"
+      ],
+      "params": [],
+      "example": "#榴莲面板",
+      "moreExamples": [],
+      "preconditions": [
+        "无（这条本身不可用）"
+      ],
+      "pitfalls": [
+        "**发它完全没反应**，不入队、不报错、不回话",
+        "`admin.js` 同一个规则数组里的另外 3 条（`#榴莲更新` / `#榴莲更新图像` / `#榴莲安装芒果插件`）因为 `apps/index.js` 自己又写了一遍同样的正则，反而能用",
+        "这是源码侧的历史遗留，不是配置问题"
+      ],
+      "failures": [
+        {
+          "symptom": "怎么发都没反应",
+          "cause": "规则未注册，属插件侧缺陷"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "排查「面板指令为什么没用」"
+      ],
+      "vs": [
+        {
+          "command": "#榴莲设置",
+          "diff": "那个是真能用的设置入口"
+        }
+      ],
+      "related": [
+        "#榴莲设置",
+        "#榴莲状态"
+      ],
+      "risk": "q",
+      "permission": "master",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/ai-reset",
+      "command": "#榴莲重置记忆",
+      "aliases": [
+        "#榴莲重置记忆 123456789"
+      ],
+      "title": "清掉 AI 的记忆",
+      "summary": "按 QQ 号重置某个人的上下文",
+      "what": "`#榴莲重置记忆 <QQ>` 把该用户在 AI 侧的对话记忆/好感度清掉，回到初始状态。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~5 秒",
+      "cost": "删云端记忆，不可逆",
+      "keywords": [
+        "重置记忆",
+        "清记忆"
+      ],
+      "params": [
+        {
+          "name": "QQ",
+          "required": true,
+          "desc": "目标 QQ 号",
+          "example": "123456789"
+        }
+      ],
+      "example": "#榴莲重置记忆 123456789",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份",
+        "记忆服务已启用（`memory.mode=cloud`）"
+      ],
+      "pitfalls": [
+        "**记忆默认就是关的**（`off`），没开记忆时这条没有实际作用",
+        "清掉不可恢复，好感度一起归零",
+        "只清这个 QQ 的，别人不受影响"
+      ],
+      "failures": [
+        {
+          "symptom": "回「记忆服务未启用」",
+          "cause": "`memory.mode` 是 off"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "AI 记错了要重来"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲ai设置",
+        "#榴莲状态"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/game-topics",
+      "command": "#原神",
+      "aliases": [
+        "#明日方舟",
+        "#崩坏3",
+        "#碧蓝航线",
+        "#蔚蓝档案",
+        "#FGO",
+        "#7d",
+        "#少女前线",
+        "#公主连结"
+      ],
+      "title": "游戏名话题彩蛋",
+      "summary": "发一个游戏名，机器人接一句",
+      "what": "单发一个游戏名（`#原神`、`#明日方舟`、`#崩坏3`、`#碧蓝航线`、`#蔚蓝档案`、`#FGO`、`#7d`、`#少女前线`、`#公主连结`）时接一句对应的梗话。**每个游戏是独立的一条正则**，只认这几个名字。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~2 秒",
+      "cost": "只回文本或一张图",
+      "keywords": [
+        "原神",
+        "明日方舟",
+        "崩坏3",
+        "碧蓝航线",
+        "蔚蓝档案",
+        "FGO",
+        "少女前线",
+        "公主连结"
+      ],
+      "params": [],
+      "example": "#原神",
+      "moreExamples": [
+        "#明日方舟",
+        "#碧蓝航线"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**必须单独发这一个词** —— `#原神 今天打什么` 带别的字就不命中（正则带 `$` 结尾）",
+        "`#碧蓝航线` 那条正则没写结尾锚点，所以后面跟字也能触发，和其他几条不一致",
+        "纯彩蛋，没有实际查询功能"
+      ],
+      "failures": [
+        {
+          "symptom": "后面带了字没反应",
+          "cause": "其余几条都是整行匹配"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#鸡你太美",
+        "#看腿"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/kun",
+      "command": "#鸡你太美",
+      "aliases": [
+        "#小黑子",
+        "#鲲鲲",
+        "#蔡徐坤",
+        "#菜虚鲲"
+      ],
+      "title": "小黑子彩蛋",
+      "summary": "**默认关**（`sys.jtm`）；消息里含这些词就接",
+      "what": "开了之后，消息里出现「鸡你太美 / 小黑子 / 鲲鲲 / 蔡徐坤 / 菜虚鲲 / 爱坤 / 鸽鸽 / geigei / 姬霓太美」等词时机器人接一句。正则**没有锚点**，只要包含就触发。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~2 秒",
+      "cost": "只回文本",
+      "keywords": [
+        "鸡你太美",
+        "小黑子",
+        "鲲鲲",
+        "蔡徐坤"
+      ],
+      "params": [],
+      "example": "#鸡你太美",
+      "moreExamples": [
+        "#小黑子"
+      ],
+      "preconditions": [
+        "`sys.jtm` 已开启"
+      ],
+      "pitfalls": [
+        "**默认关**",
+        "正则无锚点：群友正常聊天里带上这些字也会被接话，容易刷屏",
+        "`apps/index.js` 和 `apps/kun.js` 各有一份同类正则，措辞略有差别"
+      ],
+      "failures": [
+        {
+          "symptom": "不接茬",
+          "cause": "`sys.jtm` 没开"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#游戏名话题 ",
+        "#看腿"
+      ],
+      "risk": "q",
+      "permission": "",
+      "enabled_by_default": false
+    },
+    {
+      "id": "liulian/legs",
+      "command": "#看腿1",
+      "aliases": [
+        "#看腿2",
+        "#涩涩一下"
+      ],
+      "title": "看腿 / 涩涩彩蛋",
+      "summary": "三张固定图",
+      "what": "`#看腿1` / `#看腿2` / `#涩涩一下` 分别发一张内置的图。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~3 秒",
+      "cost": "只发图",
+      "keywords": [
+        "看腿",
+        "涩涩"
+      ],
+      "params": [],
+      "example": "#看腿1",
+      "moreExamples": [
+        "#看腿2",
+        "#涩涩一下"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**内容是内置固定图，不随机**",
+        "只在熟人小群用，正经群容易出事"
+      ],
+      "failures": [
+        {
+          "symptom": "没反应",
+          "cause": "资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩笑"
+      ],
+      "vs": [],
+      "related": [
+        "#鸡你太美",
+        "#抽色图"
+      ],
+      "risk": "a",
+      "permission": ""
+    },
+    {
+      "id": "liulian/miku",
+      "command": "初音",
+      "aliases": [
+        "#初音",
+        "miku",
+        "MIKU",
+        "初音未来",
+        "葱葱"
+      ],
+      "title": "初音彩蛋",
+      "summary": "发这几个词就有反应",
+      "what": "发 `初音` / `miku` / `初音未来` / `葱葱`（大小写都认）时接一句或一张图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~2 秒",
+      "cost": "只回文本",
+      "keywords": [
+        "初音",
+        "miku",
+        "葱葱"
+      ],
+      "params": [],
+      "example": "初音",
+      "moreExamples": [
+        "miku",
+        "#初音"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**整行只认这几个词**，带别的字不命中",
+        "纯彩蛋"
+      ],
+      "failures": [
+        {
+          "symptom": "带字后没反应",
+          "cause": "整行匹配"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里玩梗"
+      ],
+      "vs": [],
+      "related": [
+        "#鸡你太美"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/classic",
+      "command": "#来点经典",
+      "aliases": [
+        "#整点怪话",
+        "#随机逆天语录",
+        "#来点乐子",
+        "#搞点杂图"
+      ],
+      "title": "经典语录 / 逆天怪话",
+      "summary": "`来点/整点/搞点/随机/看看/来一张` × `经典/怪话/逆天/乐子/杂图`",
+      "what": "两个词组合：动词（来点 / 整点 / 搞点 / 随机 / 看看 / 来一张）+ 名词（经典 / 小怪话 / 怪话 / 逆天 / 逆天语录 / 经典语录 / 乐子 / 杂图），随机发一条语录或一张图。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地库",
+      "keywords": [
+        "经典语录",
+        "怪话",
+        "逆天",
+        "乐子"
+      ],
+      "params": [],
+      "example": "#来点经典",
+      "moreExamples": [
+        "#整点怪话",
+        "#来一张杂图"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**动词和名词必须都在库里的组合**，自己拼一个新词（如 `#来点爱情`）会走到另一条宽正则去",
+        "内容来自固定库，会重复"
+      ],
+      "failures": [
+        {
+          "symptom": "回了别的东西",
+          "cause": "组合没命中，落到 `#来点xx` 那条宽规则"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里找乐子"
+      ],
+      "vs": [],
+      "related": [
+        "#查看全部乐子人",
+        "#查看别名"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/lezi-people",
+      "command": "#查看全部乐子人",
+      "aliases": [
+        "#查看全部乐子人"
+      ],
+      "title": "看语录库里有谁",
+      "summary": "列出语录归属人名",
+      "what": "列出语录库里登记过的「乐子人」名单。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读配置",
+      "keywords": [
+        "乐子人",
+        "语录名单"
+      ],
+      "params": [],
+      "example": "#查看全部乐子人",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "纯查询，不能增删（增删要改配置文件）",
+        "名单长时消息会被截断"
+      ],
+      "failures": [
+        {
+          "symptom": "列表空",
+          "cause": "语录库为空"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想知道语录都出自谁"
+      ],
+      "vs": [],
+      "related": [
+        "#来点经典",
+        "#查看别名"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/alias-query",
+      "command": "#查看雷神别名",
+      "aliases": [
+        "#查看别名 雷神"
+      ],
+      "title": "查某个词的别名表",
+      "summary": "猜角色用的别名都在这",
+      "what": "`#查看<名字>别名` 查出这个词在别名库里登记的所有写法——猜角色答不对时用它确认正确叫法。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只读别名库",
+      "keywords": [
+        "查看别名",
+        "别名表"
+      ],
+      "params": [
+        {
+          "name": "名字",
+          "required": true,
+          "desc": "角色名或词条名",
+          "example": "雷神"
+        }
+      ],
+      "example": "#查看雷神别名",
+      "moreExamples": [
+        "#查看别名 雷神"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**写法是「查看XX别名」紧挨着**，中间加空格可能不命中",
+        "没登记的词回「没有别名」"
+      ],
+      "failures": [
+        {
+          "symptom": "回没有别名",
+          "cause": "该词不在别名库"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "猜角色答对了却不算分"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#我猜"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/daily-word",
+      "command": "#每日单词",
+      "aliases": [
+        "#每日句子",
+        "#word",
+        "#english",
+        "#单词",
+        "#句子"
+      ],
+      "title": "每日单词 / 每日句子",
+      "summary": "练英语用；**默认关**（`sys.dw` 管的是打我，这条走 `^-` 排除规则）",
+      "what": "发 `#每日单词` 出当天单词卡（含释义、例句），`#每日句子` 出当天句子。中英混写都认（`word` / `english` 也行）。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地词库",
+      "keywords": [
+        "每日单词",
+        "每日句子",
+        "背单词"
+      ],
+      "params": [],
+      "example": "#每日单词",
+      "moreExamples": [
+        "#每日句子",
+        "#word"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**正则带 `^[^-]*` 前缀**：消息里以 `-` 开头时不命中",
+        "同一条正则会顺带把 `句子`/`单词` 结尾的普通发言也吃进来（没有 `#` 也能触发）",
+        "内容是每天一条，同一天重复发结果一样"
+      ],
+      "failures": [
+        {
+          "symptom": "回了别的东西",
+          "cause": "没带结尾关键词"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里打卡学英语"
+      ],
+      "vs": [],
+      "related": [
+        "#早报",
+        "#来点经典"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/qa",
+      "command": "#芒果问答",
+      "aliases": [
+        "#榴莲问答",
+        "#留恋问答"
+      ],
+      "title": "原神知识问答",
+      "summary": "出了一题，等群友抢答",
+      "what": "出一道原神知识题，群友在群里抢答，答对计分。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~4 秒",
+      "cost": "只读本地题库",
+      "keywords": [
+        "芒果问答",
+        "原神问答",
+        "知识问答"
+      ],
+      "params": [],
+      "example": "#芒果问答",
+      "moreExamples": [
+        "#榴莲问答"
+      ],
+      "preconditions": [
+        "群聊"
+      ],
+      "pitfalls": [
+        "**作答没有固定前缀** —— 这条依赖 `(?!#).*` 那条宽规则接住非指令消息",
+        "一局只认第一个正确答案",
+        "题库固定，老玩家会背"
+      ],
+      "failures": [
+        {
+          "symptom": "答对了不算",
+          "cause": "消息以 `#` 开头，被当成指令跳过了"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "群里搞问答比赛"
+      ],
+      "vs": [],
+      "related": [
+        "#猜角色",
+        "#猜谜语"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/emoji-help",
+      "command": "#表情帮助",
+      "aliases": [
+        "#表情帮助"
+      ],
+      "title": "表情模块帮助",
+      "summary": "上传与随机表情的用法",
+      "what": "出表情模块的说明图：怎么上传、怎么触发、图库分类。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "1~3 秒",
+      "cost": "只渲染",
+      "keywords": [
+        "表情帮助",
+        "表情包帮助"
+      ],
+      "params": [],
+      "example": "#表情帮助",
+      "moreExamples": [],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**不带 `#` 也能触发**（正则 `^表情帮助$`）",
+        "模块关着时这条仍会响应，但不代表表情能用"
+      ],
+      "failures": [
+        {
+          "symptom": "图出不来",
+          "cause": "渲染资源缺失"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "想建表情池"
+      ],
+      "vs": [],
+      "related": [
+        "#上传随机表情",
+        "#随机表情"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/phone-lookup",
+      "command": "#查电话",
+      "aliases": [
+        "#骚扰电话 13800138000"
+      ],
+      "title": "查号码标记 / 骚扰电话",
+      "summary": "看这个号被标记成什么",
+      "what": "`#查电话 <号码>` 查该号码在公开库里的标记（骚扰、推销、快递等）；`#骚扰电话 <号码>` 是同一实现的另一种写法。",
+      "returns": "一张图。",
+      "returnsDetail": "取不到时回一句文字提示，不出图。",
+      "timing": "2~6 秒",
+      "cost": "只读第三方接口",
+      "keywords": [
+        "查电话",
+        "骚扰电话",
+        "号码查询"
+      ],
+      "params": [
+        {
+          "name": "号码",
+          "required": true,
+          "desc": "手机号或座机号",
+          "example": "13800138000"
+        }
+      ],
+      "example": "#查电话 13800138000",
+      "moreExamples": [
+        "#骚扰电话 13800138000"
+      ],
+      "preconditions": [
+        "无"
+      ],
+      "pitfalls": [
+        "**数据来自第三方标记库，不是官方**，可能不准",
+        "不带号码时回用法提示",
+        "查别人号码属于敏感操作，别乱查"
+      ],
+      "failures": [
+        {
+          "symptom": "回「无记录」",
+          "cause": "该号没被标记过"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "陌生来电是不是推销"
+      ],
+      "vs": [],
+      "related": [
+        "#二维码"
+      ],
+      "risk": "q",
+      "permission": ""
+    },
+    {
+      "id": "liulian/pm-v2-restore",
+      "command": "#v2恢复插件",
+      "aliases": [
+        "#v2恢复插件 yyy-plugin"
+      ],
+      "title": "把移除的插件加回来（v2）",
+      "summary": "和 `#v2移除插件` 配对使用",
+      "what": "把之前用 `#v2移除插件` 摘掉的插件重新加回加载列表。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "1~5 秒",
+      "cost": "改加载列表",
+      "keywords": [
+        "v2恢复插件",
+        "恢复插件"
+      ],
+      "params": [
+        {
+          "name": "插件名",
+          "required": true,
+          "desc": "`plugins/` 下的目录名",
+          "example": "yyy-plugin"
+        }
+      ],
+      "example": "#v2恢复插件 yyy-plugin",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份",
+        "插件目录还在（没被删除）"
+      ],
+      "pitfalls": [
+        "**目录被 `#v2删除插件` 删掉后这条救不回来**",
+        "恢复后要重启才加载"
+      ],
+      "failures": [
+        {
+          "symptom": "回「插件不存在」",
+          "cause": "目录已被删"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "误移除了要撤回"
+      ],
+      "vs": [],
+      "related": [
+        "#v2移除插件",
+        "#v2删除插件"
+      ],
+      "risk": "a",
+      "permission": "master"
+    },
+    {
+      "id": "liulian/install-mango",
+      "command": "#榴莲安装芒果插件",
+      "aliases": [
+        "#留恋安装芒果插件",
+        "#榴莲更新芒果插件"
+      ],
+      "title": "一键装「芒果插件」",
+      "summary": "装/更新配套插件",
+      "what": "从固定仓库安装或更新配套的「芒果插件」（官方推荐的一键装）。",
+      "returns": "一句确认文字。",
+      "returnsDetail": "成功/失败都以文字回执。",
+      "timing": "10 秒~数分钟",
+      "cost": "写磁盘装插件",
+      "keywords": [
+        "安装芒果插件",
+        "芒果插件"
+      ],
+      "params": [],
+      "example": "#榴莲安装芒果插件",
+      "moreExamples": [],
+      "preconditions": [
+        "主人身份",
+        "能访问 Gitee/GitHub"
+      ],
+      "pitfalls": [
+        "**仓库地址是写死的**，源挂了就装不了",
+        "装完要重启",
+        "重名目录已存在时会走「更新」分支"
+      ],
+      "failures": [
+        {
+          "symptom": "回「克隆失败」",
+          "cause": "网络不通"
+        }
+      ],
+      "edgeCases": [],
+      "scenarios": [
+        "装齐全家桶"
+      ],
+      "vs": [],
+      "related": [
+        "#榴莲更新",
+        "#v2添加插件"
+      ],
+      "risk": "a",
+      "permission": "master"
+    }
+  ]
+}

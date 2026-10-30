@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "revision": 45,
-  "updated": "2026-10-29T23:19:57.841Z",
+  "revision": 46,
+  "updated": "2026-10-30T00:18:51.340Z",
   "plugins": {
     "Atlas": {
       "file": "maps/Atlas.json",
@@ -155,6 +155,20 @@
       "fingerprint": "01c2d91e31f2",
       "sha256": "d905d1aa7d25e2cf8eecade7d775dc5e478813d659608abbadac6d85115f05cd",
       "bytes": 11771,
+      "used": 0
+    },
+    "liulian-plugin": {
+      "file": "maps/liulian-plugin.json",
+      "display": "榴莲插件（liulian）",
+      "category": "娱乐",
+      "version": "0.0.1",
+      "revision": 1,
+      "command_count": 105,
+      "default_off_count": 11,
+      "delegated_count": 0,
+      "fingerprint": "3f789f442a58",
+      "sha256": "d9557ff54463ae9769a940416de16dcd398dad651120cd3e0510a6a74793e692",
+      "bytes": 148345,
       "used": 0
     },
     "meme-plugin": {
@@ -521,6 +535,15 @@
       "command_count": 5,
       "units": [
         "Guoba-Plugin"
+      ],
+      "used": 0
+    },
+    "liulian-plugin": {
+      "display": "榴莲插件（liulian）",
+      "category": "娱乐",
+      "command_count": 105,
+      "units": [
+        "liulian-plugin"
       ],
       "used": 0
     },
