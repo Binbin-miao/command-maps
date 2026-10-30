@@ -160,11 +160,13 @@ CI 跑三件事，任一步非 0 就红：
 
 | 步骤 | 命令 | 拦什么 |
 |---|---|---|
-| 展示名对账 | `node scripts/build-index-v2.mjs --check-display` | 改了地图的 `display` 却没重建索引 |
+| 索引对账 | `node scripts/build-index-v2.mjs --check-index` | 改了地图却没重建索引（任何字段，不只是展示名） |
 | 重建索引 | `node scripts/build-index-v2.mjs` | 缺必填字段、`id`/`command` 重复、schema 不对 |
 | 产物自检 | `node scripts/verify-pipeline.mjs` | 落盘哈希 / 字节数 / 条数与索引对不上、`dist/maps` 有孤儿文件 |
 
-`--check-display` 只比对不写盘；它拦的是「地图改了、`dist/` 没跟上」这类半更新——这种问题只在合并后才暴露的话，修起来要回改 main。
+`--check-index` 只比对不写盘，连 `dist/maps` 都不碰：按当前地图把索引算一遍，跟已提交的那份逐字段比（只排除 `updated` 与运行时统计的 `used`），不一致就点名是哪个插件的哪一项。
+它拦的是「地图改了、`dist/` 没跟上」这类半更新——这种问题只在合并后才暴露的话，修起来要回改 main。
+注意这一步必须排在「重建索引」**之前**：重建出来的索引永远自洽，先重建就再也发现不了提交的 `dist/` 落后。
 
 ## 提交前钩子（可选）
 
@@ -194,7 +196,7 @@ git config core.hooksPath .githooks
 
 | 脚本 | 用途 |
 | --- | --- |
-| `build-index-v2.mjs` | 由 `maps-v2/` 生成 `dist/index.json`，校验字段、算哈希、自动升版本号；`--check-display` 只对账不写盘 |
+| `build-index-v2.mjs` | 由 `maps-v2/` 生成 `dist/index.json`，校验字段、算哈希、自动升版本号；`--check-index` 只对账不写盘 |
 | `verify-pipeline.mjs` | 产物自检：结构层逐条对账；有前端仓库时再跑一遍完整拉取链路 |
 | `rebase-index.mjs` | 按一组插件从最新索引裁出子集，单个 PR 只贴自己的条目，避免整份覆盖导致连环冲突 |
 | `check-map-commands.mjs` | 反查地图里的写法能否命中源码正则；`<地图名> <源码目录>` |
@@ -202,6 +204,7 @@ git config core.hooksPath .githooks
 | `probe-loader.mjs` | 离线枚举单个插件的真实规则（不启动 Bot、不连协议端） |
 | `probe-all.mjs` | 批量跑 `probe-loader`，中间产物落在系统临时目录，退出即删 |
 | `analyze-logs.mjs` | 统计近一月指令用量（用于 `used` 与长文筛选） |
+| `push-pr.mjs` | 本机 push 不通时改用 GitHub Data API 建分支 + 提交 + 开 PR；凭据只走 `GITHUB_TOKEN` |
 
 历史（schema 1 遗留，别再用来发布）：`build-index.mjs`、`bump-revision.mjs`、`classify-index.mjs`、`expand-keys.mjs`、`extract-sources.mjs`。
 

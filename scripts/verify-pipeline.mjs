@@ -89,7 +89,6 @@ check('dist/maps 没有孤儿文件', orphans.length === 0, orphans.join(', ') |
 
 const frontendEntry = path.join(FRONTEND, 'utils', 'capability', 'mapRunner.js')
 const canReachFrontend = fs.existsSync(frontendEntry)
-let flat = null
 
 if (canReachFrontend) {
   const fakeFetch = async target => {
@@ -144,7 +143,7 @@ if (canReachFrontend) {
     check(`${key} 元信息哈希对得上`, meta?.sha256 === entry.sha256)
   }
 
-  flat = loadMapIndex()
+  const flat = loadMapIndex()
   check(`拍平后条目数 = ${expectedEntries}`, flat.entries.length === expectedEntries, String(flat.entries.length))
   check(`拍平后有 ${expectedPull} 个插件`, flat.stats.plugins === expectedPull, String(flat.stats.plugins))
 
@@ -163,19 +162,20 @@ if (canReachFrontend) {
   fs.rmSync(tmp, { recursive: true, force: true })
 }
 
-// 覆盖率对账：地图条数明显少于源码规则数时，多半是有整块漏写（阈值 10%）
+// 覆盖率对账：地图条数明显少于源码规则数时，多半是有整块漏写（阈值 10%）。
+// 只提醒不判失败 —— 合并「开启/关闭」成一条、把一条拆成多条都是合理的，
+// 拿比例当门禁会把正常的编辑拦下来。真正的发布门禁在 build-index-v2 的字段校验。
+const warnings = []
 const countsPath = path.join(path.dirname(DIST), 'maps-v2', '_rule-counts.json')
 if (fs.existsSync(countsPath)) {
   const counts = JSON.parse(fs.readFileSync(countsPath, 'utf8'))
-  const short = []
   for (const key of keys) {
     const expected = Number(counts[key])
     if (!expected) continue
     if (index.plugins[key].command_count < expected * 0.9) {
-      short.push(`${key}(${index.plugins[key].command_count}/${expected})`)
+      warnings.push(`${key}(${index.plugins[key].command_count}/${expected}) 可能整块漏写`)
     }
   }
-  check('地图覆盖不低于源码规则的 90%', short.length === 0, short.join(', ') || `已对账 ${keys.length} 个插件`)
 }
 
 let failed = 0
@@ -185,6 +185,12 @@ for (const item of checks) {
 }
 if (!canReachFrontend) {
   console.log(`\n跳过链路层：没找到 ${FRONTEND}（设 FRONTEND_REPO 指向前端仓库即可跑完整自检）`)
+}
+if (warnings.length) {
+  console.log(`\n覆盖率提醒（${warnings.length} 处，不阻断）：`)
+  for (const line of warnings) console.log(`  ! ${line}`)
+} else if (fs.existsSync(countsPath)) {
+  console.log(`\n覆盖率对账通过：${keys.length} 个插件都不低于源码规则的 90%`)
 }
 console.log(`\n${checks.length - failed}/${checks.length} 通过`)
 process.exit(failed ? 1 : 0)
